@@ -16,7 +16,7 @@ function playSequence
                 for pixelSizeIndex = 1:numel(stimParams.blockSizeArray)
                     pixelatedImage(pixelSizeIndex,:,:) = squeeze(sequence(1+pixelSizeIndex, frameIndex,:,:));
                 end
-                [mean(image(:)) mean(squeeze(pixelatedImage(1,:,:))) mean(squeeze(pixelatedImage(2,:,:))) mean(squeeze(pixelatedImage(3,:,:)))]
+                [mean(image(:)) mean(mean(squeeze(pixelatedImage(1,:,:)))) mean(mean((squeeze(pixelatedImage(2,:,:))))) mean(mean(squeeze(pixelatedImage(3,:,:))))]
                 drawFrame(image, pixelatedImage, stimParams.blockSizeArray, writerObj);
             end
         end

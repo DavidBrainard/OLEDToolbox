@@ -3,16 +3,17 @@ function generateCloudProbe
     % Load the mean gamma curve function (gammaFunction)
     load('/Users/Shared/Matlab/Experiments/OLEDExps/PreliminaryData/GammaFunction.mat');
     
+    stimParams.patternGeneratingScript         = which(mfilename);
     stimParams.phaseVelocityAtZeroSF           = 0.5;      % phase velocity at zero SF
     stimParams.phaseVelocityFactor             = 0.5;      % velocity of phase at SF_i will be: SF_i ^ phaseVelocityFactor
     stimParams.meanChangeInPhaseAnglePerFrame  = pi/12;    % mean change in phase angle per frame
     stimParams.stdChangeInPhaseAnglePerFrame   = pi/18;
-    stimParams.framesNum                       = 32;
+    stimParams.framesNum                       = 8;
 
     stimParams.deltaOri                 = 45;
     stimParams.exponentOfOneOverFArray  = [1 1.2 1.4];
     stimParams.oriBiasArray             = [2 1];
-    stimParams.blockSizeArray           = [48 96 192];
+    stimParams.blockSizeArray           = [24 48 96];
     
     totalFrames = 0;
     for exponentOfOneOverFIndex = 1:numel(stimParams.exponentOfOneOverFArray)
@@ -30,7 +31,7 @@ function generateCloudProbe
     totalFrames
     
     % save stimuli
-    save('PixelOLEDprobes.mat', 'stimParams', 'stimuli');
+    save('PixelOLEDprobes1.mat', 'stimParams', 'stimuli');
 end
 
     
