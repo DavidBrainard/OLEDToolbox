@@ -87,7 +87,7 @@ function [imageSequence, orientationSequence] = generateMovingCloudSequence(stim
     end
     
     % pre-allocate memory
-    imageSequence = zeros(2,nframes,desiredMatrixSize(1), desiredMatrixSize(2), 'uint8');
+    imageSequence = zeros(1+numel(blockSizeArray),nframes,desiredMatrixSize(1), desiredMatrixSize(2), 'uint8');
     
     for frameIndex = 1:nframes  
       if (oribias > 0)    
