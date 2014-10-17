@@ -9,7 +9,7 @@ function AnalyzePreliminarySamsungOLEDdata
     printCalibrationFrames = false;
       
     %  Single target runs expect for last 2 runs
-    calibrationFileName = './PreliminaryData/SamsungOLED_calib.mat';
+    calibrationFileName = '/Users/Shared/Matlab/Experiments/OLEDExps/PreliminaryData/SamsungOLED_calib.mat';
     
     % Double target runs
     %calibrationFileName = './PreliminaryData/SamsungOLED_DoubleTargetCalib1.mat';
