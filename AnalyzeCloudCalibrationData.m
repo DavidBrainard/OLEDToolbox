@@ -100,60 +100,90 @@ function AnalyzeCloudCalibrationData
             end % oriBiasIndex
     end % exponentOfOneOVerFIndex
                             
-                            
+               
+    runParams.leftTargetGrays
+    
+    ratioBins = [0.7:0.02:1.5];
     figure(2);
     clf;
     
-    lum1a = luminanceValues(:,:,:,1,1);
-    lum1b = luminanceValues(:,:,:,2,1);
-   
-    lum2a = luminanceValues(:,:,:,1,1);
-    lum2b = luminanceValues(:,:,:,3,1);
+    lumLims = [70 570];
     
-    lum3a = luminanceValues(:,:,:,1,1);
-    lum3b = luminanceValues(:,:,:,4,1);
-    
-    lum4a = luminanceValues(:,:,:,1,2);
-    lum4b = luminanceValues(:,:,:,2,2);
-    
-    lum5a = luminanceValues(:,:,:,1,2);
-    lum5b = luminanceValues(:,:,:,3,2);
-    
-    lum6a = luminanceValues(:,:,:,1,2);
-    lum6b = luminanceValues(:,:,:,4,2);
-    
+    targetGrayIndex = 1;
+    lum1a = luminanceValues(:,:,:,1,targetGrayIndex);
+    lum1b = luminanceValues(:,:,:,2,targetGrayIndex);
+    targetGrayIndex = 2;
+    lum4a = luminanceValues(:,:,:,1,targetGrayIndex);
+    lum4b = luminanceValues(:,:,:,2,targetGrayIndex);
     
     subplot(2,3,1);
-    plot(lum1a(:), lum1b(:), 'ks');
-    set(gca, 'XLim', [0 500], 'YLim', [0 500]);
+    plot([0 500], [0 500], 'r-');
+    hold on;
+    plot(lum1a(:), lum1b(:), 'ks', 'MarkerFaceColor', [0.3 0.3 0.3], 'MarkerSize', 12);
+    plot(lum4a(:), lum4b(:), 'ks', 'MarkerFaceColor', [0.9 0.9 0.9], 'MarkerSize', 12);
+    set(gca, 'XLim', lumLims, 'YLim', lumLims);
     axis 'square'
-    
-    subplot(2,3,2);
-    plot(lum2a(:), lum2b(:), 'ks');
-    set(gca, 'XLim', [0 500], 'YLim', [0 500]);
-    axis 'square'
-    
-    subplot(2,3,3);
-    plot(lum3a(:), lum3b(:), 'ks');
-    set(gca, 'XLim', [0 500], 'YLim', [0 500]);
-    axis 'square'
+    legend({'identity line', 'target settings=0.74', 'target settings=1.0'}, 'Location', 'SouthEast');
+    xlabel('target luminance (cd/m2) in original image');
+    ylabel(sprintf('target luminance (cd/m2) in pixelated image (%d)', stimParams.blockSizeArray(1)));
+    set(gca, 'FontSize', 14, 'FontName','Helvetica');
     
     subplot(2,3,4);
-    plot(lum4a(:), lum4b(:), 'ks');
-    set(gca, 'XLim', [0 500], 'YLim', [0 500]);
-    axis 'square'
+    ratios = [lum1a./lum1b lum4a./lum4b];
+    histogram(ratios, ratioBins)
+    xlabel(sprintf('target luminance ratio (original/pixelated(%d) image)', stimParams.blockSizeArray(1)));
+    set(gca, 'XLim', [0.7 1.5]);
+    set(gca, 'FontSize', 14, 'FontName','Helvetica');
+     
+    targetGrayIndex = 1;
+    lum2a = luminanceValues(:,:,:,1,targetGrayIndex);
+    lum2b = luminanceValues(:,:,:,3,targetGrayIndex);
+    targetGrayIndex = 2;
+    lum5a = luminanceValues(:,:,:,1,targetGrayIndex);
+    lum5b = luminanceValues(:,:,:,3,targetGrayIndex);
     
+    subplot(2,3,2);
+    plot([0 500], [0 500], 'r-');
+    hold on;
+    plot(lum2a(:), lum2b(:), 'ks', 'MarkerFaceColor', [0.3 0.3 0.3], 'MarkerSize', 12);
+    plot(lum5a(:), lum5b(:), 'ks', 'MarkerFaceColor', [0.9 0.9 0.9], 'MarkerSize', 12);
+    set(gca, 'XLim', lumLims, 'YLim', lumLims);
+    axis 'square'
+    legend({'identity line', 'target settings=0.74', 'target settings=1.0'}, 'Location', 'SouthEast');
+    xlabel('target luminance (cd/m2) in original image');
+    ylabel(sprintf('target luminance (cd/m2) in pixelated image (%d)', stimParams.blockSizeArray(2)));
+    set(gca, 'FontSize', 14, 'FontName','Helvetica');
+     
     subplot(2,3,5);
-    plot(lum5a(:), lum5b(:), 'ks');
-    set(gca, 'XLim', [0 500], 'YLim', [0 500]);
+    ratios = [lum2a./lum2b lum5a./lum5b];
+    histogram(ratios, ratioBins)
+    xlabel(sprintf('target luminance ratio (original/pixelated(%d) image)', stimParams.blockSizeArray(2)));
+    set(gca, 'XLim', [0.7 1.5]);
+    set(gca, 'FontSize', 14, 'FontName','Helvetica');
+     
+    targetGrayIndex = 1;
+    lum3a = luminanceValues(:,:,:,1,targetGrayIndex);
+    lum3b = luminanceValues(:,:,:,4,targetGrayIndex);
+    targetGrayIndex = 2;
+    lum6a = luminanceValues(:,:,:,1,targetGrayIndex);
+    lum6b = luminanceValues(:,:,:,4,targetGrayIndex);
+    subplot(2,3,3);
+    plot([0 500], [0 500], 'r-');
+    hold on;
+    plot(lum3a(:), lum3b(:), 'ks', 'MarkerFaceColor', [0.3 0.3 0.3], 'MarkerSize', 12);
+    plot(lum6a(:), lum6b(:), 'ks', 'MarkerFaceColor', [0.9 0.9 0.9], 'MarkerSize', 12);
+    set(gca, 'XLim', lumLims, 'YLim', lumLims);
     axis 'square'
-    
+    legend({'identity line', 'target settings=0.74', 'target settings=1.0'}, 'Location', 'SouthEast');
+    xlabel('target luminance (cd/m2) in original image');
+    ylabel(sprintf('target luminance (cd/m2) in pixelated image (%d)', stimParams.blockSizeArray(3)));
+    set(gca, 'FontSize', 14, 'FontName','Helvetica');
+     
     subplot(2,3,6);
-    plot(lum6a(:), lum6b(:), 'ks');
-    set(gca, 'XLim', [0 500], 'YLim', [0 500]);
-    axis 'square'
-    
-    
-    
+    ratios = [lum3a./lum3b lum6a./lum6b];
+    histogram(ratios, ratioBins)
+    xlabel(sprintf('target luminance ratio (original/pixelated(%d) image)', stimParams.blockSizeArray(3)));
+    set(gca, 'XLim', [0.7 1.5]);
+    set(gca, 'FontSize', 14, 'FontName','Helvetica');
     
 end
