@@ -269,7 +269,7 @@ function AnalyzeCloudCalibrationData
     grid on
     axis 'square'
     set(gca, 'FontSize', 12, 'FontName', 'Helvetica');
-    title(sprintf('Target RGB settings: %2.2f', runParams.leftTargetGrays(targetGrayIndex)));
+    title(sprintf('Target RGB settings: %2.2f vs %2.2f', runParams.leftTargetGrays(1), runParams.leftTargetGrays(2)));
     
     
     subplot(3,2,6);
@@ -278,14 +278,14 @@ function AnalyzeCloudCalibrationData
     lum1 = luminanceValues(:,:,:,:,1);
     lum2 = luminanceValues(:,:,:,:,2);
     plot(mRGB(:), lum1(:)./lum2(:), 'rs', 'MarkerFaceColor', [0.99 0.9 0.9], 'MarkerSize', 6);
-    set(gca, 'XLim', [0.2 0.6], 'YLim', [0 1], 'XTick', [0.2:1:0.6], 'YTick', [0:0.25:1.0]);
+    set(gca, 'XLim', [0.2 0.6], 'YLim', [0 1], 'XTick', [0.2:0.1:0.6], 'YTick', [0:0.25:1.0]);
     xlabel('RGB power', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
     ylabel('target luminance ratio', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
     box on
     grid on
     axis 'square'
     set(gca, 'FontSize', 12, 'FontName', 'Helvetica');
-    title(sprintf('Target RGB settings: %2.2f', runParams.leftTargetGrays(targetGrayIndex)));
+    title(sprintf('Target RGB settings: %2.2f vs %2.2f', runParams.leftTargetGrays(1), runParams.leftTargetGrays(2)));
     
     
     % Print figure
