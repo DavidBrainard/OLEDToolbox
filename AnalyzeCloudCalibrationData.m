@@ -262,14 +262,14 @@ function AnalyzeCloudCalibrationData
     lum1 = luminanceValues(:,:,:,:,1);
     lum2 = luminanceValues(:,:,:,:,2);
     plot(mRGB(:), lum1(:)./lum2(:), 'rs', 'MarkerFaceColor', [0.99 0.9 0.9], 'MarkerSize', 6);
-    set(gca, 'XLim', [0.4 0.6], 'YLim', [0 1], 'XTick', [0.4:0.05:0.6], 'YTick', [0:0.25:1.0]);
+    set(gca, 'XLim', [0.4 0.6], 'YLim', [0.47 0.59], 'XTick', [0.4:0.05:0.6], 'YTick', [0.4:0.02:0.6]);
     xlabel('RGB mean', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
     ylabel('target luminance ratio', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
     box on
     grid on
     axis 'square'
     set(gca, 'FontSize', 12, 'FontName', 'Helvetica');
-    title(sprintf('Target RGB settings: %2.2f vs %2.2f', runParams.leftTargetGrays(1), runParams.leftTargetGrays(2)));
+    title(sprintf('RGB settings: %2.2f vs %2.2f', runParams.leftTargetGrays(1), runParams.leftTargetGrays(2)));
     
     
     subplot(3,2,6);
@@ -278,14 +278,14 @@ function AnalyzeCloudCalibrationData
     lum1 = luminanceValues(:,:,:,:,1);
     lum2 = luminanceValues(:,:,:,:,2);
     plot(mRGB(:), lum1(:)./lum2(:), 'rs', 'MarkerFaceColor', [0.99 0.9 0.9], 'MarkerSize', 6);
-    set(gca, 'XLim', [0.2 0.6], 'YLim', [0 1], 'XTick', [0.2:0.1:0.6], 'YTick', [0:0.25:1.0]);
+    set(gca, 'XLim', [0.2 0.6], 'YLim', [0.47 0.59], 'XTick', [0.2:0.1:0.6], 'YTick', [0.4:0.02:0.6]);
     xlabel('RGB power', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
-    ylabel('target luminance ratio', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
+    ylabel('');
     box on
     grid on
     axis 'square'
     set(gca, 'FontSize', 12, 'FontName', 'Helvetica');
-    title(sprintf('Target RGB settings: %2.2f vs %2.2f', runParams.leftTargetGrays(1), runParams.leftTargetGrays(2)));
+    title(sprintf('RGB settings: %2.2f vs %2.2f', runParams.leftTargetGrays(1), runParams.leftTargetGrays(2)));
     
     
     % Print figure
@@ -294,6 +294,126 @@ function AnalyzeCloudCalibrationData
     set(h,'PaperPosition', [0 0 1 1]);
     print(gcf, '-dpdf', '-r600', 'Fig2.pdf');
     pause;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    h = figure(44);
+    set(h, 'Position', [300 100 700 1024]);
+    clf;
+
+    targetGrayIndex = 1;
+    lumLims = [0 300];
+    
+    symColor = jet(1+numel(stimParams.blockSizeArray)+2);
+
+    highligted_oriBiasIndex = 1;
+    highlightedFrameIndex = 7;
+    highlighted_pattern1Index = 1;
+    highlighted_pattern2Index = 2;
+        
+    for exponentOfOneOverFIndex = 1:numel(stimParams.exponentOfOneOverFArray)
+        yoffset = 1.03-(exponentOfOneOverFIndex)*0.33;
+        xoffset = 0.06;
+        subplot('Position', [xoffset, yoffset, 0.43 0.27]);
+        hold on;
+            
+        for patternIndex = 1:1+numel(stimParams.blockSizeArray)
+            for oriBiasIndex = 1:numel(stimParams.oriBiasArray)
+                lum = [];
+                pRGB = [];
+                for frameIndex = 1:stimParams.framesNum
+                    lum(oriBiasIndex,frameIndex) = luminanceValues(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex);
+                    pRGB(oriBiasIndex,frameIndex) = powerRGB(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex);
+                end
+            end
+            plot(pRGB(:), lum(:), 'ks','MarkerSize', 10, 'MarkerFaceColor', squeeze(symColor(patternIndex,:)));
+            
+            if (patternIndex == 1)
+                legendMatrix{patternIndex} = 'original image';
+            else
+                legendMatrix{patternIndex} = sprintf('sub-sampled (%d)', stimParams.blockSizeArray(patternIndex-1));
+            end  
+        end
+        
+        legend(legendMatrix, 'Location', 'SouthWest');
+        
+        highlightedLum = luminanceValues(exponentOfOneOverFIndex,highligted_oriBiasIndex,highlightedFrameIndex,highlighted_pattern1Index,targetGrayIndex);       
+        hightlightedPRGB = powerRGB(exponentOfOneOverFIndex,highligted_oriBiasIndex,highlightedFrameIndex,highlighted_pattern1Index,targetGrayIndex);       
+        plot(hightlightedPRGB, highlightedLum , 'rs', 'MarkerSize', 12, 'MarkerFaceColor', squeeze(symColor(highlighted_pattern1Index,:)), 'LineWidth', 4);
+        
+        highlightedLum = luminanceValues(exponentOfOneOverFIndex,highligted_oriBiasIndex,highlightedFrameIndex,highlighted_pattern2Index,targetGrayIndex);       
+        hightlightedPRGB = powerRGB(exponentOfOneOverFIndex,highligted_oriBiasIndex,highlightedFrameIndex,highlighted_pattern2Index,targetGrayIndex);       
+        plot(hightlightedPRGB, highlightedLum , 'ys', 'MarkerSize', 12, 'MarkerFaceColor', squeeze(symColor(highlighted_pattern2Index,:)),  'LineWidth', 4);
+        
+        
+        axis 'square'
+        box on
+        grid on
+        title(sprintf('1/F Exponent = %2.1f', stimParams.exponentOfOneOverFArray(exponentOfOneOverFIndex)))
+
+        set(gca, 'XLim', [0.2 0.6], 'YLim', lumLims, 'XTick', (0.2:0.1:0.6), 'YTick', 0:50:300);
+        set(gca, 'FontSize', 12, 'FontName','Helvetica');
+        if (yoffset < 1.0-2*0.33);
+                xlabel('RGB power', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
+        end
+        ylabel('target luminance (cd/m2)', 'FontSize', 14, 'FontName','Helvetica', 'FontWeight', 'bold'); 
+        
+        
+        xoffset = xoffset + 0.5;
+        subplot('Position', [xoffset yoffset 0.43 0.27]);
+        
+
+        frame1 = squeeze(frames(exponentOfOneOverFIndex,highligted_oriBiasIndex,highlightedFrameIndex ,highlighted_pattern1Index, targetGrayIndex, :,:));
+        frame2 = squeeze(frames(exponentOfOneOverFIndex,highligted_oriBiasIndex,highlightedFrameIndex ,highlighted_pattern2Index, targetGrayIndex, :,:));
+        demoImage = ones(1080*2+100, 1920);
+        demoImage(1:1080, :) = double(frame1)/255;
+        demoImage(1181:1180+1080,:) = double(frame2)/255;
+        imagesc(demoImage);
+        hold on;
+        plot([2 1919 1919 2 2], [2 2 1079 1079 2], 'r-', 'LineWidth', 2);
+        plot([2 1919 1919 2 2], 1179+[2 2 1079 1079 2], 'y-', 'LineWidth', 2);
+        set(gca, 'CLim', [0 1], 'XTick', [], 'YTick', []);
+        axis 'image'
+        box off
+        axis 'off'
+        colormap(gray(512));
+            
+            
+            
+    end  % exponent
+    
+    drawnow;
+    % Print figure
+    set(h,'PaperOrientation','Portrait');
+    set(h,'PaperUnits','normalized');
+    set(h,'PaperPosition', [0 0 1 1]);
+    print(gcf, '-dpdf', '-r600', 'Fig3.pdf');
+    pause
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     % examine the RGB=0.74 target 
     targetGrayIndex = 1;
