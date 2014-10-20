@@ -43,6 +43,7 @@ function AnalyzeCloudCalibrationData
     stimParams   = runParams.stimParams;
     conditionsNum = numel(allCondsData);
     
+
     % Load CIE 1931 CMFs
     load T_xyz1931
     vLambda1931_originalSampling = squeeze(T_xyz1931(2,:));
@@ -54,6 +55,20 @@ function AnalyzeCloudCalibrationData
                             1+numel(stimParams.blockSizeArray), ...
                             numel(runParams.leftTargetGrays)...
                             );
+    meanRGB = zeros(numel(stimParams.exponentOfOneOverFArray), ...
+                            numel(stimParams.oriBiasArray), ...
+                            stimParams.framesNum, ...
+                            1+numel(stimParams.blockSizeArray), ...
+                            numel(runParams.leftTargetGrays)...
+                            );
+                        
+    powerRGB = zeros(numel(stimParams.exponentOfOneOverFArray), ...
+                            numel(stimParams.oriBiasArray), ...
+                            stimParams.framesNum, ...
+                            1+numel(stimParams.blockSizeArray), ...
+                            numel(runParams.leftTargetGrays)...
+                            );
+                        
     frames = zeros(numel(stimParams.exponentOfOneOverFArray), ...
                             numel(stimParams.oriBiasArray), ...
                             stimParams.framesNum, ...
@@ -69,12 +84,14 @@ function AnalyzeCloudCalibrationData
         writerObj.FrameRate = 30;
         writerObj.Quality = 100;
         open(writerObj);
+    
+        % start figure
+        h = figure(1);
+        subplot('Position', [0.02 0.02 0.96 0.96]);
+        set(h, 'Position', [100 100 1920/2 1080/2], 'Units', 'pixels');
     end
     
-    h = figure(1);
-    subplot('Position', [0.02 0.02 0.96 0.96]);
-    set(h, 'Position', [100 100 1920/2 1080/2], 'Units', 'pixels');
-                            
+    
     cond = 0;
     for exponentOfOneOverFIndex = 1:numel(stimParams.exponentOfOneOverFArray)
             for oriBiasIndex = 1:numel(stimParams.oriBiasArray)
@@ -109,9 +126,12 @@ function AnalyzeCloudCalibrationData
                             % interpolate to desiredS
                             spd = SplineSpd(nativeS, spd', desiredS);
         
+                            calibFrame = squeeze(runData.demoFrame(:,:,1));
                             luminanceValues(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex) = sum(spd'.*vLambda,2);
-                            frames(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex,:,:) = squeeze(runData.demoFrame(:,:,1));
-                            
+                            frames(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex,:,:)    = calibFrame;
+                            meanRGB(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex)       = mean(double(calibFrame(:))/255.0);
+                            powerRGB(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex)      = mean((double(calibFrame(:))/255).^2);
+            
                             if (makeStimulusVideo)
                                 imshow(runData.demoFrame, 'InitialMagnification','fit');
                                 axis 'image'
@@ -133,6 +153,147 @@ function AnalyzeCloudCalibrationData
     end
     
     
+    showExampleStimuli = false;
+    if (showExampleStimuli)
+        h = figure(1);
+        set(h, 'Position', [100 100 740 600]);
+        clf;
+        
+        exponentOfOneOverFIndex = 3;
+        oriBiasIndex = 2;
+        frameIndex = 1;
+        
+        targetGrayIndex = 1;
+        
+        for patternIndex = 1:4
+            xoffset = mod((patternIndex-1),2)*0.5 + 0.02;
+            yoffset = 1.0 - 0.5 - floor((patternIndex-1)/2)*0.5 + 0.01;
+            subplot('Position', [xoffset yoffset 0.46 0.46]);
+            calibFrame = squeeze(frames(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex,:,:));
+            targetLum = luminanceValues(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex);
+            imagesc(calibFrame);
+            set(gca, 'CLim', [0 255]);
+            set(gca, 'FontSize', 12, 'FontName', 'Helvetica');
+            set(gca, 'XTick', [], 'YTick', []);
+            axis 'image'
+            RGBmean         = meanRGB(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex) ;
+            RGBmeanPower    = powerRGB(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex) ;
+            if (patternIndex == 1) 
+                title(sprintf('original pattern, RGB (mean,pwr) = (%2.2f, %2.2f)\ntargetLum = %2.1f', RGBmean, RGBmeanPower, targetLum));
+            else
+                M = stimParams.blockSizeArray(patternIndex-1);
+                title(sprintf('subsampled (%dx%d), RGB (mean,pwr) = (%2.2f, %2.2f)\ntargetLum = %2.1f', M,M,  RGBmean, RGBmeanPower, targetLum));
+            end
+            colorbar('horiz');
+        end
+        
+        colormap(gray(512));
+        drawnow;
+        
+        % Print figure
+        set(h,'PaperOrientation','Landscape');
+        set(h,'PaperUnits','normalized');
+        set(h,'PaperPosition', [0 0 1 1]);
+        print(gcf, '-dpdf', '-r600', 'Fig1.pdf');
+        pause;
+        
+    end
+    
+    
+    h = figure(1);
+    set(h, 'Position', [100 100 600 890]);
+    clf;
+    subplot(3,2,1)
+    targetGrayIndex = 1;
+    mRGB = meanRGB(:,:,:,:,targetGrayIndex);
+    lum1 = luminanceValues(:,:,:,:,targetGrayIndex);
+    plot(mRGB(:), lum1(:), 'rs', 'MarkerFaceColor', [0.99 0.9 0.9], 'MarkerSize', 6);
+    set(gca, 'XLim', [0.4 0.6], 'YLim', [0 600], 'XTick', [0.4:0.05:0.6], 'YTick', [0:100:600]);
+    xlabel('RGB mean', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
+    ylabel('target luminance (cd/m2)', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
+    box on
+    grid on
+    axis 'square'
+    set(gca, 'FontSize', 12, 'FontName', 'Helvetica');
+    title(sprintf('Target RGB settings: %2.2f', runParams.leftTargetGrays(targetGrayIndex)));
+    
+    subplot(3,2,2)
+    pRGB = powerRGB(:,:,:,:,targetGrayIndex);
+    plot(pRGB(:), lum1(:), 'rs', 'MarkerFaceColor', [0.99 0.9 0.9], 'MarkerSize', 6);
+    set(gca, 'XLim', [0.2 0.6], 'YLim', [0 600], 'XTick', [0.2:0.1:0.6], 'YTick', [0:100:600]);
+    xlabel('RGB power', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
+    ylabel('');
+    box on
+    grid on
+    axis 'square'
+    set(gca, 'FontSize', 12, 'FontName', 'Helvetica');
+    title(sprintf('Target RGB settings: %2.2f', runParams.leftTargetGrays(targetGrayIndex)));
+    
+    subplot(3,2,3)
+    targetGrayIndex = 2;
+    mRGB = meanRGB(:,:,:,:,targetGrayIndex);
+    lum1 = luminanceValues(:,:,:,:,targetGrayIndex);
+    plot(mRGB(:), lum1(:), 'rs', 'MarkerFaceColor', [0.99 0.9 0.9], 'MarkerSize', 6);
+    set(gca, 'XLim', [0.4 0.6], 'YLim', [0 600], 'XTick', [0.4:0.05:0.6], 'YTick', [0:100:600]);
+    xlabel('RGB mean', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
+    ylabel('target luminance (cd/m2)', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
+    box on
+    grid on
+    axis 'square'
+    set(gca, 'FontSize', 12, 'FontName', 'Helvetica', 'YTick', [0:100:600]);
+    title(sprintf('Target RGB settings: %2.2f', runParams.leftTargetGrays(targetGrayIndex)));
+    
+    subplot(3,2,4)
+    pRGB = powerRGB(:,:,:,:,targetGrayIndex);
+    plot(pRGB(:), lum1(:), 'rs', 'MarkerFaceColor', [0.99 0.9 0.9], 'MarkerSize', 6);
+    set(gca, 'XLim', [0.2 0.6], 'YLim', [0 600], 'XTick', [0.2:0.1:0.6], 'YTick', [0:100:600]);
+    xlabel('RGB power', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
+    ylabel('');
+    box on
+    grid on
+    axis 'square'
+    set(gca, 'FontSize', 12, 'FontName', 'Helvetica');
+    title(sprintf('Target RGB settings: %2.2f', runParams.leftTargetGrays(targetGrayIndex)));
+    
+    
+    subplot(3,2,5);
+    targetGrayIndex = 1;
+    mRGB = meanRGB(:,:,:,:,targetGrayIndex);
+    lum1 = luminanceValues(:,:,:,:,1);
+    lum2 = luminanceValues(:,:,:,:,2);
+    plot(mRGB(:), lum1(:)./lum2(:), 'rs', 'MarkerFaceColor', [0.99 0.9 0.9], 'MarkerSize', 6);
+    set(gca, 'XLim', [0.4 0.6], 'YLim', [0 1], 'XTick', [0.4:0.05:0.6], 'YTick', [0:0.25:1.0]);
+    xlabel('RGB mean', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
+    ylabel('target luminance ratio', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
+    box on
+    grid on
+    axis 'square'
+    set(gca, 'FontSize', 12, 'FontName', 'Helvetica');
+    title(sprintf('Target RGB settings: %2.2f', runParams.leftTargetGrays(targetGrayIndex)));
+    
+    
+    subplot(3,2,6);
+    targetGrayIndex = 1;
+    mRGB = powerRGB(:,:,:,:,targetGrayIndex);
+    lum1 = luminanceValues(:,:,:,:,1);
+    lum2 = luminanceValues(:,:,:,:,2);
+    plot(mRGB(:), lum1(:)./lum2(:), 'rs', 'MarkerFaceColor', [0.99 0.9 0.9], 'MarkerSize', 6);
+    set(gca, 'XLim', [0.2 0.6], 'YLim', [0 1], 'XTick', [0.2:1:0.6], 'YTick', [0:0.25:1.0]);
+    xlabel('RGB power', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
+    ylabel('target luminance ratio', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
+    box on
+    grid on
+    axis 'square'
+    set(gca, 'FontSize', 12, 'FontName', 'Helvetica');
+    title(sprintf('Target RGB settings: %2.2f', runParams.leftTargetGrays(targetGrayIndex)));
+    
+    
+    % Print figure
+    set(h,'PaperOrientation','Portrait');
+    set(h,'PaperUnits','normalized');
+    set(h,'PaperPosition', [0 0 1 1]);
+    print(gcf, '-dpdf', '-r600', 'Fig2.pdf');
+    pause;
     
     % examine the RGB=0.74 target 
     targetGrayIndex = 1;
