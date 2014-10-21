@@ -107,7 +107,7 @@ function AnalyzeCloudCalibrationData
     colOffset = (fftSamplesNum -1920)/2;
     rowRange = 1:1080;
     colRange = 1:1920;
-    fftSamplesToKeep = 256;
+    fftSamplesToKeep = 1000;
     rowRange2 = -fftSamplesToKeep:fftSamplesToKeep;
     colRange2 = -fftSamplesToKeep:fftSamplesToKeep;
     zeroBin = fftSamplesToKeep+1;
@@ -121,6 +121,18 @@ function AnalyzeCloudCalibrationData
                             numel(runParams.leftTargetGrays), ...
                             numel(spatialFreqAxis), numel(spatialFreqAxis));
                         
+                        
+    spectrumEnergyLessThan8CPI = zeros(numel(stimParams.exponentOfOneOverFArray), ...
+                            numel(stimParams.oriBiasArray), ...
+                            stimParams.framesNum, ...
+                            1+numel(stimParams.blockSizeArray), ...
+                            numel(runParams.leftTargetGrays));
+                        
+    spectrumEnergyLessThan2CPI = zeros(numel(stimParams.exponentOfOneOverFArray), ...
+                            numel(stimParams.oriBiasArray), ...
+                            stimParams.framesNum, ...
+                            1+numel(stimParams.blockSizeArray), ...
+                            numel(runParams.leftTargetGrays));
                         
     spectrumEnergyLessThan5CPI = zeros(numel(stimParams.exponentOfOneOverFArray), ...
                             numel(stimParams.oriBiasArray), ...
@@ -153,11 +165,6 @@ function AnalyzeCloudCalibrationData
                             1+numel(stimParams.blockSizeArray), ...
                             numel(runParams.leftTargetGrays));
                         
-    spectrumEnergyLessThan160CPI = zeros(numel(stimParams.exponentOfOneOverFArray), ...
-                            numel(stimParams.oriBiasArray), ...
-                            stimParams.framesNum, ...
-                            1+numel(stimParams.blockSizeArray), ...
-                            numel(runParams.leftTargetGrays));
                         
                         
     cond = 0;
@@ -213,24 +220,27 @@ function AnalyzeCloudCalibrationData
                             [sfX,sfY] = meshgrid(spatialFreqAxis, spatialFreqAxis);
                             R = sqrt(sfX.^2+sfY.^2);
                             
-                            indices = find(R < 5);
+                            indices = find(R < 2);
+                            spectrumEnergyLessThan2CPI(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex) = sum(fftCalibFrame(indices));
+                            
+                            indices = find(R < 4);
                             spectrumEnergyLessThan5CPI(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex) = sum(fftCalibFrame(indices));
                             
-                            indices = find(R < 10);
+                            indices = find(R < 8);
+                            spectrumEnergyLessThan8CPI(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex) = sum(fftCalibFrame(indices));
+                             
+                            indices = find(R < 16);
                             spectrumEnergyLessThan10CPI(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex) = sum(fftCalibFrame(indices));
                             
-                            indices = find((R < 20));
+                            indices = find((R < 64));
                             spectrumEnergyLessThan20CPI(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex) = sum(fftCalibFrame(indices));
                             
-                            indices = find((R < 40));
+                            indices = find((R < 256));
                             spectrumEnergyLessThan40CPI(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex) = sum(fftCalibFrame(indices));
                             
-                            indices = find((R < 80));
+                            indices = find((R < 1024));
                             spectrumEnergyLessThan80CPI(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex) = sum(fftCalibFrame(indices));
-                            
-                            indices = find((R < 160));
-                            spectrumEnergyLessThan160CPI(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex) = sum(fftCalibFrame(indices));
-                            
+
                             figure(33);
                             subplot(2,1,1);
                             imagesc(normCalibFrame);
@@ -274,30 +284,35 @@ function AnalyzeCloudCalibrationData
     clf;
     targetGrayIndex = 1;
     
-    subplot(6,1,1);
-    energy = spectrumEnergyLessThan5CPI(:,:,:,:,targetGrayIndex);
+    subplot(7,1,1);
+    energy = spectrumEnergyLessThan2CPI(:,:,:,:,targetGrayIndex);
     lum    = luminanceValues(:,:,:,:,targetGrayIndex);
     plot(energy(:),lum(:), 'ks');
     
-    subplot(6,1,2);
+    subplot(7,1,2);
+    energy = spectrumEnergyLessThan5CPI(:,:,:,:,targetGrayIndex);
+    plot(energy(:),lum(:), 'ks');
+    
+    subplot(7,1,3);
+    energy = spectrumEnergyLessThan8CPI(:,:,:,:,targetGrayIndex);
+    plot(energy(:),lum(:), 'ks');
+    
+    subplot(7,1,4);
     energy = spectrumEnergyLessThan10CPI(:,:,:,:,targetGrayIndex);
     plot(energy(:),lum(:), 'ks');
     
-    subplot(6,1,3);
+    subplot(7,1,5);
     energy = spectrumEnergyLessThan20CPI(:,:,:,:,targetGrayIndex);
     plot(energy(:),lum(:), 'ks');
     
-    subplot(6,1,4);
+    subplot(7,1,6);
     energy = spectrumEnergyLessThan40CPI(:,:,:,:,targetGrayIndex);
     plot(energy(:),lum(:), 'ks');
     
-    subplot(6,1,5);
+    subplot(7,1,7);
     energy = spectrumEnergyLessThan80CPI(:,:,:,:,targetGrayIndex);
     plot(energy(:),lum(:), 'ks');
     
-    subplot(6,1,6);
-    energy = spectrumEnergyLessThan160CPI(:,:,:,:,targetGrayIndex);
-    plot(energy(:),lum(:), 'ks');
     drawnow;
     pause;
     
