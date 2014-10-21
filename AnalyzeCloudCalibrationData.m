@@ -114,6 +114,7 @@ function AnalyzeCloudCalibrationData
     spatialFreqAxis = rowRange2*freqRes;
     spatialFreqAxis(end)
     
+    
     spectrum = zeros(numel(stimParams.exponentOfOneOverFArray), ...
                             numel(stimParams.oriBiasArray), ...
                             stimParams.framesNum, ...
@@ -122,51 +123,17 @@ function AnalyzeCloudCalibrationData
                             numel(spatialFreqAxis), numel(spatialFreqAxis));
                         
                         
-    spectrumEnergyLessThan8CPI = zeros(numel(stimParams.exponentOfOneOverFArray), ...
+    upperFrequencies = [2 4 8 16 64 256 960];
+    spectrumEnergyRegions = zeros(numel(upperFrequencies), ...
+                            numel(stimParams.exponentOfOneOverFArray), ...
                             numel(stimParams.oriBiasArray), ...
                             stimParams.framesNum, ...
                             1+numel(stimParams.blockSizeArray), ...
                             numel(runParams.leftTargetGrays));
+    
                         
-    spectrumEnergyLessThan2CPI = zeros(numel(stimParams.exponentOfOneOverFArray), ...
-                            numel(stimParams.oriBiasArray), ...
-                            stimParams.framesNum, ...
-                            1+numel(stimParams.blockSizeArray), ...
-                            numel(runParams.leftTargetGrays));
-                        
-    spectrumEnergyLessThan5CPI = zeros(numel(stimParams.exponentOfOneOverFArray), ...
-                            numel(stimParams.oriBiasArray), ...
-                            stimParams.framesNum, ...
-                            1+numel(stimParams.blockSizeArray), ...
-                            numel(runParams.leftTargetGrays));
-                        
-    spectrumEnergyLessThan10CPI = zeros(numel(stimParams.exponentOfOneOverFArray), ...
-                            numel(stimParams.oriBiasArray), ...
-                            stimParams.framesNum, ...
-                            1+numel(stimParams.blockSizeArray), ...
-                            numel(runParams.leftTargetGrays));
-                        
-                        
-    spectrumEnergyLessThan20CPI = zeros(numel(stimParams.exponentOfOneOverFArray), ...
-                            numel(stimParams.oriBiasArray), ...
-                            stimParams.framesNum, ...
-                            1+numel(stimParams.blockSizeArray), ...
-                            numel(runParams.leftTargetGrays));
-                        
-   spectrumEnergyLessThan40CPI = zeros(numel(stimParams.exponentOfOneOverFArray), ...
-                            numel(stimParams.oriBiasArray), ...
-                            stimParams.framesNum, ...
-                            1+numel(stimParams.blockSizeArray), ...
-                            numel(runParams.leftTargetGrays));
-                        
-    spectrumEnergyLessThan80CPI = zeros(numel(stimParams.exponentOfOneOverFArray), ...
-                            numel(stimParams.oriBiasArray), ...
-                            stimParams.framesNum, ...
-                            1+numel(stimParams.blockSizeArray), ...
-                            numel(runParams.leftTargetGrays));
-                        
-                        
-                        
+    
+    
     cond = 0;
     for exponentOfOneOverFIndex = 1:numel(stimParams.exponentOfOneOverFArray)
             for oriBiasIndex = 1:numel(stimParams.oriBiasArray)
@@ -220,43 +187,30 @@ function AnalyzeCloudCalibrationData
                             [sfX,sfY] = meshgrid(spatialFreqAxis, spatialFreqAxis);
                             R = sqrt(sfX.^2+sfY.^2);
                             
-                            indices = find(R < 2);
-                            spectrumEnergyLessThan2CPI(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex) = sum(fftCalibFrame(indices));
-                            
-                            indices = find(R < 4);
-                            spectrumEnergyLessThan5CPI(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex) = sum(fftCalibFrame(indices));
-                            
-                            indices = find(R < 8);
-                            spectrumEnergyLessThan8CPI(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex) = sum(fftCalibFrame(indices));
-                             
-                            indices = find(R < 16);
-                            spectrumEnergyLessThan10CPI(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex) = sum(fftCalibFrame(indices));
-                            
-                            indices = find((R < 64));
-                            spectrumEnergyLessThan20CPI(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex) = sum(fftCalibFrame(indices));
-                            
-                            indices = find((R < 256));
-                            spectrumEnergyLessThan40CPI(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex) = sum(fftCalibFrame(indices));
-                            
-                            indices = find((R < 1024));
-                            spectrumEnergyLessThan80CPI(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex) = sum(fftCalibFrame(indices));
+                            for upperFrequencyIndex = 1:numel(upperFrequencies)
+                                cutoffFreq = upperFrequencies(upperFrequencyIndex);
+                                indices = find(R < cutoffFreq);
+                                spectrumEnergyRegions(upperFrequencyIndex, exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex) = sum(fftCalibFrame(indices));
+                            end
 
-                            figure(33);
-                            subplot(2,1,1);
-                            imagesc(normCalibFrame);
-                            axis 'image'
-                            set(gca, 'CLim', [0 1]);
-                            subplot(2,1,2)
-                            FT = fftCalibFrame;
-                            FT(zeroBin,zeroBin) = 0;
-                            imagesc(spatialFreqAxis, spatialFreqAxis, fftCalibFrame);
-                            xlabel('Cycles/image');
-                            ylabel('Cycles/image');
-                            axis 'square'
-                            set(gca, 'CLim', [0 max(FT(:))/4]);
-                            colormap(gray(512));
-                            drawnow;
-                            
+                            showFT = false;
+                            if (showFT)
+                                figure(33);
+                                subplot(2,1,1);
+                                imagesc(normCalibFrame);
+                                axis 'image'
+                                set(gca, 'CLim', [0 1]);
+                                subplot(2,1,2)
+                                FT = fftCalibFrame;
+                                FT(zeroBin,zeroBin) = 0;
+                                imagesc(spatialFreqAxis, spatialFreqAxis, fftCalibFrame);
+                                xlabel('Cycles/image');
+                                ylabel('Cycles/image');
+                                axis 'square'
+                                set(gca, 'CLim', [0 max(FT(:))/4]);
+                                colormap(gray(512));
+                                drawnow;
+                            end
                             
                             
                             if (makeStimulusVideo)
@@ -280,40 +234,73 @@ function AnalyzeCloudCalibrationData
     end
     
     
-    figure(111);
+    h = figure(111);
+    set(h, 'Position', [100 100 857 1254]);
     clf;
     targetGrayIndex = 1;
     
-    subplot(7,1,1);
-    energy = spectrumEnergyLessThan2CPI(:,:,:,:,targetGrayIndex);
-    lum    = luminanceValues(:,:,:,:,targetGrayIndex);
-    plot(energy(:),lum(:), 'ks');
+    lum = luminanceValues(:,:,:,:,targetGrayIndex);
+    dy = 0.04;
+    height = 0.70/numel(upperFrequencies);
     
-    subplot(7,1,2);
-    energy = spectrumEnergyLessThan5CPI(:,:,:,:,targetGrayIndex);
-    plot(energy(:),lum(:), 'ks');
-    
-    subplot(7,1,3);
-    energy = spectrumEnergyLessThan8CPI(:,:,:,:,targetGrayIndex);
-    plot(energy(:),lum(:), 'ks');
-    
-    subplot(7,1,4);
-    energy = spectrumEnergyLessThan10CPI(:,:,:,:,targetGrayIndex);
-    plot(energy(:),lum(:), 'ks');
-    
-    subplot(7,1,5);
-    energy = spectrumEnergyLessThan20CPI(:,:,:,:,targetGrayIndex);
-    plot(energy(:),lum(:), 'ks');
-    
-    subplot(7,1,6);
-    energy = spectrumEnergyLessThan40CPI(:,:,:,:,targetGrayIndex);
-    plot(energy(:),lum(:), 'ks');
-    
-    subplot(7,1,7);
-    energy = spectrumEnergyLessThan80CPI(:,:,:,:,targetGrayIndex);
-    plot(energy(:),lum(:), 'ks');
+    for k = 1:numel(upperFrequencies)
+        subplot('Position', [0.1 1.02-k*(height+dy) 0.88 height]);
+        energy = spectrumEnergyRegions(k,:,:,:,:,targetGrayIndex);
+        plot(energy(:),lum(:), 'ks', 'MarkerFaceColor', [0.2 0.2 0.2], 'MarkerSize', 4);
+        hold on;
+        deltaE =  max(energy(:)) - min(energy(:));
+        energyAxis = (0:1:1000)/1000;
+        
+        
+        if (k == 1)
+            e0 = 2.0/7;
+            n = 30;
+            gain = 130;
+        elseif (k == 2)
+            e0 = 3.2/9;
+            n = 60;
+            gain = 130;
+        elseif (k == 3)
+            e0 = 3.0/7;
+            n = 16;
+            gain = 130;
+        elseif (k == 4)
+            e0 = 3.5/7;
+            n = 12;
+            gain = 120;
+        elseif (k == 5)
+            e0 = 3.5/7;
+            n = 8;
+            gain = 120;
+        elseif (k == 6)
+            e0 = 2.3/7;
+            n = 16;
+            gain = 110;
+        elseif (k == 7)
+            e0 = 1.3/9;
+            n = 10;
+            gain = 110;
+        end
+        
+        
+        y = 255 - gain*(energyAxis.^n)./(e0.^n + energyAxis.^n);
+        
+        plot(min(energy(:)) + energyAxis*deltaE, y, 'r-', 'LineWidth', 2.0);
+        hold off;
+        set(gca, 'FontSize', 10, 'FontName', 'Helvetica');
+        set(gca, 'YLim', [round(min(lum(:)))-5 round(max(lum(:)))+5], 'YTick', [0:50:300], 'XLim', [min(energy(:)) max(energy(:))]);
+        xlabel(sprintf('spectral energy (0.0 - %2.1f cycles/image)',upperFrequencies(k)), 'FontSize', 10, 'FontName', 'Helvetica', 'FontWeight', 'bold');
+        ylabel(sprintf('target luminnce\n(cd/m2)'), 'FontSize', 12, 'FontName', 'Helvetica', 'FontWeight', 'bold');
+    end
     
     drawnow;
+    % Print figure
+    set(h,'PaperOrientation','Portrait');
+    set(h,'PaperUnits','normalized');
+    set(h,'PaperPosition', [0 0 1 1]);
+    print(gcf, '-dpdf', '-r600', 'Fig11.pdf');
+    pause;
+        
     pause;
     
     
@@ -483,8 +470,8 @@ function AnalyzeCloudCalibrationData
         
     for exponentOfOneOverFIndex = 1:numel(stimParams.exponentOfOneOverFArray)
         yoffset = 1.03-(exponentOfOneOverFIndex)*0.33;
-        xoffset = 0.06;
-        subplot('Position', [xoffset, yoffset, 0.43 0.27]);
+        xoffset = 0.07;
+        subplot('Position', [xoffset, yoffset, 0.47 0.27]);
         hold on;
             
         for patternIndex = 1:1+numel(stimParams.blockSizeArray)
@@ -515,8 +502,7 @@ function AnalyzeCloudCalibrationData
         hightlightedPRGB = powerRGB(exponentOfOneOverFIndex,highligted_oriBiasIndex,highlightedFrameIndex,highlighted_pattern2Index,targetGrayIndex);       
         plot(hightlightedPRGB, highlightedLum , 'ys', 'MarkerSize', 12, 'MarkerFaceColor', squeeze(symColor(highlighted_pattern2Index,:)),  'LineWidth', 4);
         
-        
-        axis 'square'
+       
         box on
         grid on
         title(sprintf('1/F Exponent = %2.1f', stimParams.exponentOfOneOverFArray(exponentOfOneOverFIndex)))
@@ -592,10 +578,10 @@ function AnalyzeCloudCalibrationData
             for oriBiasIndex = 1:numel(stimParams.oriBiasArray)
                 for frameIndex = 1:stimParams.framesNum
                     lum(oriBiasIndex,frameIndex) = luminanceValues(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex);
-                    energyLessThan5CPI(oriBiasIndex,frameIndex) = spectrumEnergyLessThan5CPI(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex);
+                    energyLessThan4CPI(oriBiasIndex,frameIndex) = spectrumEnergyRegions(2,exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex);
                 end
             end
-            plot(energyLessThan5CPI(:), lum(:), 'ks','MarkerSize', 10, 'MarkerFaceColor', squeeze(symColor(patternIndex,:)));
+            plot(energyLessThan4CPI(:), lum(:), 'ks','MarkerSize', 10, 'MarkerFaceColor', squeeze(symColor(patternIndex,:)));
             
             if (patternIndex == 1)
                 legendMatrix{patternIndex} = 'original image';
