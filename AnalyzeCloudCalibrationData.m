@@ -124,7 +124,7 @@ function AnalyzeCloudCalibrationData
                         
                         
     upperFrequencies = [2 4 8 16 64 256 960];
-    upperFrequencies = 960 ./ [512 256 128 64 32 16 1];
+    %upperFrequencies = 960 ./ [512 256 128 64 32 16 1];
     
     spectrumEnergyRegions = zeros(numel(upperFrequencies), ...
                             numel(stimParams.exponentOfOneOverFArray), ...
@@ -134,6 +134,33 @@ function AnalyzeCloudCalibrationData
                             numel(runParams.leftTargetGrays));
     
                         
+    
+    gammaSelection = input('Represent images as gamma-in (settings) or gamma-out values? [Gamma-In = 1 (default), Gamma-Out = 2]: ');
+    if (isempty(gammaSelection))
+        gammaSelection = 1;
+    elseif ((gammaSelection ~= 1) && (gammaSelection ~= 2))
+        gammaSelection = 1;
+    end
+    
+    if (gammaSelection == 1)
+        fprintf('Representing images as gamma-in values.\n');
+    else
+        fprintf('Representing images as gamma-out values.\n');
+        load('GammaFunction.mat');
+        gammaFunction.output = (gammaFunction.output - min(gammaFunction.output))/(max(gammaFunction.output) - min(gammaFunction.output));
+        gammaOut = gammaFunction.output*1020.0;
+        gammaIn  = gammaFunction.input*1020.0;
+        clear 'gammaFunction'
+        for k = 0:1020
+           [m,index] = min(abs(gammaIn-k));
+           gammaFunction.In(k+1) = round(gammaIn(index));
+           gammaFunction.Out(k+1) = round(gammaOut(index));
+        end
+        clear 's'
+        figure(1);
+        plot(gammaFunction.In, gammaFunction.Out, 'ks', 'LineWidth', 2);
+        set(gca, 'XLim', [0 1024], 'YLim', [0 1024]);
+    end
     
     
     cond = 0;
@@ -170,15 +197,34 @@ function AnalyzeCloudCalibrationData
                             % interpolate to desiredS
                             spd = SplineSpd(nativeS, spd', desiredS);
         
-                            calibFrame = squeeze(runData.demoFrame(:,:,1));
+                            calibFrame = squeeze(runData.demoFrame(:,:,1));                         
                             normCalibFrame = double(calibFrame)/255.0;
+   
+                            
+                            if (gammaSelection == 2)
+                                figure(1);
+                                clf;
+                                subplot(1,2,1);
+                                imagesc(normCalibFrame);
+                                set(gca, 'CLim', [0 1]);
+                                axis 'image'
+                               % map normCalibFrame according to gamma curve
+                                %fprintf('\ngammaIn %2.4f %2.4f  -> ', min(normCalibFrame(:)), max(normCalibFrame(:)));
+                                normCalibFrame = gammaFunction.Out(double(calibFrame)*4+1)/1020;
+                                %fprintf('%2.4f %2.4f :gammaOut \n', min(normCalibFrame(:)), max(normCalibFrame(:)));
+                                subplot(1,2,2);
+                                imagesc(normCalibFrame);
+                                set(gca, 'CLim', [0 1]);
+                                axis 'image'
+                                colormap(gray(512));
+                                drawnow
+                            end
                             
                             % Do fft
                             fftCalibFrame = zeros(fftSamplesNum,fftSamplesNum);
                             fftCalibFrame(rowOffset+rowRange, colOffset+colRange) = normCalibFrame;
                             fftCalibFrame = abs(fftshift(fft2(fftCalibFrame)));
                             fftCalibFrame = fftCalibFrame(fftSamplesNum/2+1+rowRange2, fftSamplesNum/2+1+colRange2);
-                            
                             
                             luminanceValues(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex) = sum(spd'.*vLambda,2);
                             frames(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex,:,:)      = calibFrame;
@@ -253,35 +299,67 @@ function AnalyzeCloudCalibrationData
         deltaE =  max(energy(:)) - min(energy(:));
         energyAxis = (0:1:1000)/1000;
         
-        
-        if (k == 1)
-            e0 = 2.0/7;
-            n = 30;
-            gain = 130;
-        elseif (k == 2)
-            e0 = 3.2/9;
-            n = 60;
-            gain = 130;
-        elseif (k == 3)
-            e0 = 3.0/7;
-            n = 16;
-            gain = 130;
-        elseif (k == 4)
-            e0 = 3.5/7;
-            n = 12;
-            gain = 120;
-        elseif (k == 5)
-            e0 = 3.5/7;
-            n = 8;
-            gain = 120;
-        elseif (k == 6)
-            e0 = 2.3/7;
-            n = 16;
-            gain = 110;
-        elseif (k == 7)
-            e0 = 1.3/9;
-            n = 10;
-            gain = 110;
+        % manual fits, not optimized
+        if (gammaSelection == 2)
+            if (k == 1)
+                e0 = 3.3/8;
+                n = 10;
+                gain = 130;
+            elseif (k == 2)
+                e0 = 3.2/7;
+                n = 10;
+                gain = 130;
+            elseif (k == 3)
+                e0 = 4.0/8;
+                n = 10;
+                gain = 130;
+            elseif (k == 4)
+                e0 = 3.5/7;
+                n = 12;
+                gain = 120;
+            elseif (k == 5)
+                e0 = 3.0/7;
+                n = 8;
+                gain = 120;
+            elseif (k == 6)
+                e0 = 2.0/7;
+                n = 16;
+                gain = 110;
+            elseif (k == 7)
+                e0 = 1.0/9;
+                n = 10;
+                gain = 110;
+            end
+        else 
+            if (k == 1)
+                e0 = 2.0/7;
+                n = 30;
+                gain = 130;
+            elseif (k == 2)
+                e0 = 3.2/9;
+                n = 60;
+                gain = 130;
+            elseif (k == 3)
+                e0 = 3.0/7;
+                n = 16;
+                gain = 130;
+            elseif (k == 4)
+                e0 = 3.5/7;
+                n = 12;
+                gain = 120;
+            elseif (k == 5)
+                e0 = 3.5/7;
+                n = 8;
+                gain = 120;
+            elseif (k == 6)
+                e0 = 2.3/7;
+                n = 16;
+                gain = 110;
+            elseif (k == 7)
+                e0 = 1.3/9;
+                n = 10;
+                gain = 110;
+            end
         end
         
         
@@ -361,7 +439,7 @@ function AnalyzeCloudCalibrationData
     mRGB = meanRGB(:,:,:,:,targetGrayIndex);
     lum1 = luminanceValues(:,:,:,:,targetGrayIndex);
     plot(mRGB(:), lum1(:), 'rs', 'MarkerFaceColor', [0.99 0.9 0.9], 'MarkerSize', 6);
-    set(gca, 'XLim', [0.4 0.6], 'YLim', [0 600], 'XTick', [0.4:0.05:0.6], 'YTick', [0:100:600]);
+    set(gca, 'XLim', [0.2 0.6], 'YLim', [0 600], 'XTick', [0.0:1:1.0], 'YTick', [0:100:600]);
     xlabel('RGB mean', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
     ylabel('target luminance (cd/m2)', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
     box on
@@ -373,7 +451,7 @@ function AnalyzeCloudCalibrationData
     subplot(3,2,2)
     pRGB = powerRGB(:,:,:,:,targetGrayIndex);
     plot(pRGB(:), lum1(:), 'rs', 'MarkerFaceColor', [0.99 0.9 0.9], 'MarkerSize', 6);
-    set(gca, 'XLim', [0.2 0.6], 'YLim', [0 600], 'XTick', [0.2:0.1:0.6], 'YTick', [0:100:600]);
+    set(gca, 'XLim', [0.0 0.6], 'YLim', [0 600], 'XTick', [0.0:0.1:0.6], 'YTick', [0:100:600]);
     xlabel('RGB power', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
     ylabel('');
     box on
@@ -387,7 +465,7 @@ function AnalyzeCloudCalibrationData
     mRGB = meanRGB(:,:,:,:,targetGrayIndex);
     lum1 = luminanceValues(:,:,:,:,targetGrayIndex);
     plot(mRGB(:), lum1(:), 'rs', 'MarkerFaceColor', [0.99 0.9 0.9], 'MarkerSize', 6);
-    set(gca, 'XLim', [0.4 0.6], 'YLim', [0 600], 'XTick', [0.4:0.05:0.6], 'YTick', [0:100:600]);
+    set(gca, 'XLim', [0.2 0.6], 'YLim', [0 600], 'XTick', [0.0:0.1:0.6], 'YTick', [0:100:600]);
     xlabel('RGB mean', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
     ylabel('target luminance (cd/m2)', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
     box on
@@ -399,7 +477,7 @@ function AnalyzeCloudCalibrationData
     subplot(3,2,4)
     pRGB = powerRGB(:,:,:,:,targetGrayIndex);
     plot(pRGB(:), lum1(:), 'rs', 'MarkerFaceColor', [0.99 0.9 0.9], 'MarkerSize', 6);
-    set(gca, 'XLim', [0.2 0.6], 'YLim', [0 600], 'XTick', [0.2:0.1:0.6], 'YTick', [0:100:600]);
+    set(gca, 'XLim', [0.0 0.6], 'YLim', [0 600], 'XTick', [0.0:0.1:0.6], 'YTick', [0:100:600]);
     xlabel('RGB power', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
     ylabel('');
     box on
@@ -415,7 +493,7 @@ function AnalyzeCloudCalibrationData
     lum1 = luminanceValues(:,:,:,:,1);
     lum2 = luminanceValues(:,:,:,:,2);
     plot(mRGB(:), lum1(:)./lum2(:), 'rs', 'MarkerFaceColor', [0.99 0.9 0.9], 'MarkerSize', 6);
-    set(gca, 'XLim', [0.4 0.6], 'YLim', [0.47 0.59], 'XTick', [0.4:0.05:0.6], 'YTick', [0.4:0.02:0.6]);
+    set(gca, 'XLim', [0.2 0.6], 'YLim', [0.47 0.59], 'XTick', [0.0:0.1:0.6], 'YTick', [0.4:0.02:0.6]);
     xlabel('RGB mean', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
     ylabel('target luminance ratio', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
     box on
@@ -431,7 +509,7 @@ function AnalyzeCloudCalibrationData
     lum1 = luminanceValues(:,:,:,:,1);
     lum2 = luminanceValues(:,:,:,:,2);
     plot(mRGB(:), lum1(:)./lum2(:), 'rs', 'MarkerFaceColor', [0.99 0.9 0.9], 'MarkerSize', 6);
-    set(gca, 'XLim', [0.2 0.6], 'YLim', [0.47 0.59], 'XTick', [0.2:0.1:0.6], 'YTick', [0.4:0.02:0.6]);
+    set(gca, 'XLim', [0.2 0.6], 'YLim', [0.47 0.59], 'XTick', [0.0:0.1:0.6], 'YTick', [0.4:0.02:0.6]);
     xlabel('RGB power', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
     ylabel('');
     box on
@@ -509,7 +587,7 @@ function AnalyzeCloudCalibrationData
         grid on
         title(sprintf('1/F Exponent = %2.1f', stimParams.exponentOfOneOverFArray(exponentOfOneOverFIndex)))
 
-        set(gca, 'XLim', [0.2 0.6], 'YLim', lumLims, 'XTick', (0.2:0.1:0.6), 'YTick', 0:50:300);
+        set(gca, 'XLim', [0.0 0.6], 'YLim', lumLims, 'XTick', (0.2:0.1:0.6), 'YTick', 0:50:300);
         set(gca, 'FontSize', 12, 'FontName','Helvetica');
         if (yoffset < 1.0-2*0.33);
                 xlabel('RGB power', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
@@ -550,81 +628,7 @@ function AnalyzeCloudCalibrationData
     
     
     
-    
-    
-    
-    h = figure(55);
-    set(h, 'Position', [300 100 700 1024]);
-    clf;
 
-    targetGrayIndex = 1;
-    lumLims = [0 300];
-    
-    symColor = jet(1+numel(stimParams.blockSizeArray)+2);
-
-    highligted_oriBiasIndex = 1;
-    highlightedFrameIndex = 7;
-    highlighted_pattern1Index = 1;
-    highlighted_pattern2Index = 2;
-        
-    EnergyLims = [2.8 4.6]*1E7;
-    for exponentOfOneOverFIndex = 1:numel(stimParams.exponentOfOneOverFArray)
-        yoffset = 1.03-(exponentOfOneOverFIndex)*0.33;
-        xoffset = 0.06;
-        subplot('Position', [xoffset, yoffset, 0.43 0.27]);
-        hold on;
-            
-        for patternIndex = 1:1+numel(stimParams.blockSizeArray)
-            lum = [];
-            energyLessThan5CPI = [];
-            for oriBiasIndex = 1:numel(stimParams.oriBiasArray)
-                for frameIndex = 1:stimParams.framesNum
-                    lum(oriBiasIndex,frameIndex) = luminanceValues(exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex);
-                    energyLessThan4CPI(oriBiasIndex,frameIndex) = spectrumEnergyRegions(2,exponentOfOneOverFIndex,oriBiasIndex,frameIndex,patternIndex,targetGrayIndex);
-                end
-            end
-            plot(energyLessThan4CPI(:), lum(:), 'ks','MarkerSize', 10, 'MarkerFaceColor', squeeze(symColor(patternIndex,:)));
-            
-            if (patternIndex == 1)
-                legendMatrix{patternIndex} = 'original image';
-            else
-                legendMatrix{patternIndex} = sprintf('sub-sampled (%d)', stimParams.blockSizeArray(patternIndex-1));
-            end  
-        end
-        
-        legend(legendMatrix, 'Location', 'SouthWest');
-        
-        
-        axis 'square'
-        box on
-        grid on
-        title(sprintf('1/F Exponent = %2.1f', stimParams.exponentOfOneOverFArray(exponentOfOneOverFIndex)));
-
-        set(gca, 'XLim', EnergyLims, 'YLim', lumLims,  'YTick', 0:50:300);
-        set(gca, 'FontSize', 12, 'FontName','Helvetica');
-        if (yoffset < 1.0-2*0.33);
-                xlabel('RGB energy < 5 CPI', 'FontSize', 14, 'FontName', 'Helvetica', 'FontWeight', 'bold');
-        end
-        ylabel('target luminance (cd/m2)', 'FontSize', 14, 'FontName','Helvetica', 'FontWeight', 'bold'); 
-    end
-    
-    
-    drawnow;
-    % Print figure
-    set(h,'PaperOrientation','Portrait');
-    set(h,'PaperUnits','normalized');
-    set(h,'PaperPosition', [0 0 1 1]);
-    print(gcf, '-dpdf', '-r600', 'Fig5.pdf');
-    pause
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     % examine the RGB=0.74 target 
     targetGrayIndex = 1;
