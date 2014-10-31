@@ -381,7 +381,6 @@ function AnalyzeCloudCalibrationData
     print(gcf, '-dpdf', '-r600', 'Fig11.pdf');
     pause;
         
-    pause;
     
     
     showExampleStimuli = false;
