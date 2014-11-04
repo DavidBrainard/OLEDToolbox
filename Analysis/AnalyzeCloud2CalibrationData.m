@@ -1,9 +1,9 @@
 function AnalyzeCloud2CalibrationData
-
     
     
     % Load calibration file from /Users1
     calibrationDir  = '/Volumes/Data/Users1/Matlab/Experiments/SamsungOLED/PreliminaryData';
+    calibrationDir  = '/Users1/Matlab/Experiments/SamsungOLED/PreliminaryData';
     calibrationFile = 'SamsungOLED_CloudsCalib2.mat';
     
     calibrationDataSet = loadCalibrationFile(calibrationDir,calibrationFile);
@@ -19,8 +19,8 @@ function AnalyzeCloud2CalibrationData
     nyquistFrequency = 1.0/(2*sampleSize);
     fftSamplesNum = 4096/2;
     freqRes = nyquistFrequency/(fftSamplesNum/2);
-    fprintf('freq. res = %2.2f cycles/image', freqRes);
-    fprintf('max freq = %2.2f cycles/image', freqRes * fftSamplesNum/2);
+    fprintf('freq. res = %2.2f cycles/image\n', freqRes);
+    fprintf('max freq = %2.2f cycles/image\n', freqRes * fftSamplesNum/2);
     
     rowOffset = (fftSamplesNum -1080)/2;
     colOffset = (fftSamplesNum -1920)/2;
@@ -33,13 +33,9 @@ function AnalyzeCloud2CalibrationData
     freqYaxis = freqRes * [0:size(spectrum,1)-1] - nyquistFrequency;
     [sfX,sfY] = meshgrid(freqXaxis, freqYaxis);
     radialFreq = sqrt(sfX.^2 + sfY.^2);
-    indices8Cycles = find(radialFreq <= 8.0);
     
-    indices2Cycles = find(radialFreq == 0.0);
-    indices2to4Cycles = find((radialFreq > 0.0) & (radialFreq <= 2.0));
-    indices4to6Cycles = find((radialFreq > 2.0) & (radialFreq <= 4.0));
-    indices6to8Cycles = find((radialFreq > 4.0) & (radialFreq <= 8.0));
-    indices8to10Cycles = find((radialFreq > 8.0) & (radialFreq <= 16.0));
+    maxSF = input('Enter maxSF : ');
+    indicesMaxSF = find(radialFreq <= maxSF);
     
     
     % Load CIE 1931 CMFs
@@ -67,15 +63,17 @@ function AnalyzeCloud2CalibrationData
     meanRGBpower         = leftTargetLuminance;
     spectralPower8Cycles = leftTargetLuminance;
     
-    Nsamples = prod(size(leftTargetLuminance))
-    Mfeatures = 5
+    Nsamples = prod(size(leftTargetLuminance));
+    Mfeatures = numel(indicesMaxSF);
     
     yLeft = zeros(Nsamples,1);
     yRight = zeros(Nsamples,1);
     X = zeros(Nsamples, Mfeatures);
     
-    numel(stimParams.exponentOfOneOverFArray)
-    pause;
+
+    frameBasedTrainingIndices = [];
+    frameBasedTestingIndices = [];
+    
     condIndex = 0;
     for exponentOfOneOverFIndex = 1:numel(stimParams.exponentOfOneOverFArray)
     for oriBiasIndex = 1:numel(stimParams.oriBiasArray)
@@ -89,6 +87,12 @@ function AnalyzeCloud2CalibrationData
             condIndex
         end
         condIndex = condIndex + 1;
+        
+        if (frameIndex <= size(calibrationDataSet.allCondsData,4)-2)
+            frameBasedTrainingIndices = [frameBasedTrainingIndices condIndex];
+        else
+            frameBasedTestingIndices = [frameBasedTestingIndices condIndex];
+        end
         
         runData = calibrationDataSet.allCondsData{...
             exponentOfOneOverFIndex, ...
@@ -145,27 +149,22 @@ function AnalyzeCloud2CalibrationData
        
         
         % Perhaps here window frame
-        if (1==2)
+        
         % Now do spectral analysis
         spectrum = doFFT(frame, fftSamplesNum, rowOffset, colOffset, rowRange, colRange);
         
         
-        spectralPower8Cycles(exponentOfOneOverFIndex, ...
-            oriBiasIndex, ...
-            orientationIndex, ...
-            frameIndex, ...
-            conditionIndex, ...
-            polarityIndex, ...
-            targetGrayIndex) = mean(spectrum(indices8Cycles(:)));
+%         spectralPower8Cycles(exponentOfOneOverFIndex, ...
+%             oriBiasIndex, ...
+%             orientationIndex, ...
+%             frameIndex, ...
+%             conditionIndex, ...
+%             polarityIndex, ...
+%             targetGrayIndex) = mean(spectrum(indices8Cycles(:)));
         
         
-        featureVector = [...
-            mean(spectrum(indices2Cycles)); ...
-            mean(spectrum(indices2to4Cycles)); ...
-            mean(spectrum(indices4to6Cycles)); ...
-            mean(spectrum(indices6to8Cycles)); ...
-            mean(spectrum(indices8to10Cycles)) ...
-            ];
+        featureVector = spectrum(indicesMaxSF);
+
     
         % Set up linear regression problem
         
@@ -187,7 +186,7 @@ function AnalyzeCloud2CalibrationData
             polarityIndex, ...
             targetGrayIndex);
         
-        end
+        
         
         
         if (1==2)
@@ -300,7 +299,7 @@ function AnalyzeCloud2CalibrationData
     end
    
     
-    if (1==2)
+    
     disp('Solving linear regresssion');
     
     % Find max(X) for each feature
@@ -308,26 +307,262 @@ function AnalyzeCloud2CalibrationData
     size(maxX)
     % normalize X
     X = X ./ maxX;
-    figure(222);
     
+    figure(222);
     clf;
     imagesc(X);
     colormap(gray)
     
-    
+
     % solve for weights
-    Xdagger = (inv(X'*X))*(X');
-    weightsVectorLeftTarget = Xdagger * yLeft;
+    Xdagger = pinv(X); % (inv(X'*X))*(X');
+    % Compute weights on first half of data
+    weightsVectorLeftTarget  = Xdagger * yLeft;
+    weightsVectorRightTarget = Xdagger * yRight;
     
-    size(weightsVectorLeftTarget)
-    size(yLeft)
-    yPredictionLeft = (X) * weightsVectorLeftTarget;
+    % Prediction on second half of data
+    yPredictionLeft  = X * weightsVectorLeftTarget;
+    yPredictionRight = X * weightsVectorRightTarget;
+    
+    minAll = min([min(yLeft(:)) min(yRight(:)) min(yPredictionLeft) min(yPredictionRight) ]);
+    maxAll = min([max(yLeft(:)) max(yRight(:)) max(yPredictionLeft) max(yPredictionRight) ]);
     
     figure(99);
+    clf;
+    
+    subplot(1,2,1);
     plot(yLeft, yPredictionLeft, 'k.');
+    hold on;
+    plot([minAll maxAll], [minAll maxAll], 'r-')
+    hold off;
+    xlabel('Measured');
+    ylabel('Fit');
+    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+    title(sprintf('Left Target (ALL DATA) maxSF = %2.1f cpi (features: %d)', maxSF, numel(indicesMaxSF)));
+    axis 'square';
+    
+    subplot(1,2,2);
+    plot(yRight, yPredictionRight, 'k.');
+    hold on;
+    plot([minAll maxAll], [minAll maxAll], 'r-')
+    hold off;
+    xlabel('Measured');
+    ylabel('Fit');
+    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+    title(sprintf('Right Target (ALL DATA) maxSF = %2.1f cpi (features: %d)', maxSF, numel(indicesMaxSF)));
+    axis 'square';
     drawnow;
     
-    end
+    
+    
+    trainingIndices = 1:2:size(X,1);
+    testingIndices  = 2:2:size(X,1);
+    X1 = X(trainingIndices,:);
+    X2 = X(testingIndices,:);
+    
+    % solve for weights
+    Xdagger = pinv(X1); % (inv(X'*X))*(X');
+    % Compute weights on first half of data
+    weightsVectorLeftTarget  = Xdagger * yLeft(trainingIndices);
+    weightsVectorRightTarget = Xdagger * yRight(trainingIndices);
+    % Fit on firsthalf of data
+    yFitLeft  = X1 * weightsVectorLeftTarget;
+    yFitRight = X1 * weightsVectorRightTarget;
+    
+    
+    % Prediction on second half of data
+    yPredictionLeft  = X2 * weightsVectorLeftTarget;
+    yPredictionRight = X2 * weightsVectorRightTarget;
+    
+    figure(100);
+    clf;
+    
+    subplot(2,2,1);
+    plot(yLeft(trainingIndices), yFitLeft, 'k.');
+    hold on;
+    plot([minAll maxAll], [minAll maxAll], 'r-')
+    hold off;
+    xlabel('Measured');
+    ylabel('Fit');
+    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+    title(sprintf('Left Target (FIT FIRST HALF) maxSF = %2.1f cpi (features: %d)', maxSF, numel(indicesMaxSF)));
+    axis 'square';
+    subplot(2,2,2);
+    plot(yRight(trainingIndices), yFitRight, 'k.');
+    hold on;
+    plot([minAll maxAll], [minAll maxAll], 'r-')
+    hold off;
+    xlabel('Measured');
+    ylabel('Fit');
+    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+    title(sprintf('Right Target (FIT FIRST HALF) maxSF = %2.1f cpi (features: %d)', maxSF, numel(indicesMaxSF)));
+    axis 'square';
+    
+    
+    subplot(2,2,3);
+    plot(yLeft(testingIndices), yPredictionLeft, 'k.');
+    hold on;
+    plot([minAll maxAll], [minAll maxAll], 'r-')
+    hold off;
+    xlabel('Measured');
+    ylabel('Prediction');
+    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+    title(sprintf('Left Target (PREDICTION 2nd HALF) maxSF = %2.1f cpi (features: %d)', maxSF, numel(indicesMaxSF)));
+    axis 'square';
+    subplot(2,2,4);
+    plot(yRight(testingIndices), yPredictionRight, 'k.');
+    hold on;
+    plot([minAll maxAll], [minAll maxAll], 'r-')
+    hold off;
+    xlabel('Measured');
+    ylabel('Prediction');
+    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+    title(sprintf('Right Target(PREDICTION  2nd HALF) maxSF = %2.1f cpi (features: %d)', maxSF, numel(indicesMaxSF)));
+    axis 'square';
+    drawnow;
+    
+    
+    
+    
+    
+    trainingNumSamples = round(size(X,1)*0.7);
+    trainingIndices = 1:trainingNumSamples ;
+    testingIndices  = trainingNumSamples +1:size(X,1);
+    X1 = X(trainingIndices,:);
+    X2 = X(testingIndices,:);
+    
+    % solve for weights
+    Xdagger = pinv(X1); % (inv(X'*X))*(X');
+    % Compute weights on first half of data
+    weightsVectorLeftTarget  = Xdagger * yLeft(trainingIndices);
+    weightsVectorRightTarget = Xdagger * yRight(trainingIndices);
+    % Fit on firsthalf of data
+    yFitLeft  = X1 * weightsVectorLeftTarget;
+    yFitRight = X1 * weightsVectorRightTarget;
+    
+    
+    % Prediction on second half of data
+    yPredictionLeft  = X2 * weightsVectorLeftTarget;
+    yPredictionRight = X2 * weightsVectorRightTarget;
+    
+    figure(101);
+    clf;
+    
+    subplot(2,2,1);
+    plot(yLeft(trainingIndices), yFitLeft, 'k.');
+    hold on;
+    plot([minAll maxAll], [minAll maxAll], 'r-')
+    hold off;
+    xlabel('Measured');
+    ylabel('Fit');
+    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+    title(sprintf('Left Target (FIT 70%%) maxSF = %2.1f cpi (features: %d)', maxSF, numel(indicesMaxSF)));
+    axis 'square';
+    subplot(2,2,2);
+    plot(yRight(trainingIndices), yFitRight, 'k.');
+    hold on;
+    plot([minAll maxAll], [minAll maxAll], 'r-')
+    hold off;
+    xlabel('Measured');
+    ylabel('Fit');
+    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+    title(sprintf('Right Target (FIT 70%%) maxSF = %2.1f cpi (features: %d)', maxSF, numel(indicesMaxSF)));
+    axis 'square';
+    
+    
+    subplot(2,2,3);
+    plot(yLeft(testingIndices), yPredictionLeft, 'k.');
+    hold on;
+    plot([minAll maxAll], [minAll maxAll], 'r-')
+    hold off;
+    xlabel('Measured');
+    ylabel('Prediction');
+    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+    title(sprintf('Left Target (PREDICTION 30%%) maxSF = %2.1f cpi (features: %d)', maxSF, numel(indicesMaxSF)));
+    axis 'square';
+    subplot(2,2,4);
+    plot(yRight(testingIndices), yPredictionRight, 'k.');
+    hold on;
+    plot([minAll maxAll], [minAll maxAll], 'r-')
+    hold off;
+    xlabel('Measured');
+    ylabel('Prediction');
+    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+    title(sprintf('Right Target (PREDICTION 30%%) maxSF = %2.1 cpi (features: %d)', maxSF, numel(indicesMaxSF)));
+    axis 'square';
+    drawnow;
+    
+
+    
+    trainingIndices = frameBasedTrainingIndices;
+    testingIndices = frameBasedTestingIndices;
+    
+    X1 = X(trainingIndices,:);
+    X2 = X(testingIndices,:);
+    
+    % solve for weights
+    Xdagger = pinv(X1); % (inv(X'*X))*(X');
+    % Compute weights on first half of data
+    weightsVectorLeftTarget  = Xdagger * yLeft(trainingIndices);
+    weightsVectorRightTarget = Xdagger * yRight(trainingIndices);
+    % Fit on firsthalf of data
+    yFitLeft  = X1 * weightsVectorLeftTarget;
+    yFitRight = X1 * weightsVectorRightTarget;
+    
+    
+    % Prediction on second half of data
+    yPredictionLeft  = X2 * weightsVectorLeftTarget;
+    yPredictionRight = X2 * weightsVectorRightTarget;
+    
+    figure(102);
+    clf;
+    
+    subplot(2,2,1);
+    plot(yLeft(trainingIndices), yFitLeft, 'k.');
+    hold on;
+    plot([minAll maxAll], [minAll maxAll], 'r-')
+    hold off;
+    xlabel('Measured');
+    ylabel('Fit');
+    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+    title(sprintf('Left Target (FIT 1st HALF, frame-based) maxSF = %2.1f cpi (features: %d)', maxSF, numel(indicesMaxSF)));
+    axis 'square';
+    subplot(2,2,2);
+    plot(yRight(trainingIndices), yFitRight, 'k.');
+    hold on;
+    plot([minAll maxAll], [minAll maxAll], 'r-')
+    hold off;
+    xlabel('Measured');
+    ylabel('Fit');
+    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+    title(sprintf('Right Target (FIT 1st HALF, frame-based) maxSF = %2.1f cpi (features: %d)', maxSF, numel(indicesMaxSF)));
+    axis 'square';
+    
+    
+    subplot(2,2,3);
+    plot(yLeft(testingIndices), yPredictionLeft, 'k.');
+    hold on;
+    plot([minAll maxAll], [minAll maxAll], 'r-')
+    hold off;
+    xlabel('Measured');
+    ylabel('Prediction');
+    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+    title(sprintf('Left Target (PREDICTION 2nd HALF, frame-based) maxSF = %2.1f cpi(features: %d)', maxSF, numel(indicesMaxSF)));
+    axis 'square';
+    subplot(2,2,4);
+    plot(yRight(testingIndices), yPredictionRight, 'k.');
+    hold on;
+    plot([minAll maxAll], [minAll maxAll], 'r-')
+    hold off;
+    xlabel('Measured');
+    ylabel('Prediction');
+    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+    title(sprintf('Right Target (PREDICTION 2nd HALF, frame-based) maxSF = %2.1 cpi(features: %d)', maxSF, numel(indicesMaxSF)));
+    axis 'square';
+    drawnow;
+    
+    
+    
 end
 
 
