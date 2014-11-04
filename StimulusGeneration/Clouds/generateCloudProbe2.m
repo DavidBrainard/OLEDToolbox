@@ -16,6 +16,10 @@ function generateCloudProbe2
              
     
     totalFrames = 0;
+    k = 0;
+    global XdesignMatrix
+    XdesignMatrix = [];
+    maxSF = 32;
     for exponentOfOneOverFIndex = 1:numel(stimParams.exponentOfOneOverFArray)
         exponentOfOneOverF = stimParams.exponentOfOneOverFArray(exponentOfOneOverFIndex);
         for oriBiasIndex = 1:numel(stimParams.oriBiasArray)
@@ -24,14 +28,57 @@ function generateCloudProbe2
                 orientation = stimParams.orientationsArray(orientationIndex);
                 imageSequence = generateMovingCloudSequence(exponentOfOneOverF, oriBias, orientation,stimParams);
                 stimuli(exponentOfOneOverFIndex, oriBiasIndex,orientationIndex, :,:,:) = imageSequence;
-                totalFrames = totalFrames + size(imageSequence,1)
+                for frameIndex = 1:size(imageSequence,1)
+                    frame = squeeze(imageSequence(frameIndex,:,:));
+                    featureVector = extractFeatures(frame, maxSF);
+                    k = k + 1
+                    XdesignMatrix(k,:) = featureVector';
+                end
+                totalFrames = totalFrames + size(imageSequence,1);
             end
         end
     end
     
+
     % save stimuli
-    save('PixelOLEDprobes2.mat', 'stimParams', 'stimuli', '-v7.3'); 
+    %save('PixelOLEDprobes2.mat', 'stimParams', 'stimuli', '-v7.3'); 
     
+end
+
+function featureVector = extractFeatures(frame, maxSF)
+
+    imageSize = 1;
+    imageSamplesNum = 1920;
+    sampleSize = imageSize/imageSamplesNum;
+    nyquistFrequency = 1.0/(2*sampleSize);
+    fftSamplesNum = 4096/2;
+    freqRes = nyquistFrequency/(fftSamplesNum/2);
+    %fprintf('freq. res = %2.2f cycles/image', freqRes);
+    %fprintf('max freq = %2.2f cycles/image', freqRes * fftSamplesNum/2);
+    
+    rowOffset = (fftSamplesNum -1080)/2;
+    colOffset = (fftSamplesNum -1920)/2;
+    rowRange = 1:1080;
+    colRange = 1:1920;
+    
+    
+    frame = double(frame)/255.0;
+    spectrum = doFFT(frame, fftSamplesNum, rowOffset, colOffset, rowRange, colRange);
+    freqXaxis = freqRes * [0:size(spectrum,2)-1];
+    freqYaxis = freqRes * [0:size(spectrum,1)-1] - nyquistFrequency;
+    [sfX,sfY] = meshgrid(freqXaxis, freqYaxis);
+    radialFreq = sqrt(sfX.^2 + sfY.^2);
+    indicesMaxSF = find(radialFreq <= maxSF);
+    featureVector = spectrum(indicesMaxSF);
+    
+end
+
+
+function spectrum = doFFT(frame, fftSamplesNum, rowOffset, colOffset, rowRange, colRange)
+    fftFrame = zeros(fftSamplesNum,fftSamplesNum);
+    fftFrame(rowOffset+rowRange, colOffset+colRange) = frame;
+    spectrum = abs(fftshift(fft2(fftFrame)));
+    spectrum = spectrum(:, fftSamplesNum/2+1:end);        
 end
 
 
@@ -174,7 +221,7 @@ function imageSequence = generateMovingCloudSequence(exponentOfOneOverF, oriBias
         imageSequence(patternIndex, :,:) = uint8(255*highLuminanceIm4);
         
         
-        
+        if (1==2)
         [frameIndex min(originalIm(:)) max(originalIm(:)) mean(originalIm(:))]
         [100      min(lowLuminanceOriginalIm(:)) max(lowLuminanceOriginalIm(:)) mean(lowLuminanceOriginalIm(:))]
         [200       min(highLuminanceOriginalIm(:)) max(highLuminanceOriginalIm(:)) mean(highLuminanceOriginalIm(:))]
@@ -226,7 +273,9 @@ function imageSequence = generateMovingCloudSequence(exponentOfOneOverF, oriBias
         colormap(gray);
         drawnow;
         
-
+        end
+        
+        
     end % frameIndex
     
 end
