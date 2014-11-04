@@ -1,0 +1,509 @@
+function AnalyzeCloud2CalibrationData
+
+    
+    
+    % Load calibration file from /Users1
+    calibrationDir  = '/Volumes/Data/Users1/Matlab/Experiments/SamsungOLED/PreliminaryData';
+    calibrationFile = 'SamsungOLED_CloudsCalib2.mat';
+    
+    calibrationDataSet = loadCalibrationFile(calibrationDir,calibrationFile);
+    stimParams = calibrationDataSet.runParams.stimParams;
+    
+    % Set up analysis using 1st calibration frame
+    runData = calibrationDataSet.allCondsData{1,1,1,1,1,1,1};
+    
+    % FFT analysis
+    imageSize = 1;
+    imageSamplesNum = 1920;
+    sampleSize = imageSize/imageSamplesNum;
+    nyquistFrequency = 1.0/(2*sampleSize);
+    fftSamplesNum = 4096/2;
+    freqRes = nyquistFrequency/(fftSamplesNum/2);
+    fprintf('freq. res = %2.2f cycles/image', freqRes);
+    fprintf('max freq = %2.2f cycles/image', freqRes * fftSamplesNum/2);
+    
+    rowOffset = (fftSamplesNum -1080)/2;
+    colOffset = (fftSamplesNum -1920)/2;
+    rowRange = 1:1080;
+    colRange = 1:1920;
+    
+    frame = double(runData.demoFrame)/255.0;
+    spectrum = doFFT(frame, fftSamplesNum, rowOffset, colOffset, rowRange, colRange);
+    freqXaxis = freqRes * [0:size(spectrum,2)-1];
+    freqYaxis = freqRes * [0:size(spectrum,1)-1] - nyquistFrequency;
+    [sfX,sfY] = meshgrid(freqXaxis, freqYaxis);
+    radialFreq = sqrt(sfX.^2 + sfY.^2);
+    indices8Cycles = find(radialFreq <= 8.0);
+    
+    indices2Cycles = find(radialFreq == 0.0);
+    indices2to4Cycles = find((radialFreq > 0.0) & (radialFreq <= 2.0));
+    indices4to6Cycles = find((radialFreq > 2.0) & (radialFreq <= 4.0));
+    indices6to8Cycles = find((radialFreq > 4.0) & (radialFreq <= 8.0));
+    indices8to10Cycles = find((radialFreq > 8.0) & (radialFreq <= 16.0));
+    
+    
+    % Load CIE 1931 CMFs
+    load T_xyz1931
+    vLambda1931_originalSampling = squeeze(T_xyz1931(2,:));
+    desiredS = [380 1 401];
+   
+    nativeS = runData.leftS;
+    vLambda = 683*SplineCmf(S_xyz1931, vLambda1931_originalSampling, desiredS);
+    wave = SToWls(desiredS);
+    
+           
+    % Preallocate arrays
+    leftTargetLuminance = zeros(...
+        numel(stimParams.exponentOfOneOverFArray),...
+        numel(stimParams.oriBiasArray), ...
+        numel(stimParams.orientationsArray), ...
+        size(calibrationDataSet.allCondsData,4), ...
+        size(calibrationDataSet.allCondsData,5), ...
+        size(calibrationDataSet.allCondsData,6), ...
+        size(calibrationDataSet.allCondsData,7));
+    
+    rightTargetLuminance = leftTargetLuminance;
+    meanRGBsettings      = leftTargetLuminance;
+    meanRGBpower         = leftTargetLuminance;
+    spectralPower8Cycles = leftTargetLuminance;
+    
+    Nsamples = prod(size(leftTargetLuminance))
+    Mfeatures = 5
+    
+    yLeft = zeros(Nsamples,1);
+    yRight = zeros(Nsamples,1);
+    X = zeros(Nsamples, Mfeatures);
+    
+    numel(stimParams.exponentOfOneOverFArray)
+    pause;
+    condIndex = 0;
+    for exponentOfOneOverFIndex = 1:numel(stimParams.exponentOfOneOverFArray)
+    for oriBiasIndex = 1:numel(stimParams.oriBiasArray)
+    for orientationIndex = 1:numel(stimParams.orientationsArray)
+    for frameIndex = 1:size(calibrationDataSet.allCondsData,4)
+    for conditionIndex = 1:size(calibrationDataSet.allCondsData,5)
+    for polarityIndex = 1:size(calibrationDataSet.allCondsData,6)
+    for targetGrayIndex = 1:size(calibrationDataSet.allCondsData,7)
+        
+        if (mod(condIndex,100) == 0)
+            condIndex
+        end
+        condIndex = condIndex + 1;
+        
+        runData = calibrationDataSet.allCondsData{...
+            exponentOfOneOverFIndex, ...
+            oriBiasIndex, ...
+            orientationIndex, ...
+            frameIndex, ...
+            conditionIndex, ...
+            polarityIndex, ...
+            targetGrayIndex};
+        
+
+        % interpolate to desiredS
+        spd = SplineSpd(nativeS, (runData.leftSPD)', desiredS);
+        % compute luminance
+        leftTargetLuminance(exponentOfOneOverFIndex, ...
+            oriBiasIndex, ...
+            orientationIndex, ...
+            frameIndex, ...
+            conditionIndex, ...
+            polarityIndex, ...
+            targetGrayIndex) = sum(spd'.*vLambda,2);
+        
+      
+        % interpolate to desiredS
+        spd = SplineSpd(nativeS, (runData.rightSPD)', desiredS);
+        % compute luminance
+        rightTargetLuminance(exponentOfOneOverFIndex, ...
+            oriBiasIndex, ...
+            orientationIndex, ...
+            frameIndex, ...
+            conditionIndex, ...
+            polarityIndex, ...
+            targetGrayIndex) = sum(spd'.*vLambda,2);
+        
+        frame = double(runData.demoFrame)/255.0;
+        
+        
+        meanRGBsettings(exponentOfOneOverFIndex, ...
+            oriBiasIndex, ...
+            orientationIndex, ...
+            frameIndex, ...
+            conditionIndex, ...
+            polarityIndex, ...
+            targetGrayIndex) = mean(frame(:));
+        
+        meanRGBpower(exponentOfOneOverFIndex, ...
+            oriBiasIndex, ...
+            orientationIndex, ...
+            frameIndex, ...
+            conditionIndex, ...
+            polarityIndex, ...
+            targetGrayIndex) = mean((frame(:)).^2);
+        
+       
+        
+        % Perhaps here window frame
+        if (1==2)
+        % Now do spectral analysis
+        spectrum = doFFT(frame, fftSamplesNum, rowOffset, colOffset, rowRange, colRange);
+        
+        
+        spectralPower8Cycles(exponentOfOneOverFIndex, ...
+            oriBiasIndex, ...
+            orientationIndex, ...
+            frameIndex, ...
+            conditionIndex, ...
+            polarityIndex, ...
+            targetGrayIndex) = mean(spectrum(indices8Cycles(:)));
+        
+        
+        featureVector = [...
+            mean(spectrum(indices2Cycles)); ...
+            mean(spectrum(indices2to4Cycles)); ...
+            mean(spectrum(indices4to6Cycles)); ...
+            mean(spectrum(indices6to8Cycles)); ...
+            mean(spectrum(indices8to10Cycles)) ...
+            ];
+    
+        % Set up linear regression problem
+        
+        X(condIndex,:) = featureVector';
+        
+        yLeft(condIndex) = leftTargetLuminance(exponentOfOneOverFIndex, ...
+            oriBiasIndex, ...
+            orientationIndex, ...
+            frameIndex, ...
+            conditionIndex, ...
+            polarityIndex, ...
+            targetGrayIndex);
+        
+        yRight(condIndex) = rightTargetLuminance(exponentOfOneOverFIndex, ...
+            oriBiasIndex, ...
+            orientationIndex, ...
+            frameIndex, ...
+            conditionIndex, ...
+            polarityIndex, ...
+            targetGrayIndex);
+        
+        end
+        
+        
+        if (1==2)
+            figure(1);
+            clf;
+            subplot(2,2,[1 3]);
+            imagesc(freqXaxis, freqYaxis, spectrum);
+            title('log spectrum');
+            hold on;
+            plot(0,0, 'ro', 'MarkerSize', 16);
+            hold off;
+            axis 'image'
+            axis 'xy';
+            set(gca, 'XLim', [0 32], 'YLim', [-32 32]);
+            colormap(gray);
+
+            subplot(2,2,2);
+            plot(freqXaxis, spectrum(fftSamplesNum/2+1, :), 'rs-');
+            set(gca, 'XLim', [-10 32], 'XTick', [-5 0 5]);
+            xlabel('x freq');
+            subplot(2,2,4);
+            plot(freqYaxis, spectrum(:, 1), 'rs-');
+            set(gca, 'XLim', [-32 32], 'XTick', [-5 0 5]);
+            xlabel('y freq');
+            drawnow;
+        end
+        
+        
+        if (1==2)
+         figure(110);           
+                            
+         imagesc(runData.demoFrame);
+         title(sprintf('1/fexp = %2.1f, ori=%2.1f, cond = %2.0f, polarity = %2.0f', ...
+                stimParams.exponentOfOneOverFArray(exponentOfOneOverFIndex), ...
+                stimParams.orientationsArray(orientationIndex), ...
+                conditionIndex, ...
+                polarityIndex));
+            
+        set(gca, 'CLim', [0 255]);
+        axis 'image'
+        colormap(gray)
+        drawnow;
+        end
+        
+    end
+    end
+    end
+    end
+    end
+    end
+    end
+
+    lumLims(1) = min([min(leftTargetLuminance(:)) min(rightTargetLuminance(:))]);
+    lumLims(2) = max([max(leftTargetLuminance(:)) max(rightTargetLuminance(:))]);
+    
+    figure(2);
+    clf;
+    subplot(2,2,1);
+    plot(leftTargetLuminance(:), rightTargetLuminance(:), 'k.');
+    hold on;
+    plot(lumLims, lumLims, 'r-');
+    hold off;
+    set(gca, 'XLim', lumLims, 'YLim', lumLims);
+    axis 'square'
+    xlabel('Left target luminance');
+    ylabel('Right target luminance');
+    
+    if (1==2)
+    for k = 1:5
+    subplot(3,3,1+k);
+    plot(squeeze(X(:,k)), leftTargetLuminance(:), 'k.');
+    end
+    end
+    
+    
+    
+    
+    subplot(2,2,3);
+    plot(meanRGBsettings(:), leftTargetLuminance(:), 'r.');
+    hold on;
+    plot(meanRGBsettings(:), rightTargetLuminance(:), 'b.');
+    hold off;
+    set(gca, 'XLim', [0 1], 'YLim', lumLims);
+    legend({'left taget', 'right target'});
+    xlabel('mean RGB settings');
+    ylabel('target luminance');
+    
+    
+    subplot(2,2,4);
+    plot(meanRGBpower(:), leftTargetLuminance(:), 'r.');
+    hold on;
+    plot(meanRGBpower(:), rightTargetLuminance(:), 'b.');
+    hold off;
+    set(gca, 'XLim', [0 1], 'YLim', lumLims);
+    legend({'left taget', 'right target'});
+    xlabel('mean RGB power');
+    ylabel('target luminance');
+    
+    
+    if (1==2)
+    subplot(2,2,4);
+    plot(spectralPower8Cycles(:), leftTargetLuminance(:), 'r.');
+    hold on;
+    plot(spectralPower8Cycles(:), rightTargetLuminance(:), 'b.');
+    hold off;
+    set(gca, 'YLim', lumLims);
+    legend({'left taget', 'right target'});
+    xlabel('spectral power 0-8 cycles/image)');
+    ylabel('target luminance');
+    end
+   
+    
+    if (1==2)
+    disp('Solving linear regresssion');
+    
+    % Find max(X) for each feature
+    maxX = ones(Nsamples,1)*max(X,[],1);
+    size(maxX)
+    % normalize X
+    X = X ./ maxX;
+    figure(222);
+    
+    clf;
+    imagesc(X);
+    colormap(gray)
+    
+    
+    % solve for weights
+    Xdagger = (inv(X'*X))*(X');
+    weightsVectorLeftTarget = Xdagger * yLeft;
+    
+    size(weightsVectorLeftTarget)
+    size(yLeft)
+    yPredictionLeft = (X) * weightsVectorLeftTarget;
+    
+    figure(99);
+    plot(yLeft, yPredictionLeft, 'k.');
+    drawnow;
+    
+    end
+end
+
+
+
+
+function calibrationDataSet = loadCalibrationFile(calibrationDir,calibrationFile)
+    % form full path file
+    fullPathCaFile  = sprintf('%s/%s', calibrationDir,calibrationFile);
+    
+    % create a MAT-file object that supports partial loading and saving.
+    matOBJ = matfile(fullPathCaFile, 'Writable', false);
+    
+    % get current variables
+    varList = who(matOBJ);
+        
+    if isempty(varList)
+        if (exist(dataSetFilename, 'file'))
+            fprintf(2,'No calibration data found in ''%s''.\n', dataSetFilename);
+        else
+            fprintf(2,'''%s'' does not exist.\n', dataSetFilename);
+        end
+        calibrationDataSet = [];
+        return;        
+    end
+    
+    fprintf('\nFound %d calibration data sets in the saved history.', numel(varList));
+    
+    % ask the user to select one
+    defaultDataSetNo = numel(varList);
+    dataSetIndex = input(sprintf('\nSelect a data set (1-%d) [%d]: ', defaultDataSetNo, defaultDataSetNo));
+    if isempty(dataSetIndex) || (dataSetIndex < 1) || (dataSetIndex > defaultDataSetNo)
+       dataSetIndex = defaultDataSetNo;
+    end
+    
+    % return the selected ground truth data set
+    eval(sprintf('calibrationDataSet = matOBJ.%s;',varList{dataSetIndex}));
+    
+end
+
+
+function spectrum = doFFT(frame, fftSamplesNum, rowOffset, colOffset, rowRange, colRange)
+    fftFrame = zeros(fftSamplesNum,fftSamplesNum);
+    fftFrame(rowOffset+rowRange, colOffset+colRange) = frame;
+    spectrum = abs(fftshift(fft2(fftFrame)));
+    spectrum = spectrum(:, fftSamplesNum/2+1:end);        
+end
+
+% PERFFT2  2D Fourier transform of Moisan's periodic image component
+%
+% Usage: [P, S, p, s] = perfft2(im)
+%
+% Argument:  im - Image to be transformed
+% Returns:    P - 2D fft of periodic image component
+%             S - 2D fft of smooth component
+%             p - Periodic component (spatial domain)
+%             s - Smooth component (spatial domain)
+%
+% Moisan's "Periodic plus Smooth Image Decomposition" decomposes an image 
+% into two components
+%        im = p + s
+% where s is the 'smooth' component with mean 0 and p is the 'periodic'
+% component which has no sharp discontinuities when one moves cyclically across
+% the image boundaries.  
+%
+% This wonderful decomposition is very useful when one wants to obtain an FFT of
+% an image with minimal artifacts introduced from the boundary discontinuities.
+% The image p gathers most of the image information but avoids periodization
+% artifacts.
+%
+% The typical use of this function is to obtain a 'periodic only' fft of an
+% image 
+%   >>  P = perfft2(im);
+%
+% Displaying the amplitude spectrum of P will yield a clean spectrum without the
+% typical vertical-horizontal 'cross' arising from the image boundaries that you
+% would normally see.
+%
+% Note if you are using the function to perform filtering in the frequency
+% domain you may want to retain s (the smooth component in the spatial domain)
+% and add it back to the filtered result at the end.  
+%
+% The computational cost of obtaining the 'periodic only' FFT involves taking an
+% additional FFT.
+%
+%
+% Reference: 
+% This code is adapted from Lionel Moisan's Scilab function 'perdecomp.sci' 
+% "Periodic plus Smooth Image Decomposition" 07/2012 available at
+%
+%   http://www.mi.parisdescartes.fr/~moisan/p+s
+%
+% Paper:
+% L. Moisan, "Periodic plus Smooth Image Decomposition", Journal of
+% Mathematical Imaging and Vision, vol 39:2, pp. 161-179, 2011.
+
+% Peter Kovesi
+% Centre for Exploration Targeting
+% The University of Western Australia
+% peter.kovesi at uwa edu au
+% September 2012
+
+function [P, S, p, s] = perfft2(im)
+    
+    if ~isa(im, 'double'), im = double(im); end
+    [rows,cols] = size(im);
+    
+    % Compute the boundary image which is equal to the image discontinuity
+    % values across the boundaries at the edges and is 0 elsewhere
+    s = zeros(size(im));
+    s(1,:)   = im(1,:) - im(end,:);
+    s(end,:) = -s(1,:);
+    s(:,1)   = s(:,1)   + im(:,1) - im(:,end);
+    s(:,end) = s(:,end) - im(:,1) + im(:,end);
+    
+    % Generate grid upon which to compute the filter for the boundary image in
+    % the frequency domain.  Note that cos() is cyclic hence the grid values can
+    % range from 0 .. 2*pi rather than 0 .. pi and then pi .. 0
+    [cx, cy] = meshgrid(2*pi*[0:cols-1]/cols, 2*pi*[0:rows-1]/rows);    
+    
+    % Generate FFT of smooth component
+    S = fft2(s)./(2*(2 - cos(cx) - cos(cy)));
+    
+    % The (1,1) element of the filter will be 0 so S(1,1) may be Inf or NaN
+    S(1,1) = 0;          % Enforce 0 mean 
+
+    P = fft2(im) - S;    % FFT of periodic component
+
+    if nargout > 2       % Generate spatial domain results 
+        s = real(ifft2(S)); 
+        p = im - s;         
+    end
+end
+
+
+%------------------------------ PERDECOMP ------------------------------
+
+%       Periodic plus Smooth Image Decomposition
+%
+%               author: Lionel Moisan
+%
+%   This program is freely available on the web page
+%
+%   http://www.mi.parisdescartes.fr/~moisan/p+s
+%
+%   I hope that you will find it useful.
+%   If you use it for a publication, please mention 
+%   this web page and the paper it makes reference to.
+%   If you modify this program, please indicate in the
+%   code that you did so and leave this message.
+%   You can also report bugs or suggestions to 
+%   lionel.moisan [AT] parisdescartes.fr
+%
+% This function computes the periodic (p) and smooth (s) components
+% of an image (2D array) u
+%
+% usage:    p = perdecomp(u)    or    [p,s] = perdecomp(u)
+%
+% note: this function also works for 1D signals (line or column vectors)
+%
+% v1.0 (01/2014): initial Matlab version from perdecomp.sci v1.2
+
+function [p,s] = perdecomp(u)
+
+[ny,nx] = size(u); 
+u = double(u);
+X = 1:nx; Y = 1:ny;
+v = zeros(ny,nx);
+v(1,X)  = u(1,X)-u(ny,X);
+v(ny,X) = -v(1,X);
+v(Y,1 ) = v(Y,1 )+u(Y,1)-u(Y,nx);
+v(Y,nx) = v(Y,nx)-u(Y,1)+u(Y,nx);
+fx = repmat(cos(2.*pi*(X -1)/nx),ny,1);
+fy = repmat(cos(2.*pi*(Y'-1)/ny),1,nx);
+fx(1,1)=0.;   % avoid division by 0 in the line below
+s = real(ifft2(fft2(v)*0.5./(2.-fx-fy)));
+p = u-s;
+
+end
+
