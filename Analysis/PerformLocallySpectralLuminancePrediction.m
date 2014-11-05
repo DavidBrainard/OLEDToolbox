@@ -15,7 +15,7 @@ function PerformLocallySpectralLuminancePrediction
     
     % We generate two design matrices, one based on linear filtering
     % of the image with the filter, and one based on the square of
-    % that operation
+    % that operation.
     XdesignMatrix1 = zeros(conditionsNum, featuresNum);
     XdesignMatrix2 = zeros(conditionsNum, featuresNum);
     
