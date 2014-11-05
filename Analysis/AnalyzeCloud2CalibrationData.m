@@ -4,6 +4,7 @@ function AnalyzeCloud2CalibrationData
     % Load calibration file from /Users1
     calibrationDir  = '/Volumes/Data/Users1/Matlab/Experiments/SamsungOLED/PreliminaryData';
     calibrationDir  = '/Users1/Matlab/Experiments/SamsungOLED/PreliminaryData';
+    calibrationDir  = '/Users1/Shared/Matlab/Experiments/SamsungOLED/PreliminaryData';
     calibrationFile = 'SamsungOLED_CloudsCalib2.mat';
     
     calibrationDataSet = loadCalibrationFile(calibrationDir,calibrationFile);
@@ -64,7 +65,7 @@ function AnalyzeCloud2CalibrationData
     spectralPower8Cycles = leftTargetLuminance;
     
     Nsamples = prod(size(leftTargetLuminance));
-    Mfeatures = numel(indicesMaxSF);
+    Mfeatures = 1+numel(indicesMaxSF);
     
     yLeft = zeros(Nsamples,1);
     yRight = zeros(Nsamples,1);
@@ -163,7 +164,7 @@ function AnalyzeCloud2CalibrationData
 %             targetGrayIndex) = mean(spectrum(indices8Cycles(:)));
         
         
-        featureVector = spectrum(indicesMaxSF);
+        featureVector = [1; log10(spectrum(indicesMaxSF))];
 
     
         % Set up linear regression problem
@@ -303,10 +304,10 @@ function AnalyzeCloud2CalibrationData
     disp('Solving linear regresssion');
     
     % Find max(X) for each feature
-    maxX = ones(Nsamples,1)*max(X,[],1);
-    size(maxX)
+    %maxX = ones(Nsamples,1)*max(X,[],1);
+    %size(maxX)
     % normalize X
-    X = X ./ maxX;
+    % X = X ./ maxX;
     
     figure(222);
     clf;
@@ -315,6 +316,7 @@ function AnalyzeCloud2CalibrationData
     
 
     % solve for weights
+    p = inv(X'*X);
     Xdagger = pinv(X); % (inv(X'*X))*(X');
     % Compute weights on first half of data
     weightsVectorLeftTarget  = Xdagger * yLeft;
