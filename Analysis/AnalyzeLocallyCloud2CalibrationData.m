@@ -13,7 +13,7 @@ function AnalyzeLocallyCloud2CalibrationData
     runData = calibrationDataSet.allCondsData{1,1,1,1,1,1,1};
     frame = double(runData.demoFrame)/255.0;
     
-    gaborSensors = generateGaborSensors(frame);
+    
     
     figure(1);
     clf;
@@ -47,20 +47,28 @@ function AnalyzeLocallyCloud2CalibrationData
     
     rightTargetLuminance = leftTargetLuminance;
 
+    % Generate filter bank
+    filterBank = generateGaborSensorsEVEN(frame);
+    Mfeatures = 1;
+    for scaleIndex = 1:numel(filterBank)
+        Mfeatures = Mfeatures + size(filterBank{scaleIndex}.filter,1);
+    end % scaleIndex
     
+
     Nsamples = prod(size(leftTargetLuminance));
-    
-    Mfeatures = numel(indicesMaxSF);
+    Xlinear = zeros(Nsamples, Mfeatures);
+    Xenergy = zeros(Nsamples, Mfeatures);
     
     yLeft = zeros(Nsamples,1);
     yRight = zeros(Nsamples,1);
-    X = zeros(Nsamples, Mfeatures);
+    
     
 
     frameBasedTrainingIndices = [];
     frameBasedTestingIndices = [];
     
     condIndex = 0;
+    tic
     for exponentOfOneOverFIndex = 1:numel(stimParams.exponentOfOneOverFArray)
     for oriBiasIndex = 1:numel(stimParams.oriBiasArray)
     for orientationIndex = 1:numel(stimParams.orientationsArray)
@@ -69,8 +77,10 @@ function AnalyzeLocallyCloud2CalibrationData
     for polarityIndex = 1:size(calibrationDataSet.allCondsData,6)
     for targetGrayIndex = 1:size(calibrationDataSet.allCondsData,7)
         
-        if (mod(condIndex,100) == 0)
+        if (mod(condIndex,10) == 0)
             condIndex
+            toc
+            tic
         end
         condIndex = condIndex + 1;
         
@@ -132,29 +142,27 @@ function AnalyzeLocallyCloud2CalibrationData
             polarityIndex, ...
             targetGrayIndex) = mean((frame(:)).^2);
         
-       
         
-        % Perhaps here window frame
+        featureIndex = 1;
+        featureVectorLinear(featureIndex) = 1;
+        featureVectorEnergy(featureIndex) = 1;
         
-        % Now do spectral analysis
-        spectrum = doFFT(frame, fftSamplesNum, rowOffset, colOffset, rowRange, colRange);
-        
-        
-%         spectralPower8Cycles(exponentOfOneOverFIndex, ...
-%             oriBiasIndex, ...
-%             orientationIndex, ...
-%             frameIndex, ...
-%             conditionIndex, ...
-%             polarityIndex, ...
-%             targetGrayIndex) = mean(spectrum(indices8Cycles(:)));
-        
-        
-        featureVector = spectrum(indicesMaxSF);
+        for scaleIndex = 1:numel(filterBank)
+        for posIndex = 1:size(filterBank{scaleIndex}.filter,1)
+            featureIndex = featureIndex + 1;
+            map = squeeze(filterBank{scaleIndex}.filter(posIndex,:,:)) .* frame;
+            localRGBsignal = sum(sum(map));
+            localRGBenergy = sum(sum(map.^2));
+            featureVectorLinear(featureIndex) = localRGBsignal;
+            featureVectorEnergy(featureIndex) = localRGBenergy;
+        end % posIndex
+        end % scaleIndex
 
     
         % Set up linear regression problem
         
-        X(condIndex,:) = featureVector';
+        Xlinear(condIndex,:) = featureVectorLinear';
+        Xenergy(condIndex,:) = featureVectorEnergy';
         
         yLeft(condIndex) = leftTargetLuminance(exponentOfOneOverFIndex, ...
             oriBiasIndex, ...
@@ -175,30 +183,7 @@ function AnalyzeLocallyCloud2CalibrationData
         
         
         
-        if (1==2)
-            figure(1);
-            clf;
-            subplot(2,2,[1 3]);
-            imagesc(freqXaxis, freqYaxis, spectrum);
-            title('log spectrum');
-            hold on;
-            plot(0,0, 'ro', 'MarkerSize', 16);
-            hold off;
-            axis 'image'
-            axis 'xy';
-            set(gca, 'XLim', [0 32], 'YLim', [-32 32]);
-            colormap(gray);
-
-            subplot(2,2,2);
-            plot(freqXaxis, spectrum(fftSamplesNum/2+1, :), 'rs-');
-            set(gca, 'XLim', [-10 32], 'XTick', [-5 0 5]);
-            xlabel('x freq');
-            subplot(2,2,4);
-            plot(freqYaxis, spectrum(:, 1), 'rs-');
-            set(gca, 'XLim', [-32 32], 'XTick', [-5 0 5]);
-            xlabel('y freq');
-            drawnow;
-        end
+        
         
         
         if (1==2)
@@ -225,6 +210,9 @@ function AnalyzeLocallyCloud2CalibrationData
     end
     end
 
+    toc
+    
+    
     lumLims(1) = min([min(leftTargetLuminance(:)) min(rightTargetLuminance(:))]);
     lumLims(2) = max([max(leftTargetLuminance(:)) max(rightTargetLuminance(:))]);
     
@@ -288,273 +276,286 @@ function AnalyzeLocallyCloud2CalibrationData
     
     disp('Solving linear regresssion');
     
-    % Find max(X) for each feature
-    maxX = ones(Nsamples,1)*max(X,[],1);
-    size(maxX)
-    % normalize X
-    X = X ./ maxX;
-    
-    figure(222);
+    figure(10);
     clf;
-    imagesc(X);
+    imagesc(Xlinear);
     colormap(gray)
+    title('Xlinear');
+    
+    figure(20);
+    clf;
+    imagesc(Xenergy);
+    colormap(gray)
+    title('Xenergy');
+    
+    
+    
+    
+    for featureSpace = 1:2
+        
+        if (featureSpace == 1)
+            X = Xlinear;
+        else
+            X = Xenergy;
+        end
+        
+        
+        p = inv(X'*X);
+        % solve for weights
+        Xdagger = pinv(X); % (inv(X'*X))*(X');
+        % Compute weights on first half of data
+        weightsVectorLeftTarget  = Xdagger * yLeft;
+        weightsVectorRightTarget = Xdagger * yRight;
+
+        % Prediction on second half of data
+        yPredictionLeft  = X * weightsVectorLeftTarget;
+        yPredictionRight = X * weightsVectorRightTarget;
+
+        minAll = min([min(yLeft(:)) min(yRight(:)) min(yPredictionLeft) min(yPredictionRight) ]);
+        maxAll = min([max(yLeft(:)) max(yRight(:)) max(yPredictionLeft) max(yPredictionRight) ]);
+
+        figure(99+featureSpace*100);
+        clf;
+
+        subplot(1,2,1);
+        plot(yLeft, yPredictionLeft, 'k.');
+        hold on;
+        plot([minAll maxAll], [minAll maxAll], 'r-')
+        hold off;
+        xlabel('Measured');
+        ylabel('Fit');
+        set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+        title(sprintf('Left Target (ALL DATA)'))
+        axis 'square';
+    
+        subplot(1,2,2);
+        plot(yRight, yPredictionRight, 'k.');
+        hold on;
+        plot([minAll maxAll], [minAll maxAll], 'r-')
+        hold off;
+        xlabel('Measured');
+        ylabel('Fit');
+        set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+        title(sprintf('Right Target (ALL DATA)'))
+        axis 'square';
+        drawnow;
+    
+    
+    
+        trainingIndices = 1:2:size(X,1);
+        testingIndices  = 2:2:size(X,1);
+        X1 = X(trainingIndices,:);
+        X2 = X(testingIndices,:);
+
+        % solve for weights
+        Xdagger = pinv(X1); % (inv(X'*X))*(X');
+        % Compute weights on first half of data
+        weightsVectorLeftTarget  = Xdagger * yLeft(trainingIndices);
+        weightsVectorRightTarget = Xdagger * yRight(trainingIndices);
+        % Fit on firsthalf of data
+        yFitLeft  = X1 * weightsVectorLeftTarget;
+        yFitRight = X1 * weightsVectorRightTarget;
+
+
+        % Prediction on second half of data
+        yPredictionLeft  = X2 * weightsVectorLeftTarget;
+        yPredictionRight = X2 * weightsVectorRightTarget;
+
+        figure(100+featureSpace*100);
+        clf;
+    
+        subplot(2,2,1);
+        plot(yLeft(trainingIndices), yFitLeft, 'k.');
+        hold on;
+        plot([minAll maxAll], [minAll maxAll], 'r-')
+        hold off;
+        xlabel('Measured');
+        ylabel('Fit');
+        set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+        title(sprintf('Left Target (FIT FIRST HALF)'))
+        axis 'square';
+        subplot(2,2,2);
+        plot(yRight(trainingIndices), yFitRight, 'k.');
+        hold on;
+        plot([minAll maxAll], [minAll maxAll], 'r-')
+        hold off;
+        xlabel('Measured');
+        ylabel('Fit');
+        set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+        title(sprintf('Right Target (FIT FIRST HALF)'))
+        axis 'square';
+    
+    
+        subplot(2,2,3);
+        plot(yLeft(testingIndices), yPredictionLeft, 'k.');
+        hold on;
+        plot([minAll maxAll], [minAll maxAll], 'r-')
+        hold off;
+        xlabel('Measured');
+        ylabel('Prediction');
+        set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+        title(sprintf('Left Target (PREDICTION 2nd HALF)'))
+        axis 'square';
+        subplot(2,2,4);
+        plot(yRight(testingIndices), yPredictionRight, 'k.');
+        hold on;
+        plot([minAll maxAll], [minAll maxAll], 'r-')
+        hold off;
+        xlabel('Measured');
+        ylabel('Prediction');
+        set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+        title(sprintf('Right Target(PREDICTION  2nd HALF)'))
+        axis 'square';
+        drawnow;
+    
+    
+    
+    
+    
+        trainingNumSamples = round(size(X,1)*0.7);
+        trainingIndices = 1:trainingNumSamples ;
+        testingIndices  = trainingNumSamples +1:size(X,1);
+        X1 = X(trainingIndices,:);
+        X2 = X(testingIndices,:);
+
+        % solve for weights
+        Xdagger = pinv(X1); % (inv(X'*X))*(X');
+        % Compute weights on first half of data
+        weightsVectorLeftTarget  = Xdagger * yLeft(trainingIndices);
+        weightsVectorRightTarget = Xdagger * yRight(trainingIndices);
+        % Fit on firsthalf of data
+        yFitLeft  = X1 * weightsVectorLeftTarget;
+        yFitRight = X1 * weightsVectorRightTarget;
+
+
+        % Prediction on second half of data
+        yPredictionLeft  = X2 * weightsVectorLeftTarget;
+        yPredictionRight = X2 * weightsVectorRightTarget;
+    
+        figure(101+featureSpace*100);
+        clf;
+
+        subplot(2,2,1);
+        plot(yLeft(trainingIndices), yFitLeft, 'k.');
+        hold on;
+        plot([minAll maxAll], [minAll maxAll], 'r-')
+        hold off;
+        xlabel('Measured');
+        ylabel('Fit');
+        set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+        title(sprintf('Left Target (FIT 70%%)'))
+        axis 'square';
+        subplot(2,2,2);
+        plot(yRight(trainingIndices), yFitRight, 'k.');
+        hold on;
+        plot([minAll maxAll], [minAll maxAll], 'r-')
+        hold off;
+        xlabel('Measured');
+        ylabel('Fit');
+        set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+        title(sprintf('Right Target (FIT 70%%)'))
+        axis 'square';
+    
+    
+        subplot(2,2,3);
+        plot(yLeft(testingIndices), yPredictionLeft, 'k.');
+        hold on;
+        plot([minAll maxAll], [minAll maxAll], 'r-')
+        hold off;
+        xlabel('Measured');
+        ylabel('Prediction');
+        set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+        title(sprintf('Left Target (PREDICTION 30%%) '))
+        axis 'square';
+        subplot(2,2,4);
+        plot(yRight(testingIndices), yPredictionRight, 'k.');
+        hold on;
+        plot([minAll maxAll], [minAll maxAll], 'r-')
+        hold off;
+        xlabel('Measured');
+        ylabel('Prediction');
+        set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+        title(sprintf('Right Target (PREDICTION 30%%)'))
+        axis 'square';
+        drawnow;
     
 
-    % solve for weights
-    Xdagger = pinv(X); % (inv(X'*X))*(X');
-    % Compute weights on first half of data
-    weightsVectorLeftTarget  = Xdagger * yLeft;
-    weightsVectorRightTarget = Xdagger * yRight;
     
-    % Prediction on second half of data
-    yPredictionLeft  = X * weightsVectorLeftTarget;
-    yPredictionRight = X * weightsVectorRightTarget;
-    
-    minAll = min([min(yLeft(:)) min(yRight(:)) min(yPredictionLeft) min(yPredictionRight) ]);
-    maxAll = min([max(yLeft(:)) max(yRight(:)) max(yPredictionLeft) max(yPredictionRight) ]);
-    
-    figure(99);
-    clf;
-    
-    subplot(1,2,1);
-    plot(yLeft, yPredictionLeft, 'k.');
-    hold on;
-    plot([minAll maxAll], [minAll maxAll], 'r-')
-    hold off;
-    xlabel('Measured');
-    ylabel('Fit');
-    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
-    title(sprintf('Left Target (ALL DATA) maxSF = %2.1f cpi (features: %d)', maxSF, numel(indicesMaxSF)));
-    axis 'square';
-    
-    subplot(1,2,2);
-    plot(yRight, yPredictionRight, 'k.');
-    hold on;
-    plot([minAll maxAll], [minAll maxAll], 'r-')
-    hold off;
-    xlabel('Measured');
-    ylabel('Fit');
-    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
-    title(sprintf('Right Target (ALL DATA) maxSF = %2.1f cpi (features: %d)', maxSF, numel(indicesMaxSF)));
-    axis 'square';
-    drawnow;
-    
-    
-    
-    trainingIndices = 1:2:size(X,1);
-    testingIndices  = 2:2:size(X,1);
-    X1 = X(trainingIndices,:);
-    X2 = X(testingIndices,:);
-    
-    % solve for weights
-    Xdagger = pinv(X1); % (inv(X'*X))*(X');
-    % Compute weights on first half of data
-    weightsVectorLeftTarget  = Xdagger * yLeft(trainingIndices);
-    weightsVectorRightTarget = Xdagger * yRight(trainingIndices);
-    % Fit on firsthalf of data
-    yFitLeft  = X1 * weightsVectorLeftTarget;
-    yFitRight = X1 * weightsVectorRightTarget;
-    
-    
-    % Prediction on second half of data
-    yPredictionLeft  = X2 * weightsVectorLeftTarget;
-    yPredictionRight = X2 * weightsVectorRightTarget;
-    
-    figure(100);
-    clf;
-    
-    subplot(2,2,1);
-    plot(yLeft(trainingIndices), yFitLeft, 'k.');
-    hold on;
-    plot([minAll maxAll], [minAll maxAll], 'r-')
-    hold off;
-    xlabel('Measured');
-    ylabel('Fit');
-    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
-    title(sprintf('Left Target (FIT FIRST HALF) maxSF = %2.1f cpi (features: %d)', maxSF, numel(indicesMaxSF)));
-    axis 'square';
-    subplot(2,2,2);
-    plot(yRight(trainingIndices), yFitRight, 'k.');
-    hold on;
-    plot([minAll maxAll], [minAll maxAll], 'r-')
-    hold off;
-    xlabel('Measured');
-    ylabel('Fit');
-    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
-    title(sprintf('Right Target (FIT FIRST HALF) maxSF = %2.1f cpi (features: %d)', maxSF, numel(indicesMaxSF)));
-    axis 'square';
-    
-    
-    subplot(2,2,3);
-    plot(yLeft(testingIndices), yPredictionLeft, 'k.');
-    hold on;
-    plot([minAll maxAll], [minAll maxAll], 'r-')
-    hold off;
-    xlabel('Measured');
-    ylabel('Prediction');
-    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
-    title(sprintf('Left Target (PREDICTION 2nd HALF) maxSF = %2.1f cpi (features: %d)', maxSF, numel(indicesMaxSF)));
-    axis 'square';
-    subplot(2,2,4);
-    plot(yRight(testingIndices), yPredictionRight, 'k.');
-    hold on;
-    plot([minAll maxAll], [minAll maxAll], 'r-')
-    hold off;
-    xlabel('Measured');
-    ylabel('Prediction');
-    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
-    title(sprintf('Right Target(PREDICTION  2nd HALF) maxSF = %2.1f cpi (features: %d)', maxSF, numel(indicesMaxSF)));
-    axis 'square';
-    drawnow;
-    
-    
-    
-    
-    
-    trainingNumSamples = round(size(X,1)*0.7);
-    trainingIndices = 1:trainingNumSamples ;
-    testingIndices  = trainingNumSamples +1:size(X,1);
-    X1 = X(trainingIndices,:);
-    X2 = X(testingIndices,:);
-    
-    % solve for weights
-    Xdagger = pinv(X1); % (inv(X'*X))*(X');
-    % Compute weights on first half of data
-    weightsVectorLeftTarget  = Xdagger * yLeft(trainingIndices);
-    weightsVectorRightTarget = Xdagger * yRight(trainingIndices);
-    % Fit on firsthalf of data
-    yFitLeft  = X1 * weightsVectorLeftTarget;
-    yFitRight = X1 * weightsVectorRightTarget;
-    
-    
-    % Prediction on second half of data
-    yPredictionLeft  = X2 * weightsVectorLeftTarget;
-    yPredictionRight = X2 * weightsVectorRightTarget;
-    
-    figure(101);
-    clf;
-    
-    subplot(2,2,1);
-    plot(yLeft(trainingIndices), yFitLeft, 'k.');
-    hold on;
-    plot([minAll maxAll], [minAll maxAll], 'r-')
-    hold off;
-    xlabel('Measured');
-    ylabel('Fit');
-    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
-    title(sprintf('Left Target (FIT 70%%) maxSF = %2.1f cpi (features: %d)', maxSF, numel(indicesMaxSF)));
-    axis 'square';
-    subplot(2,2,2);
-    plot(yRight(trainingIndices), yFitRight, 'k.');
-    hold on;
-    plot([minAll maxAll], [minAll maxAll], 'r-')
-    hold off;
-    xlabel('Measured');
-    ylabel('Fit');
-    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
-    title(sprintf('Right Target (FIT 70%%) maxSF = %2.1f cpi (features: %d)', maxSF, numel(indicesMaxSF)));
-    axis 'square';
-    
-    
-    subplot(2,2,3);
-    plot(yLeft(testingIndices), yPredictionLeft, 'k.');
-    hold on;
-    plot([minAll maxAll], [minAll maxAll], 'r-')
-    hold off;
-    xlabel('Measured');
-    ylabel('Prediction');
-    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
-    title(sprintf('Left Target (PREDICTION 30%%) maxSF = %2.1f cpi (features: %d)', maxSF, numel(indicesMaxSF)));
-    axis 'square';
-    subplot(2,2,4);
-    plot(yRight(testingIndices), yPredictionRight, 'k.');
-    hold on;
-    plot([minAll maxAll], [minAll maxAll], 'r-')
-    hold off;
-    xlabel('Measured');
-    ylabel('Prediction');
-    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
-    title(sprintf('Right Target (PREDICTION 30%%) maxSF = %2.1 cpi (features: %d)', maxSF, numel(indicesMaxSF)));
-    axis 'square';
-    drawnow;
-    
+        trainingIndices = frameBasedTrainingIndices;
+        testingIndices = frameBasedTestingIndices;
 
+        X1 = X(trainingIndices,:);
+        X2 = X(testingIndices,:);
+
+        % solve for weights
+        Xdagger = pinv(X1); % (inv(X'*X))*(X');
+        % Compute weights on first half of data
+        weightsVectorLeftTarget  = Xdagger * yLeft(trainingIndices);
+        weightsVectorRightTarget = Xdagger * yRight(trainingIndices);
+        % Fit on firsthalf of data
+        yFitLeft  = X1 * weightsVectorLeftTarget;
+        yFitRight = X1 * weightsVectorRightTarget;
+
+
+        % Prediction on second half of data
+        yPredictionLeft  = X2 * weightsVectorLeftTarget;
+        yPredictionRight = X2 * weightsVectorRightTarget;
+
+        figure(102+featureSpace*100);
+        clf;
     
-    trainingIndices = frameBasedTrainingIndices;
-    testingIndices = frameBasedTestingIndices;
-    
-    X1 = X(trainingIndices,:);
-    X2 = X(testingIndices,:);
-    
-    % solve for weights
-    Xdagger = pinv(X1); % (inv(X'*X))*(X');
-    % Compute weights on first half of data
-    weightsVectorLeftTarget  = Xdagger * yLeft(trainingIndices);
-    weightsVectorRightTarget = Xdagger * yRight(trainingIndices);
-    % Fit on firsthalf of data
-    yFitLeft  = X1 * weightsVectorLeftTarget;
-    yFitRight = X1 * weightsVectorRightTarget;
-    
-    
-    % Prediction on second half of data
-    yPredictionLeft  = X2 * weightsVectorLeftTarget;
-    yPredictionRight = X2 * weightsVectorRightTarget;
-    
-    figure(102);
-    clf;
-    
-    subplot(2,2,1);
-    plot(yLeft(trainingIndices), yFitLeft, 'k.');
-    hold on;
-    plot([minAll maxAll], [minAll maxAll], 'r-')
-    hold off;
-    xlabel('Measured');
-    ylabel('Fit');
-    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
-    title(sprintf('Left Target (FIT 1st HALF, frame-based) maxSF = %2.1f cpi (features: %d)', maxSF, numel(indicesMaxSF)));
-    axis 'square';
-    subplot(2,2,2);
-    plot(yRight(trainingIndices), yFitRight, 'k.');
-    hold on;
-    plot([minAll maxAll], [minAll maxAll], 'r-')
-    hold off;
-    xlabel('Measured');
-    ylabel('Fit');
-    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
-    title(sprintf('Right Target (FIT 1st HALF, frame-based) maxSF = %2.1f cpi (features: %d)', maxSF, numel(indicesMaxSF)));
-    axis 'square';
+        subplot(2,2,1);
+        plot(yLeft(trainingIndices), yFitLeft, 'k.');
+        hold on;
+        plot([minAll maxAll], [minAll maxAll], 'r-')
+        hold off;
+        xlabel('Measured');
+        ylabel('Fit');
+        set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+        title(sprintf('Left Target (FIT 1st HALF, frame-based)'));
+        axis 'square';
+        subplot(2,2,2);
+        plot(yRight(trainingIndices), yFitRight, 'k.');
+        hold on;
+        plot([minAll maxAll], [minAll maxAll], 'r-')
+        hold off;
+        xlabel('Measured');
+        ylabel('Fit');
+        set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+        title(sprintf('Right Target (FIT 1st HALF, frame-based)'))
+        axis 'square';
     
     
-    subplot(2,2,3);
-    plot(yLeft(testingIndices), yPredictionLeft, 'k.');
-    hold on;
-    plot([minAll maxAll], [minAll maxAll], 'r-')
-    hold off;
-    xlabel('Measured');
-    ylabel('Prediction');
-    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
-    title(sprintf('Left Target (PREDICTION 2nd HALF, frame-based) maxSF = %2.1f cpi(features: %d)', maxSF, numel(indicesMaxSF)));
-    axis 'square';
-    subplot(2,2,4);
-    plot(yRight(testingIndices), yPredictionRight, 'k.');
-    hold on;
-    plot([minAll maxAll], [minAll maxAll], 'r-')
-    hold off;
-    xlabel('Measured');
-    ylabel('Prediction');
-    set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
-    title(sprintf('Right Target (PREDICTION 2nd HALF, frame-based) maxSF = %2.1 cpi(features: %d)', maxSF, numel(indicesMaxSF)));
-    axis 'square';
-    drawnow;
-    
+        subplot(2,2,3);
+        plot(yLeft(testingIndices), yPredictionLeft, 'k.');
+        hold on;
+        plot([minAll maxAll], [minAll maxAll], 'r-')
+        hold off;
+        xlabel('Measured');
+        ylabel('Prediction');
+        set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+        title(sprintf('Left Target (PREDICTION 2nd HALF, frame-based)'))
+        axis 'square';
+        subplot(2,2,4);
+        plot(yRight(testingIndices), yPredictionRight, 'k.');
+        hold on;
+        plot([minAll maxAll], [minAll maxAll], 'r-')
+        hold off;
+        xlabel('Measured');
+        ylabel('Prediction');
+        set(gca, 'XLim', [minAll maxAll], 'YLim', [minAll maxAll]);
+        title(sprintf('Right Target (PREDICTION 2nd HALF, frame-based)'))
+        axis 'square';
+        drawnow;
+    end
     
     
 end
 
 
 function gaborSensors = generateGaborSensors(frame)
-    columnsNum = size(frame,2)
-    rowsNum    = size(frame,1)
+    columnsNum = size(frame,2);
+    rowsNum    = size(frame,1);
     
     x = (1:columnsNum);
     y = (1:rowsNum);
@@ -570,11 +571,11 @@ function gaborSensors = generateGaborSensors(frame)
         
         envelopeSize = gaborSigma(gaborSigmaIndex)*6;
     
-        distanceX = 0+ envelopeSize/2;
-        while (distanceX <= columnsNum-envelopeSize/2)
+        distanceX = 1;
+        while (distanceX < columnsNum)
            xo = distanceX;
-           distanceY = 0+ envelopeSize/2;
-           while (distanceY <= rowsNum-envelopeSize/2)
+           distanceY = 1;
+           while (distanceY < rowsNum)
                yo = distanceY;
                gaborFilterIndex = gaborFilterIndex + 1;
                centers{gaborSigmaIndex}.coords(gaborFilterIndex,:) = [xo yo];
@@ -639,14 +640,16 @@ end
 
 
 
-function gaborSensors = generateGaborSensorsEVEN(frame)
-    columnsNum = size(frame,2)
-    rowsNum    = size(frame,1)
+function filterBank = generateGaborSensorsEVEN(frame)
+    columnsNum = size(frame,2);
+    rowsNum    = size(frame,1);
     
     x = ((1:columnsNum)-columnsNum/2);
     y = ((1:rowsNum)-rowsNum/2);
+    [X,Y] = meshgrid(x,y);
     
-    gaborSigma = [40 60 80 100 120 130 140];
+    
+    gaborSigma = [25 50 100 200];
     
     
     centers = {};
@@ -656,11 +659,11 @@ function gaborSensors = generateGaborSensorsEVEN(frame)
         gaborFilterIndex = 0;
         envelopeSize = gaborSigma(gaborSigmaIndex)*6;
     
-        distanceX = 0;
-        while (distanceX <= columnsNum/2-envelopeSize/2)
+        distanceX = 1;
+        while (distanceX <= columnsNum/2)
            xo = distanceX;
            distanceY = 0;
-           while (distanceY <= rowsNum/2-envelopeSize/2)
+           while (distanceY <= rowsNum/2)
                yo = distanceY;
                gaborFilterIndex = gaborFilterIndex + 1;
                centers{gaborSigmaIndex}.coords(gaborFilterIndex,:) = [xo yo];
@@ -668,7 +671,7 @@ function gaborSensors = generateGaborSensorsEVEN(frame)
            end
 
            distanceY = 0-envelopeSize/2;
-           while (distanceY >= -rowsNum/2+envelopeSize/2)
+           while (distanceY >= -rowsNum/2)
                yo = distanceY;
                gaborFilterIndex = gaborFilterIndex + 1;
                centers{gaborSigmaIndex}.coords(gaborFilterIndex,:)  = [xo yo];
@@ -678,17 +681,17 @@ function gaborSensors = generateGaborSensorsEVEN(frame)
         end
 
         distanceX = 0-envelopeSize/2;
-        while (distanceX  >= -columnsNum/2+envelopeSize/2)
+        while (distanceX  >= -columnsNum/2)
            xo = distanceX;
            distanceY = 0;
-           while (distanceY <= rowsNum/2-envelopeSize/2)
+           while (distanceY <= rowsNum/2)
                yo = distanceY;
                gaborFilterIndex = gaborFilterIndex + 1;
                centers{gaborSigmaIndex}.coords(gaborFilterIndex,:)  = [xo yo];
                distanceY = distanceY +  envelopeSize/2;
            end
            distanceY = 0-envelopeSize/2;
-           while (distanceY >= -rowsNum/2+envelopeSize/2)
+           while (distanceY >= -rowsNum/2)
                yo = distanceY;
                gaborFilterIndex = gaborFilterIndex + 1;
                centers{gaborSigmaIndex}.coords(gaborFilterIndex,:)  = [xo yo];
@@ -696,6 +699,7 @@ function gaborSensors = generateGaborSensorsEVEN(frame)
            end
             distanceX = distanceX - envelopeSize/2;
         end
+  
     end
     
     
@@ -704,32 +708,47 @@ function gaborSensors = generateGaborSensorsEVEN(frame)
     for gaborSigmaIndex = 1:numel(gaborSigma)
         
         envelopeSize = gaborSigma(gaborSigmaIndex)*6;
-        x = cos((0:180)/180*2*pi)*envelopeSize/2;
-        y = sin((0:180)/180*2*pi)*envelopeSize/2;
+        xCircle = cos((0:180)/180*2*pi)*envelopeSize/2;
+        yCircle = sin((0:180)/180*2*pi)*envelopeSize/2;
     
-        figure(gaborSigmaIndex);
+        h = figure(gaborSigmaIndex);
+        set(h, 'Position', [gaborSigmaIndex*100 gaborSigmaIndex*100 560 300]);
         clf;
+            
         coords = centers{gaborSigmaIndex}.coords;
-        size(coords,1)
-        plot(coords(:,1), coords(:,2), 'r+');
+        for k = 1:size(coords,1)
+            if (k == 1)
+                filterBank{gaborSigmaIndex}.filter = zeros(size(coords,1), size(X,1), size(X,2));
+            end
+            xo = coords(k,1);
+            yo = coords(k,2);
+            filterBank{gaborSigmaIndex}.filter(k,:,:) = exp(-0.5*((X-xo)/gaborSigma(gaborSigmaIndex)).^2).*exp(-0.5*((Y-xo)/gaborSigma(gaborSigmaIndex)).^2);
+        end
+        
+        exampleFilter = squeeze(filterBank{gaborSigmaIndex}.filter(1,:,:));
+        imagesc(x,y,exampleFilter);
+        axis 'image'
+        colormap(gray(512));
+        set(gca, 'CLim', [0 1]);
+        
         hold on;
     
-        for k = 1:size(coords,1)
-           plot(coords(k,1)+x, coords(k,2)+y, 'g-');
+        for k = 2:size(coords,1)
+           plot(coords(k,1)+xCircle, coords(k,2)+yCircle, 'g-');
         end
+        plot(coords(1,1)+xCircle, coords(1,2)+yCircle, 'r-');
+        
+        plot(coords(:,1), coords(:,2), 'k+');
+        
         hold off
         set(gca, 'XLim', [-1920/2 1920/2], 'YLim', [-1080/2 1080/2]);
+        title(sprintf('Gabors: %d', size(coords,1)));
         drawnow
+        
     end
     
     
     
-    
-    sigmaX = 30*7.2;
-    sigmaY = 30*7.2;
-    [X,Y] = meshgrid(x,y);
-    envelope = sigmoid(exp(-0.5*((X-1920/2)/(1920/1080*sigmaX)).^2), 0.08); 
-    envelope = envelope .* sigmoid(exp(-0.5*((Y-1080/2)/sigmaY).^2), 0.12);
     
 end
 
