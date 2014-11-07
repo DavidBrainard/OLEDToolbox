@@ -2,14 +2,51 @@ function PerformLocallySpectralLuminancePrediction
 
     % Load stimuli and responses (measured luminances)
     [stimuliGammaIn, stimuliGammaOut, leftTargetLuminance, rightTargetLuminance, ...
-    trainingIndices, testingIndices] = loadStimuliAndResponses();
+     trainingIndices, testingIndices] = loadStimuliAndResponses();
 
     fprintf('Training samples: %d\n', numel(trainingIndices))
     fprintf('Testing  samples: %d\n', numel(testingIndices));
     
+    useParallelEngine = input('Use parallel engine? [1=YES, default=NO] : ');
+   
     % Generate sensor
-    [sensor, sensorSpectrum, sensorLocations] = generateSensor(1920, 1080);
+    bestOutOfSampleError = 10^14;
+    
+    sensorSigmas = [40 50 60 80 100 120 160];
+    for sensorSigmaIndex = 1:numel(sensorSigmas)
+        sensorSpacings = [1.0 1.5 2.0 3.0];
+        for sensorSpacingIndex = 1:numel(sensorSpacings)   
+            sensorSigma = sensorSigmas(sensorSigmaIndex);
+            sensorSpacing = sensorSpacings(sensorSpacingIndex);
+            [inSampleError, outOfSampleError] = testSensorPrediction(sensorSigma, sensorSpacing, useParallelEngine, ...
+            stimuliGammaIn, stimuliGammaOut, leftTargetLuminance, rightTargetLuminance, ...
+            trainingIndices, testingIndices);
+            for featureSpaceIndex = 1:numel(outOfSampleError)
+                error = min([outOfSampleError(featureSpaceIndex).leftTarget outOfSampleError(featureSpaceIndex).rightTarget]);
+                if (error < bestOutOfSampleError)
+                   bestOutOfSampleError = error;
+                   bestSigma = sensorSigma;
+                   bestSpacing = sensorSpacing;
+                   fprintf('So far, minimal error: %2.2f (sensor sigma: %2.1f, sensorSpacing: %2.0f)\n', bestOutOfSampleError, bestSigma, bestSpacing);
+                end
+            end
+        end
+    end
+    
+    [inSampleError, outOfSampleError] = testSensorPrediction(bestSigma, bestSpacing,useParallelEngine, ...
+            stimuliGammaIn, stimuliGammaOut, leftTargetLuminance, rightTargetLuminance, ...
+            trainingIndices, testingIndices);
+        
+        
 
+
+end
+
+function [inSampleError, outOfSampleError] = testSensorPrediction(sensorSigma, sensorSpacing,useParallelEngine, ...
+    stimuliGammaIn, stimuliGammaOut, leftTargetLuminance, rightTargetLuminance, ...
+    trainingIndices, testingIndices)
+
+    [sensor, sensorSpectrum, sensorLocations] = generateSensor(1920, 1080, sensorSigma, sensorSpacing*sensorSigma);
     
     % Construct design matrix
     conditionsNum = size(stimuliGammaIn,1)
@@ -22,7 +59,6 @@ function PerformLocallySpectralLuminancePrediction
     fprintf('Full design matrix     is %d x %d\n', size(XdesignMatrix1,1), size(XdesignMatrix1,2));
     fprintf('Training design matrix is %d x %d\n', numel(trainingIndices), size(XdesignMatrix1,2));
      
-    useParallelEngine = input('Use parallel engine? [1=YES, default=NO] : ');
     
     if (~isempty(useParallelEngine) && useParallelEngine)
         % Check if a parpool is open 
@@ -50,29 +86,44 @@ function PerformLocallySpectralLuminancePrediction
         % ALl done. Delete parallel pool object
         delete(gcp)
     else
+        [xx,yy] = meshgrid(sensorLocations.x, sensorLocations.y);
         for conditionIndex = 1:conditionsNum
             [conditionIndex conditionsNum]
+            
             stimGammaIn  = double(squeeze(stimuliGammaIn(conditionIndex,:,:)))/255.0;
             stimGammaOut = double(squeeze(stimuliGammaOut(conditionIndex,:,:)))/255.0;
-            [featureVector1, filteredStimGammIn] = extractFeatures(stimGammaIn, sensorSpectrum, sensorLocations);
+            [featureVector1, filteredStimGammIn]  = extractFeatures(stimGammaIn, sensorSpectrum, sensorLocations);
             [featureVector2, filteredStimGammOut] = extractFeatures(stimGammaOut, sensorSpectrum, sensorLocations);
             XdesignMatrix1(conditionIndex, :) = featureVector1;
             XdesignMatrix2(conditionIndex, :) = featureVector2;
+            
             figure(1);
             subplot(2,2,1);
             imagesc(stimGammaIn);
+            hold on;
+            plot(xx(:), yy(:), 'r+');
+            hold off;
             set(gca, 'CLim', [0 1]);
             axis 'image'
             subplot(2,2,2);
             imagesc(stimGammaOut);
+            hold on;
+            plot(xx(:), yy(:), 'r+');
+            hold off;
             set(gca, 'CLim', [0 1]);
             axis 'image'
             subplot(2,2,3);
             imagesc(filteredStimGammIn);
+            hold on;
+            plot(xx(:), yy(:), 'r+');
+            hold off;
             set(gca, 'CLim', [0 1]);
             axis 'image'
             subplot(2,2,4);
             imagesc(filteredStimGammOut);
+            hold on;
+            plot(xx(:), yy(:), 'r+');
+            hold off;
             set(gca, 'CLim', [0 1]);
             axis 'image'
             colormap(gray(256));
@@ -81,8 +132,8 @@ function PerformLocallySpectralLuminancePrediction
     end
     
 
-    
-    save('intermediate_local_spectral_analysis_gaborSigma30.mat', ...
+    XdesignMatrixFileName = sprintf('intermediate_local_spectral_analysis_sensorSigma_%2.0f_sensorSpacing_%2.0f.mat', sensorSigma, sensorSpacing);
+    save(XdesignMatrixFileName, ...
         'XdesignMatrix1', 'XdesignMatrix2', ...
         'trainingIndices', 'testingIndices', ...
         'leftTargetLuminance', 'rightTargetLuminance');
@@ -107,11 +158,6 @@ function PerformLocallySpectralLuminancePrediction
         
         Xtrain = X(trainingIndices,:);
         Xtest  = X(testingIndices,:);
-        
-        figure(55+featureSpace);
-        imagesc(X)
-        colormap(gray);
-        
         
         Xdagger = pinv(Xtrain);
         
@@ -155,16 +201,10 @@ function PerformLocallySpectralLuminancePrediction
         
         figure(990+featureSpace);
         clf;
-        index = 0;
-        weightDistributionLeft = zeros(numel(sensorLocations.y), numel(sensorLocations.x));
-        weightDistributionRight = zeros(numel(sensorLocations.y), numel(sensorLocations.x));
-        for iy = 1:numel(sensorLocations.y)
-            for ix = 1:numel(sensorLocations.x)
-                index = index + 1;
-                weightDistributionLeft(iy,ix) = weightsVectorLeftTarget(index);
-                weightDistributionRight(iy,ix) = weightsVectorRightTarget(index);
-            end
-        end
+      
+        weightDistributionLeft = reshape(weightsVectorLeftTarget(2:end), numel(sensorLocations.y), numel(sensorLocations.x));
+        weightDistributionRight = reshape(weightsVectorRightTarget(2:end), numel(sensorLocations.y), numel(sensorLocations.x));
+        
         subplot(1,2,1);
         imagesc(weightDistributionLeft);
         axis 'image';
@@ -276,35 +316,32 @@ function PerformLocallySpectralLuminancePrediction
 end
 
 
-function [sensor, sensorSpectrum, sensorLocations] = generateSensor(columnsNum, rowsNum)
+function [sensor, sensorSpectrum, sensorLocations] = generateSensor(columnsNum, rowsNum, sigma, sensorSpacing)
 
     x = ((1:columnsNum)-columnsNum/2);
     y = ((1:rowsNum)-rowsNum/2);
     [X,Y] = meshgrid(x,y);
     
-    % Sensor characteristics (sigma and sampling)
-    sigma = 50;
-    samplingInterval = 2.0*sigma;
-    
+  
     xo = 0; yo = 0;
     sensor = exp(-0.5*((X-xo)/sigma).^2) .* exp(-0.5*((Y-yo)/sigma).^2);
     % Normalize to unit area
     sensor = sensor / sum(sensor(:));
     
-    if (1==2)
-    sensor = [];
+    
+     
+    
+    sensors3 = [];
     for i = -1:1
         for j = -1:1
-            xo = i*samplingInterval; yo = j*samplingInterval;
-            if (isempty(sensor))
-                sensor = exp(-0.5*((X-xo)/sigma).^2) .* exp(-0.5*((Y-yo)/sigma).^2);
+            xo = i*sensorSpacing; yo = j*sensorSpacing;
+            if (isempty(sensors3))
+                sensors3 = exp(-0.5*((X-xo)/sigma).^2) .* exp(-0.5*((Y-yo)/sigma).^2);
             else
-                sensor = sensor + exp(-0.5*((X-xo)/sigma).^2) .* exp(-0.5*((Y-yo)/sigma).^2);
+                sensors3 = sensors3 + exp(-0.5*((X-xo)/sigma).^2) .* exp(-0.5*((Y-yo)/sigma).^2);
             end
         end
     end
-    end
-    
     
     
     fftSamplesNum = 2048;
@@ -317,16 +354,38 @@ function [sensor, sensorSpectrum, sensorLocations] = generateSensor(columnsNum, 
 
     delta = (1:1000);
     delta = [-delta(end:-1:1) 0 delta];
-    xcoords = delta*samplingInterval;
-    ycoords = delta*samplingInterval;
-    xcoords = xcoords((xcoords > -columnsNum/2+sigma) & (xcoords < columnsNum/2-sigma));
-    ycoords = ycoords((ycoords > -rowsNum/2+sigma) & (ycoords < rowsNum/2-sigma));
+    xcoords = delta*sensorSpacing;
+    ycoords = delta*sensorSpacing;
+    xcoords = xcoords((xcoords > -columnsNum/2) & (xcoords < columnsNum/2));
+    ycoords = ycoords((ycoords > -rowsNum/2) & (ycoords < rowsNum/2));
     
     xcoords = xcoords + columnsNum/2;
     ycoords = ycoords + rowsNum/2;
     
     sensorLocations.x = xcoords;
     sensorLocations.y = ycoords;
+    
+    figure(55);
+    clf;
+    subplot(2,1,1)
+    imagesc(sensor);
+    axis 'image'
+    colormap(gray);
+    hold on
+    [xx,yy] = meshgrid(sensorLocations.x, sensorLocations.y);
+    plot(xx,yy, 'r+');
+    hold off;
+    
+    subplot(2,1,2)
+    imagesc(sensors3);
+    axis 'image'
+    colormap(gray);
+    hold on
+    [xx,yy] = meshgrid(sensorLocations.x, sensorLocations.y);
+    plot(xx,yy, 'r+');
+    hold off;
+    
+    drawnow;
     
 end
 
@@ -385,7 +444,7 @@ function [stimuliGammaIn, stimuliGammaOut, leftTargetLuminance, rightTargetLumin
     exponentsNum    = numel(stimParams.exponentOfOneOverFArray);
     oriBiasNum      = numel(stimParams.oriBiasArray);
     orientationsNum = numel(stimParams.orientationsArray);
-    framesNum       = size(calibrationDataSet.allCondsData,4)
+    framesNum       = size(calibrationDataSet.allCondsData,4);
     conditionsNum   = size(calibrationDataSet.allCondsData,5);
     polaritiesNum   = size(calibrationDataSet.allCondsData,6);
     targetGraysNum  = size(calibrationDataSet.allCondsData,7);
@@ -417,10 +476,10 @@ function [stimuliGammaIn, stimuliGammaOut, leftTargetLuminance, rightTargetLumin
         end
         stimIndex = stimIndex + 1;
         
-        if (mod(frameIndex-1,framesNum) < framesNum-1)
-            trainingIndices = [trainingIndices stimIndex];
-        else
+        if (mod(frameIndex-1,3) == 0)
             testingIndices = [testingIndices stimIndex];
+        else
+            trainingIndices = [trainingIndices stimIndex];
         end
         
         runData = calibrationDataSet.allCondsData{...
