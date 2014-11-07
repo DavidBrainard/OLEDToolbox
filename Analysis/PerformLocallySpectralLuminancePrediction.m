@@ -27,12 +27,13 @@ function PerformLocallySpectralLuminancePrediction
                    bestOutOfSampleError = error;
                    bestSigma = sensorSigma;
                    bestSpacing = sensorSpacing;
-                   fprintf('So far, minimal error: %2.2f (sensor sigma: %2.1f, sensorSpacing: %2.0f)\n', bestOutOfSampleError, bestSigma, bestSpacing);
+                   fprintf('So far, minimal error: %2.2f (sensor sigma: %2.1f, sensorSpacing: %2.2f)\n', bestOutOfSampleError, bestSigma, bestSpacing);
                 end
             end
         end
     end
     
+    fprintf('Finished with grid search. Running final prediction with best sigma(%2.1f)/spacing(%2.2f) params', bestSigma, bestSpacing);
     [inSampleError, outOfSampleError] = testSensorPrediction(bestSigma, bestSpacing,useParallelEngine, ...
             stimuliGammaIn, stimuliGammaOut, leftTargetLuminance, rightTargetLuminance, ...
             trainingIndices, testingIndices);
@@ -132,7 +133,7 @@ function [inSampleError, outOfSampleError] = testSensorPrediction(sensorSigma, s
     end
     
 
-    XdesignMatrixFileName = sprintf('intermediate_local_spectral_analysis_sensorSigma_%2.0f_sensorSpacing_%2.1f.mat', sensorSigma, sensorSpacing);
+    XdesignMatrixFileName = sprintf('intermediate_local_spectral_analysis_sensorSigma_%2.1f_sensorSpacing_%2.2f.mat', sensorSigma, sensorSpacing);
     save(XdesignMatrixFileName, ...
         'XdesignMatrix1', 'XdesignMatrix2', ...
         'trainingIndices', 'testingIndices', ...
