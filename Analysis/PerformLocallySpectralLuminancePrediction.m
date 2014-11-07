@@ -4,61 +4,83 @@ function PerformLocallySpectralLuminancePrediction
     [stimuliGammaIn, stimuliGammaOut, leftTargetLuminance, rightTargetLuminance, ...
     trainingIndices, testingIndices] = loadStimuliAndResponses();
 
-    % Generate filter bank
-    filterBank = generateFilters(size(stimuliGammaIn,2), size(stimuliGammaIn,3));
+    fprintf('Training samples: %d\n', numel(trainingIndices))
+    fprintf('Testing  samples: %d\n', numel(testingIndices));
+    
+    % Generate sensor
+    [sensor, sensorSpectrum, sensorLocations] = generateSensor(1920, 1080);
 
     
     % Construct design matrix
-    conditionsNum = size(stimuliGammaIn,1);
-    filtersNum    = size(filterBank,1);
-    featuresNum   = 1 + filtersNum;
+    conditionsNum = size(stimuliGammaIn,1)
+    featuresNum   = 1 + numel(sensorLocations.y) * numel(sensorLocations.x);
     
-    % We generate two design matrices, one based on linear filtering
-    % of the image with the filter, and one based on the square of
-    % that operation.
+    % We generate two design matrices, one based on gammaIn RGB settings
+    % and one based on gammaOut RGB settings
     XdesignMatrix1 = zeros(conditionsNum, featuresNum);
     XdesignMatrix2 = zeros(conditionsNum, featuresNum);
+    fprintf('Full design matrix     is %d x %d\n', size(XdesignMatrix1,1), size(XdesignMatrix1,2));
+    fprintf('Training design matrix is %d x %d\n', numel(trainingIndices), size(XdesignMatrix1,2));
+     
+    useParallelEngine = input('Use parallel engine? [1=YES, default=NO] : ');
     
-    
-    
-    
-    % Check if a parpool is open 
-    poolobj = gcp('nocreate'); 
-    if isempty(poolobj)
-        poolsize = 0;
-    else
-        poolsize = poolobj.NumWorkers
-        delete(gcp)
-    end
-    
-    % Start new parpool
-    parpool
-    
-    for filterIndex = 1:filtersNum
-        [filterIndex filtersNum]
-        tic
-        filter = double(squeeze(filterBank(filterIndex,:,:)));  
-        parfor conditionIndex = 1:conditionsNum
-            stimGammaIn = double(squeeze(stimuliGammaIn(conditionIndex,:,:)))/255.0;
-            stimGammaOut = double(squeeze(stimuliGammaOut(conditionIndex,:,:)))/255.0;
-            gammaInMap  = stimGammaIn  .* filter;
-            gammaOutMap = stimGammaOut .* filter;
-            XdesignMatrix1(conditionIndex, filterIndex) = sum(sum(gammaInMap));
-            XdesignMatrix2(conditionIndex, filterIndex) = sum(sum(gammaOutMap));
+    if (~isempty(useParallelEngine) && useParallelEngine)
+        % Check if a parpool is open 
+        poolobj = gcp('nocreate'); 
+        if isempty(poolobj)
+            poolsize = 0;
+        else
+            poolsize = poolobj.NumWorkers
+            delete(gcp)
         end
-        toc
-    end
 
-    % ALl done. Delete parallel pool object
-    delete(gcp)
+        % Start new parpool
+        parpool
 
-    for k = filtersNum:-1:1
-        XdesignMatrix1(:,k+1) = XdesignMatrix1(:,k);
-        XdesignMatrix2(:,k+1) = XdesignMatrix2(:,k);
+        % Loop over all conditions
+        parfor conditionIndex = 1:conditionsNum
+            stimGammaIn  = double(squeeze(stimuliGammaIn(conditionIndex,:,:)))/255.0;
+            stimGammaOut = double(squeeze(stimuliGammaOut(conditionIndex,:,:)))/255.0;
+            [featureVector1, filteredStimGammIan] = extractFeatures(stimGammaIn, sensorSpectrum, sensorLocations);
+            [featureVector2, filteredStimGammOut] = extractFeatures(stimGammaOut, sensorSpectrum, sensorLocations);
+            XdesignMatrix1(conditionIndex, :) = featureVector1;
+            XdesignMatrix2(conditionIndex, :) = featureVector2;
+        end
+        
+        % ALl done. Delete parallel pool object
+        delete(gcp)
+    else
+        for conditionIndex = 1:conditionsNum
+            [conditionIndex conditionsNum]
+            stimGammaIn  = double(squeeze(stimuliGammaIn(conditionIndex,:,:)))/255.0;
+            stimGammaOut = double(squeeze(stimuliGammaOut(conditionIndex,:,:)))/255.0;
+            [featureVector1, filteredStimGammIn] = extractFeatures(stimGammaIn, sensorSpectrum, sensorLocations);
+            [featureVector2, filteredStimGammOut] = extractFeatures(stimGammaOut, sensorSpectrum, sensorLocations);
+            XdesignMatrix1(conditionIndex, :) = featureVector1;
+            XdesignMatrix2(conditionIndex, :) = featureVector2;
+            figure(1);
+            subplot(2,2,1);
+            imagesc(stimGammaIn);
+            set(gca, 'CLim', [0 1]);
+            axis 'image'
+            subplot(2,2,2);
+            imagesc(stimGammaOut);
+            set(gca, 'CLim', [0 1]);
+            axis 'image'
+            subplot(2,2,3);
+            imagesc(filteredStimGammIn);
+            set(gca, 'CLim', [0 1]);
+            axis 'image'
+            subplot(2,2,4);
+            imagesc(filteredStimGammOut);
+            set(gca, 'CLim', [0 1]);
+            axis 'image'
+            colormap(gray(256));
+            drawnow;
+        end
     end
-    % First element is the bias
-    XdesignMatrix1(:,1) = 1;
-    XdesignMatrix2(:,1) = 1;
+    
+
     
     save('intermediate_local_spectral_analysis_gaborSigma30.mat', ...
         'XdesignMatrix1', 'XdesignMatrix2', ...
@@ -130,6 +152,28 @@ function PerformLocallySpectralLuminancePrediction
             max(predictLeftTargetLuminance) max(predictRightTargetLuminance) ...
         ]);
     
+        
+        figure(990+featureSpace);
+        clf;
+        index = 0;
+        weightDistributionLeft = zeros(numel(sensorLocations.y), numel(sensorLocations.x));
+        weightDistributionRight = zeros(numel(sensorLocations.y), numel(sensorLocations.x));
+        for iy = 1:numel(sensorLocations.y)
+            for ix = 1:numel(sensorLocations.x)
+                index = index + 1;
+                weightDistributionLeft(iy,ix) = weightsVectorLeftTarget(index);
+                weightDistributionRight(iy,ix) = weightsVectorRightTarget(index);
+            end
+        end
+        subplot(1,2,1);
+        imagesc(weightDistributionLeft);
+        axis 'image';
+        subplot(1,2,2);
+        imagesc(weightDistributionRight);
+        axis 'image';
+        colormap(gray);
+        drawnow;
+        
         
         figure(100+featureSpace);
         clf;
@@ -232,154 +276,89 @@ function PerformLocallySpectralLuminancePrediction
 end
 
 
-function filterBank = generateFilters(rowsNum,columnsNum)
+function [sensor, sensorSpectrum, sensorLocations] = generateSensor(columnsNum, rowsNum)
 
-    % scales
-    gaborSigma = [30]; % [50]; %50 works ok [25 50 100 200];
-    
-    totalFiltersNum = 0;
-    centers = {};
-    for gaborSigmaIndex = 1:numel(gaborSigma)
-        
-        gaborFilterIndex = 0;
-        envelopeSize(gaborSigmaIndex) = gaborSigma(gaborSigmaIndex)*6;
-        
-        % Find centers above vertical midline
-        distanceX = 1;
-        while (distanceX <= columnsNum/2)
-           xo = distanceX;
-           distanceY = 0;
-           while (distanceY <= rowsNum/2)
-               yo = distanceY;
-               gaborFilterIndex = gaborFilterIndex + 1;
-               centers{gaborSigmaIndex}.coords(gaborFilterIndex,:) = [xo yo];
-               distanceY = distanceY +  envelopeSize(gaborSigmaIndex)/2;
-           end
-
-           distanceY = 0-envelopeSize(gaborSigmaIndex)/2;
-           while (distanceY >= -rowsNum/2)
-               yo = distanceY;
-               gaborFilterIndex = gaborFilterIndex + 1;
-               centers{gaborSigmaIndex}.coords(gaborFilterIndex,:)  = [xo yo];
-               distanceY = distanceY - envelopeSize(gaborSigmaIndex)/2;
-           end
-           distanceX = distanceX +  envelopeSize(gaborSigmaIndex)/2;
-        end
-
-        % Find centers below vertical midline
-        distanceX = 0-envelopeSize(gaborSigmaIndex)/2;
-        while (distanceX  >= -columnsNum/2)
-           xo = distanceX;
-           distanceY = 0;
-           while (distanceY <= rowsNum/2)
-               yo = distanceY;
-               gaborFilterIndex = gaborFilterIndex + 1;
-               centers{gaborSigmaIndex}.coords(gaborFilterIndex,:)  = [xo yo];
-               distanceY = distanceY +  envelopeSize(gaborSigmaIndex)/2;
-           end
-           distanceY = 0-envelopeSize(gaborSigmaIndex)/2;
-           while (distanceY >= -rowsNum/2)
-               yo = distanceY;
-               gaborFilterIndex = gaborFilterIndex + 1;
-               centers{gaborSigmaIndex}.coords(gaborFilterIndex,:)  = [xo yo];
-               distanceY = distanceY -  envelopeSize(gaborSigmaIndex)/2;
-           end
-            distanceX = distanceX - envelopeSize(gaborSigmaIndex)/2;
-        end
-        
-        % Center x-centers
-        xcenters = centers{gaborSigmaIndex}.coords(:,1);
-        xmin = min(xcenters);
-        xmax = max(xcenters);
-        leftBorder = xmin+(columnsNum/2);
-        rightBorder = columnsNum/2 - xmax;
-        if (rightBorder > leftBorder)
-           xcenters = xcenters + ((rightBorder-leftBorder))/2;
-        else
-           xcenters = xcenters - ((leftBorder-rightBorder))/2;
-        end
-        centers{gaborSigmaIndex}.coords(:,1) = xcenters;
-        
-        % Center y-centers
-        ycenters = centers{gaborSigmaIndex}.coords(:,2);
-        ymin = min(ycenters);
-        ymax = max(ycenters);
-        leftBorder = ymin+rowsNum/2;
-        rightBorder = rowsNum/2 - ymax;
-        if (rightBorder > leftBorder)
-           ycenters = ycenters + ((rightBorder-leftBorder))/2;
-        else
-           ycenters = ycenters - (leftBorder-rightBorder)/2;
-        end
-        centers{gaborSigmaIndex}.coords(:,2) = ycenters;
-        
-        
-        
-        fprintf('There are %d gabors at scale %d.\n', gaborFilterIndex, gaborSigmaIndex);
-        totalFiltersNum = totalFiltersNum + gaborFilterIndex;
-    end
-    
-    % Generate filters
     x = ((1:columnsNum)-columnsNum/2);
     y = ((1:rowsNum)-rowsNum/2);
     [X,Y] = meshgrid(x,y);
     
-    % Preallocate filter bank memory
-    filterBank = zeros(totalFiltersNum, size(X,1), size(X,2), 'single');
+    % Sensor characteristics (sigma and sampling)
+    sigma = 50;
+    samplingInterval = 2.0*sigma;
     
-    filterIndex = 0;
-    for gaborSigmaIndex = 1:numel(gaborSigma)
-        
-        xCircle = cos((0:180)/180*2*pi)*envelopeSize(gaborSigmaIndex)/2;
-        yCircle = sin((0:180)/180*2*pi)*envelopeSize(gaborSigmaIndex)/2;
-        
-        h = figure(gaborSigmaIndex);
-        set(h, 'Position', [gaborSigmaIndex*100 gaborSigmaIndex*100 560 300]);
-        clf;
-        
-        coords = centers{gaborSigmaIndex}.coords;
-        sigma = envelopeSize(gaborSigmaIndex)/2;
-        
-        for k = 1:size(coords,1)
-            xo = coords(k,1);
-            yo = coords(k,2);
-            filterKernel = ...
-                single(exp(-0.5*((X-xo)/sigma).^2) .* ...
-                       exp(-0.5*((Y-yo)/sigma).^2));
-            % normalize to unit area
-            filterIndex = filterIndex + 1;
-            filterBank(filterIndex,:,:) = filterKernel / sum(filterKernel(:));
-            
-            if (k == 1)
-                exampleFilter = squeeze(filterBank(filterIndex,:,:));
+    xo = 0; yo = 0;
+    sensor = exp(-0.5*((X-xo)/sigma).^2) .* exp(-0.5*((Y-yo)/sigma).^2);
+    % Normalize to unit area
+    sensor = sensor / sum(sensor(:));
+    
+    if (1==2)
+    sensor = [];
+    for i = -1:1
+        for j = -1:1
+            xo = i*samplingInterval; yo = j*samplingInterval;
+            if (isempty(sensor))
+                sensor = exp(-0.5*((X-xo)/sigma).^2) .* exp(-0.5*((Y-yo)/sigma).^2);
             else
-                exampleFilter = 0*squeeze(filterBank(filterIndex,:,:)) + exampleFilter;
+                sensor = sensor + exp(-0.5*((X-xo)/sigma).^2) .* exp(-0.5*((Y-yo)/sigma).^2);
             end
-            
         end
-        
-        imagesc(x,y,exampleFilter);
-        axis 'image'
-        colormap(gray(512));
-        hold on;
-
-            
-        % Plot coverage
-        %for k = 2:size(coords,1)
-        %   plot(coords(k,1)+xCircle, coords(k,2)+yCircle, 'g-');
-        %end
-        %plot(coords(1,1)+xCircle, coords(1,2)+yCircle, 'r-');
-        plot(coords(:,1), coords(:,2), 'r+');
-        
-        hold off
-        set(gca, 'XLim', [-1920/2 1920/2], 'YLim', [-1080/2 1080/2]);
-        title(sprintf('Gabors: %d', size(coords,1)));
-        drawnow
-        
+    end
     end
     
     
+    
+    fftSamplesNum = 2048;
+    rowOffset = (fftSamplesNum -rowsNum)/2;
+    colOffset = (fftSamplesNum -columnsNum)/2;
+    rowRange = 1:rowsNum;
+    colRange = 1:columnsNum;
+    
+    sensorSpectrum = doFFT(sensor, fftSamplesNum, rowOffset, colOffset, rowRange, colRange);
+
+    delta = (1:1000);
+    delta = [-delta(end:-1:1) 0 delta];
+    xcoords = delta*samplingInterval;
+    ycoords = delta*samplingInterval;
+    xcoords = xcoords((xcoords > -columnsNum/2+sigma) & (xcoords < columnsNum/2-sigma));
+    ycoords = ycoords((ycoords > -rowsNum/2+sigma) & (ycoords < rowsNum/2-sigma));
+    
+    xcoords = xcoords + columnsNum/2;
+    ycoords = ycoords + rowsNum/2;
+    
+    sensorLocations.x = xcoords;
+    sensorLocations.y = ycoords;
+    
 end
+
+
+function [featureVector, sensorImage] = extractFeatures(frame, sensorSpectrum, sensorLocations)
+    fftSamplesNum = 2048;
+    rowOffset = (fftSamplesNum -1080)/2;
+    colOffset = (fftSamplesNum -1920)/2;
+    rowRange = 1:1080;
+    colRange = 1:1920;
+    
+    spectrum = doFFT(frame, fftSamplesNum, rowOffset, colOffset, rowRange, colRange);
+    
+    % Multiply in frequency domain - convolve in space
+    sensorImage = real(fftshift(ifft2(spectrum .* sensorSpectrum)));
+    % extract center image
+    sensorImage   = sensorImage(rowOffset+rowRange, colOffset+colRange);
+    % make sure it is all positive
+    sensorImage(sensorImage<0) = 0;
+    
+    % Sample according to sensor locations
+    featureVector = sensorImage(sensorLocations.y, sensorLocations.x);
+    featureVector = [1; featureVector(:)];
+end
+
+
+function spectrum = doFFT(frame, fftSamplesNum, rowOffset, colOffset, rowRange, colRange)
+    fftFrame = zeros(fftSamplesNum,fftSamplesNum);
+    fftFrame(rowOffset+rowRange, colOffset+colRange) = frame;
+    spectrum = fft2(fftFrame);      
+end
+
 
 
 function [stimuliGammaIn, stimuliGammaOut, leftTargetLuminance, rightTargetLuminance, ...
@@ -406,7 +385,7 @@ function [stimuliGammaIn, stimuliGammaOut, leftTargetLuminance, rightTargetLumin
     exponentsNum    = numel(stimParams.exponentOfOneOverFArray);
     oriBiasNum      = numel(stimParams.oriBiasArray);
     orientationsNum = numel(stimParams.orientationsArray);
-    framesNum       = size(calibrationDataSet.allCondsData,4);
+    framesNum       = size(calibrationDataSet.allCondsData,4)
     conditionsNum   = size(calibrationDataSet.allCondsData,5);
     polaritiesNum   = size(calibrationDataSet.allCondsData,6);
     targetGraysNum  = size(calibrationDataSet.allCondsData,7);
@@ -424,6 +403,7 @@ function [stimuliGammaIn, stimuliGammaOut, leftTargetLuminance, rightTargetLumin
     trainingIndices = [];
     testingIndices  = [];
     
+    
     for exponentOfOneOverFIndex = 1:exponentsNum 
     for oriBiasIndex = 1:oriBiasNum
     for orientationIndex = 1:orientationsNum
@@ -437,7 +417,7 @@ function [stimuliGammaIn, stimuliGammaOut, leftTargetLuminance, rightTargetLumin
         end
         stimIndex = stimIndex + 1;
         
-        if (mod(frameIndex-1,3 <= 1))
+        if (mod(frameIndex-1,framesNum) < framesNum-1)
             trainingIndices = [trainingIndices stimIndex];
         else
             testingIndices = [testingIndices stimIndex];
