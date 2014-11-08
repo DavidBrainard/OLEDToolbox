@@ -28,14 +28,16 @@ function PerformLocallySpectralLuminancePrediction
     % Select data set
     % Just the first trial
     repeatIndex = 1;
-    theLeftTargetLuminance  = leftTargetLuminance(repeatIndex,:);
-    theRightTargetLuminance = rightTargetLuminance(repeatIndex,:);
+    theLeftTargetLuminance  = squeeze(leftTargetLuminance(repeatIndex,:));
+    theRightTargetLuminance = squeeze(rightTargetLuminance(repeatIndex,:));
     
-    % Repeat of first 3 trials
+    % average of first 3 trials
     repeatIndex = 1:3;
-    theLeftTargetLuminance  = mean(leftTargetLuminance(repeatIndex,:),1);
-    theRightTargetLuminance = mean(rightTargetLuminance(repeatIndex,:),1);
+    theLeftTargetLuminance  = squeeze(mean(leftTargetLuminance(repeatIndex,:),1));
+    theRightTargetLuminance = squeeze(mean(rightTargetLuminance(repeatIndex,:),1));
     
+    theLeftTargetLuminance  = reshape(theLeftTargetLuminance,  [numel(theLeftTargetLuminance) 1]);
+    theRightTargetLuminance = reshape(theRightTargetLuminance, [numel(theRightTargetLuminance) 1]);
     
     % Grid search over sensor sigmas & sensor spacings
     bestOutOfSampleError = 10^14;
