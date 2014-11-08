@@ -20,7 +20,7 @@ function PerformLocallySpectralLuminancePrediction
     
     
     % Sensor sigmas (in pixels) to examine
-    sensorSigmas   = [60 80 100 120 160];
+    sensorSigmas   = [60 70 80 90 100 120 140 160 180 200 240 280 320];
     
     % Sensor spacings (multiples of sensor sigma) to examine
     sensorSpacings = [1.0 1.5 2.0 2.5 3.0];
@@ -61,7 +61,7 @@ function PerformLocallySpectralLuminancePrediction
                    bestOutOfSampleError = error;
                    bestSigma = sensorSigma;
                    bestSpacing = sensorSpacing;
-                   fprintf('So far, minimal error: %2.2f (sensor sigma: %2.1f, sensorSpacing: %2.2f)\n', bestOutOfSampleError, bestSigma, bestSpacing);
+                   fprintf('So far, minimal out-of-sample RMS error = %2.2f cd/m2 (sensor sigma: %2.1f, sensorSpacing: %2.2f)\n', bestOutOfSampleError, bestSigma, bestSpacing);
                 end
             end
         end
