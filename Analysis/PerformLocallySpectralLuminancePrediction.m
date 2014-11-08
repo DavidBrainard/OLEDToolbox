@@ -1,19 +1,41 @@
 function PerformLocallySpectralLuminancePrediction
 
+    [rootDir, ~, ~] = fileparts(mfilename('fullpath'));
+    rootDir
+    
     useParallelEngine = input('Use parallel engine? [1=YES, default=NO] : '); 
     
     % Load stimuli and responses (measured luminances)
-    [stimuliGammaIn, stimuliGammaOut, leftTargetLuminance, rightTargetLuminance, ...
-     trainingIndices, testingIndices] = loadStimuliAndResponses();
+    calibrationFile = 'SamsungOLED_CloudsCalib3.mat';
+    
+    [stimuliGammaIn, stimuliGammaOut, ...
+     leftTargetLuminance, rightTargetLuminance, timeOfMeasurement, ...
+     trainingIndices, testingIndices] = loadStimuliAndResponses(calibrationFile);
 
     fprintf('Training samples: %d\n', numel(trainingIndices))
     fprintf('Testing  samples: %d\n', numel(testingIndices)); 
-        
+     
+    % Examine repeatability
+    examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, timeOfMeasurement);
+    
+    
     % Sensor sigmas (in pixels) to examine
-    sensorSigmas   = [40 50 60 80 100 120 160];
+    sensorSigmas   = [60 80 100 120 160];
     
     % Sensor spacings (multiples of sensor sigma) to examine
-    sensorSpacings = [1.0 1.5 2.0 3.0];
+    sensorSpacings = [1.0 1.5 2.0 2.5 3.0];
+    
+    % Select data set
+    % Just the first trial
+    repeatIndex = 1;
+    theLeftTargetLuminance  = leftTargetLuminance(repeatIndex,:);
+    theRightTargetLuminance = rightTargetLuminance(repeatIndex,:);
+    
+    % Repeat of first 3 trials
+    repeatIndex = 1:3;
+    theLeftTargetLuminance  = mean(leftTargetLuminance(repeatIndex,:),1);
+    theRightTargetLuminance = mean(rightTargetLuminance(repeatIndex,:),1);
+    
     
     % Grid search over sensor sigmas & sensor spacings
     bestOutOfSampleError = 10^14;
@@ -24,8 +46,11 @@ function PerformLocallySpectralLuminancePrediction
             
             [inSampleError, outOfSampleError] = ...
                 testSensorPrediction(sensorSigma, sensorSpacing, ...
-                stimuliGammaIn, stimuliGammaOut, leftTargetLuminance, rightTargetLuminance, ...
-                trainingIndices, testingIndices, useParallelEngine);
+                    stimuliGammaIn, ...
+                    stimuliGammaOut, ...
+                    theLeftTargetLuminance, ... 
+                    theRightTargetLuminance, ...
+                    trainingIndices, testingIndices, useParallelEngine, rootDir);
             
             % find min error across all feature spaces
             for featureSpaceIndex = 1:numel(outOfSampleError)
@@ -40,16 +65,13 @@ function PerformLocallySpectralLuminancePrediction
         end
     end
     
-    fprintf('Finished with grid search. Running final prediction with best sigma (%2.1f) / spacing(%2.2f) params', bestSigma, bestSpacing);
-    [inSampleError, outOfSampleError] = testSensorPrediction(bestSigma, bestSpacing, ...
-            stimuliGammaIn, stimuliGammaOut, leftTargetLuminance, rightTargetLuminance, ...
-            trainingIndices, testingIndices, useParallelEngine);
+    fprintf('Finished with grid search. Best sigma = %2.1f, best spacing = %2.2f,', bestSigma, bestSpacing);
 end
 
 
 function [inSampleError, outOfSampleError] = testSensorPrediction(sensorSigma, sensorSpacing, ...
 stimuliGammaIn, stimuliGammaOut, leftTargetLuminance, rightTargetLuminance, ...
-trainingIndices, testingIndices, useParallelEngine)
+trainingIndices, testingIndices, useParallelEngine, rootDir)
     %
     [sensor, sensorSpectrum, sensorLocations] = ...
         generateSensor(1920, 1080, sensorSigma, sensorSpacing*sensorSigma);
@@ -144,7 +166,7 @@ trainingIndices, testingIndices, useParallelEngine)
     end
     
     % Save design matrices
-    intermediateDataDirectory = '/Users/Shared/Matlab/Toolboxes/OLEDToolbox/Analysis/IntermediateData';
+    intermediateDataDirectory = sprintf('%s/IntermediateData', rootDir);
     XdesignMatrixFileName = ...
         sprintf('%s/intermediate_local_spectral_analysis_sensorSigma_%1.0f_sensorSpacing_%1.1f.mat', ...
         intermediateDataDirectory, sensorSigma, sensorSpacing);
@@ -432,13 +454,266 @@ function spectrum = doFFT(frame, fftSamplesNum, rowOffset, colOffset, rowRange, 
     spectrum = fft2(fftFrame);      
 end
 
+function examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, timeOfMeasurement)
+    
+    figure(1001);
+    clf;
+    
+    subplot(2,1,1);
+    hold on;
+    for stimIndex = 1:size(leftTargetLuminance,2)
+        plot(timeOfMeasurement(:,stimIndex), leftTargetLuminance(:,stimIndex), 'ks-');
+    end
+    hold off;
+    set(gca, 'YLim', [400 630]);
+    xlabel('time of measurement (minutes)');
+    ylabel('luminance');
+    title('LEFT TARGET');
+    
+    subplot(2,1,2);
+    hold on;
+    for stimIndex = 1:size(leftTargetLuminance,2)
+        plot(timeOfMeasurement(:,stimIndex), rightTargetLuminance(:,stimIndex), 'ks-');
+    end
+    hold off;
+    set(gca, 'YLim', [400 630]);
+    xlabel('time of measurement (minutes)');
+    ylabel('luminance');
+    title('RIGHT TARGET');
+
+    
+    figure(1002);
+    clf;
+    
+    subplot(2,1,1);
+    hold on;
+    for stimIndex = 1:size(leftTargetLuminance,2)
+        plot(timeOfMeasurement(:,stimIndex), leftTargetLuminance(:,stimIndex)/leftTargetLuminance(1,stimIndex), 'ks-');
+    end
+    hold off;
+    set(gca, 'YLim', [0.8 1.1]);
+    xlabel('time of measurement (minutes)');
+    ylabel('luminance');
+    title('LEFT TARGET');
+    
+    subplot(2,1,2);
+    hold on;
+    for stimIndex = 1:size(leftTargetLuminance,2)
+        plot(timeOfMeasurement(:,stimIndex), rightTargetLuminance(:,stimIndex)/rightTargetLuminance(1,stimIndex), 'ks-');
+    end
+    hold off;
+    set(gca, 'YLim', [0.8 1.1]);
+    xlabel('time of measurement (minutes)');
+    ylabel('luminance');
+    title('RIGHT TARGET');
+    
+    
+    
+    
+    figure(1003);
+    clf;
+    
+    XLims = [430 620]; % [min(min(leftTargetLuminance)) max(max(leftTargetLuminance))];
+    YLims = XLims;
+    
+    subplot(3,2,1);
+    plot(leftTargetLuminance(1,:), leftTargetLuminance(2,:), 'k.');
+    hold on;
+    plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
+    hold off;
+    set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:100:1000], 'YTick', [0 :100:1000]);
+    axis 'square'
+    xlabel('Repetition no. 1');
+    ylabel('Repetition no. 2');
+    
+    subplot(3,2,2);
+    plot(leftTargetLuminance(1,:), leftTargetLuminance(3,:), 'k.');
+    hold on;
+    plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
+    hold off;
+    set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:100:1000], 'YTick', [0 :100:1000]);
+    axis 'square'
+    xlabel('Repetition no. 1');
+    ylabel('Repetition no. 3');
+    
+    subplot(3,2,3);
+    plot(leftTargetLuminance(1,:), leftTargetLuminance(4,:), 'k.');
+    hold on;
+    plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
+    hold off;
+    set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:100:1000], 'YTick', [0 :100:1000]);
+    axis 'square'
+    xlabel('Repetition no. 1');
+    ylabel('Repetition no. 4');
+    
+    subplot(3,2,4);
+    plot(leftTargetLuminance(2,:), leftTargetLuminance(3,:), 'k.');
+    hold on;
+    plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
+    hold off;
+    set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:100:1000], 'YTick', [0 :100:1000]);
+    axis 'square'
+    xlabel('Repetition no. 2');
+    ylabel('Repetition no. 3');
+    
+    subplot(3,2,5);
+    plot(leftTargetLuminance(2,:), leftTargetLuminance(4,:), 'k.');
+    hold on;
+    plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
+    hold off;
+    set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:100:1000], 'YTick', [0 :100:1000]);
+    axis 'square'
+    xlabel('Repetition no. 2');
+    ylabel('Repetition no. 4');
+    
+    subplot(3,2,6);
+    plot(leftTargetLuminance(3,:), leftTargetLuminance(4,:), 'k.');
+    hold on;
+    plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
+    hold off;
+    set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:100:1000], 'YTick', [0 :100:1000]);
+    axis 'square'
+    xlabel('Repetition no. 3');
+    ylabel('Repetition no. 4');
+    drawnow;
+    
+end
+
+
+function [stimuliGammaIn, stimuliGammaOut, ...
+    leftTargetLuminance, rightTargetLuminance, timeOfMeasurement, ...
+    trainingIndices, testingIndices] = loadStimuliAndResponses(calibrationFile)
+    % Load calibration file from /Users1
+    calibrationDir  = '/Users1/Shared/Matlab/Experiments/SamsungOLED/PreliminaryData';
+    gammaFunctionFile = 'GammaFunction.mat';
+    
+    % Load gamma function
+    load(sprintf('%s/%s', calibrationDir,gammaFunctionFile));
+    %figure(1)
+    %plot(gammaFunction.input, gammaFunction.output, 'rs-');
+    %drawnow;
+    
+    calibrationDataSet = loadCalibrationFile(calibrationDir,calibrationFile);
+    stimParams         = calibrationDataSet.runParams.stimParams;
+    
+    % Load vLambda at desiredS
+    desiredS = [380 1 401];
+    nativeS  = calibrationDataSet.allCondsData{1,1,1,1,1,1,1}.leftS;
+    [vLambda, wave] = loadVlambda1nmRes(desiredS);
+    
+    repeatsNum      = stimParams.repeats;
+    exponentsNum    = numel(stimParams.exponentOfOneOverFArray);
+    oriBiasNum      = numel(stimParams.oriBiasArray);
+    orientationsNum = numel(stimParams.orientationsArray);
+    framesNum       = stimParams.motionFramesNum;
+    variantsNum     = stimParams.variants;
+    targetGraysNum  = size(calibrationDataSet.allCondsData,7);
+    stimsNum        = exponentsNum*oriBiasNum*orientationsNum*framesNum*variantsNum*targetGraysNum;
+    
+    % Set up analysis using 1st calibration frame
+    stimSize             = size(calibrationDataSet.allCondsData{1,1,1,1,1,1,1}.demoFrame);
+    
+    % Allocate memory
+    stimuliGammaIn       = zeros(stimsNum, stimSize(1), stimSize(2), 'uint8');
+    stimuliGammaOut      = stimuliGammaIn;
+    leftTargetLuminance  = zeros(repeatsNum, stimsNum);
+    rightTargetLuminance = zeros(repeatsNum, stimsNum);
+    timeOfMeasurement    = zeros(repeatsNum, stimsNum);
+    
+    % Initialize training (in-sample) and testing (out-of-sample) indices
+    trainingIndices = [];
+    testingIndices  = [];
+    
+    for repeatIndex = 1:repeatsNum
+        
+        % Initialize stim counter
+        stimIndex = 0;
+        
+        for exponentOfOneOverFIndex = 1:exponentsNum 
+        for oriBiasIndex = 1:oriBiasNum
+        for orientationIndex = 1:orientationsNum
+        for frameIndex = 1:framesNum
+        for variantIndex = 1:variantsNum
+        for targetGrayIndex = 1:targetGraysNum
+        
+            if (mod(stimIndex,100) == 0)
+                fprintf('Imported %d stimuli from trial no. %d.\n', stimIndex, repeatIndex);
+            end
+            stimIndex = stimIndex + 1;
+
+            if (repeatIndex == 1)
+                % testing indices: 0, 3, 6
+                % training indices: 1, 2, 4, 5, 7
+                if (mod(frameIndex-1,3) == 0)
+                    testingIndices = [testingIndices stimIndex];
+                else
+                    trainingIndices = [trainingIndices stimIndex];
+                end
+            end
+        
+            runData = calibrationDataSet.allCondsData{...
+                repeatIndex, ...
+                exponentOfOneOverFIndex, ...
+                oriBiasIndex, ...
+                orientationIndex, ...
+                frameIndex, ...
+                variantIndex, ...
+                targetGrayIndex};
+        
+            % interpolate to desiredS
+            spd = SplineSpd(nativeS, (runData.leftSPD)', desiredS);
+            leftTargetLuminance(repeatIndex, stimIndex) = sum(spd'.*vLambda,2);
+
+            spd = SplineSpd(nativeS, (runData.rightSPD)', desiredS);
+            rightTargetLuminance(repeatIndex, stimIndex) = sum(spd'.*vLambda,2);
+
+            % Get time of measurement
+            timeOfMeasurement(repeatIndex, stimIndex) = runData.relativeTimeOfMeasurement;
+
+            if (repeatIndex == 1)
+                % Gamma-in image
+                f = double(runData.demoFrame)/255.0;
+                % Gamma-out image
+                ff = gammaFunction.output(1+round(f*(numel(gammaFunction.output)-1)));
+
+                stimuliGammaIn(stimIndex,:,:)  = runData.demoFrame;
+                stimuliGammaOut(stimIndex,:,:) = uint8(ff*255.0);
+            end
+            
+            if (1==2) && (repeatIndex == 1)
+                figure(555);
+                subplot(2,1,1)
+                imagesc(squeeze(stimuliGammaIn(stimIndex,:,:)));
+                set(gca, 'CLim', [0 255]);
+                axis 'image'
+                colormap(gray)
+
+                subplot(2,1,2)
+                imagesc(squeeze(stimuliGammaOut(stimIndex,:,:)));
+                set(gca, 'CLim', [0 255]);
+                axis 'image'
+                drawnow
+            end
+        
+        end
+        end
+        end
+        end
+        end
+        end
+    end
+    
+    % start at t = 0, measure in minutes;
+    timeOfMeasurement = (timeOfMeasurement - timeOfMeasurement(1,1))/60;
+    
+    clear 'calibrationDataSet'
+end
 
 
 function [stimuliGammaIn, stimuliGammaOut, leftTargetLuminance, rightTargetLuminance, ...
-    trainingIndices, testingIndices] = loadStimuliAndResponses
+    trainingIndices, testingIndices] = OLDloadStimuliAndResponsesForCalib2(calibrationFile)
     % Load calibration file from /Users1
     calibrationDir  = '/Users1/Shared/Matlab/Experiments/SamsungOLED/PreliminaryData';
-    calibrationFile = 'SamsungOLED_CloudsCalib2.mat';
     gammaFunctionFile = 'GammaFunction.mat';
     
     % form gamma function
