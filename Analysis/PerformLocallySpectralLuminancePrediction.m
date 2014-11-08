@@ -17,7 +17,7 @@ function PerformLocallySpectralLuminancePrediction
      
     % Examine repeatability
     examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, timeOfMeasurement);
-    
+    return;
     
     % Sensor sigmas (in pixels) to examine
     sensorSigmas   = [60 70 80 90 100 120 140 160 180 200 240 280 320];
@@ -456,129 +456,163 @@ function spectrum = doFFT(frame, fftSamplesNum, rowOffset, colOffset, rowRange, 
     spectrum = fft2(fftFrame);      
 end
 
+
 function examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, timeOfMeasurement)
     
-    figure(1001);
+    exportToPDF = true;
+    
+    h = figure(1001);
+    set(h, 'Position', [100 100 670 950]);
     clf;
     
-    subplot(2,1,1);
+    subplot('Position', [0.09 0.04 0.90 0.95]);
     hold on;
     for stimIndex = 1:size(leftTargetLuminance,2)
-        plot(timeOfMeasurement(:,stimIndex), leftTargetLuminance(:,stimIndex), 'ks-');
+        plot(timeOfMeasurement(:,stimIndex), leftTargetLuminance(:,stimIndex), 'k-');
     end
+    plot(timeOfMeasurement(1,:), leftTargetLuminance(1,:), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [1.0 0.7 0.7], 'MarkerEdgeColor', [1.0 0.0 0.0]);
+    plot(timeOfMeasurement(2,:), leftTargetLuminance(2,:), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [0.5 0.7 0.5], 'MarkerEdgeColor', [0.0 1.0 0.0]);
+    plot(timeOfMeasurement(3,:), leftTargetLuminance(3,:), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [0.7 0.7 1.0], 'MarkerEdgeColor', [0.0 0.0 1.0]);
+    plot(timeOfMeasurement(4,:), leftTargetLuminance(4,:), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [0.7 0.7 0.4], 'MarkerEdgeColor', [1.0 1.0 0.0]);
     hold off;
-    set(gca, 'YLim', [400 630]);
-    xlabel('time of measurement (minutes)');
-    ylabel('luminance');
-    title('LEFT TARGET');
+    set(gca, 'YLim', [320 605], 'XLim', [-5 max(timeOfMeasurement(:))+5], 'XTick', [0:60:600],'FontName', 'Helvetica', 'FontSize', 14);
+    box on;
+    grid on;
+    xlabel('time of measurement (minutes)', 'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'b');
+    ylabel('luminance (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'b');
     
-    subplot(2,1,2);
-    hold on;
-    for stimIndex = 1:size(leftTargetLuminance,2)
-        plot(timeOfMeasurement(:,stimIndex), rightTargetLuminance(:,stimIndex), 'ks-');
+    if (exportToPDF)
+        pdfFileName = sprintf('Fig_1.pdf');
+        dpi = 300;
+        ExportToPDF(pdfFileName, h, dpi);
     end
-    hold off;
-    set(gca, 'YLim', [400 630]);
-    xlabel('time of measurement (minutes)');
-    ylabel('luminance');
-    title('RIGHT TARGET');
+    
 
     
-    figure(1002);
+    h = figure(1002);
+    set(h, 'Position', [200 100 670 950]);
     clf;
     
-    subplot(2,1,1);
+    subplot('Position', [0.09 0.04 0.90 0.95]);
     hold on;
     for stimIndex = 1:size(leftTargetLuminance,2)
-        plot(timeOfMeasurement(:,stimIndex), leftTargetLuminance(:,stimIndex)/leftTargetLuminance(1,stimIndex), 'ks-');
+        deltaLeftTargetLuminance(:,stimIndex) = leftTargetLuminance(:,stimIndex)-leftTargetLuminance(1,stimIndex);
+        plot(timeOfMeasurement(:,stimIndex), deltaLeftTargetLuminance(:,stimIndex), 'ks-');
     end
+    plot(timeOfMeasurement(1,:), deltaLeftTargetLuminance(1,:), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [1.0 0.7 0.7], 'MarkerEdgeColor', [1.0 0.0 0.0]);
+    plot(timeOfMeasurement(2,:), deltaLeftTargetLuminance(2,:), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [0.5 0.7 0.5], 'MarkerEdgeColor', [0.0 1.0 0.0]);
+    plot(timeOfMeasurement(3,:), deltaLeftTargetLuminance(3,:), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [0.7 0.7 1.0], 'MarkerEdgeColor', [0.0 0.0 1.0]);
+    plot(timeOfMeasurement(4,:), deltaLeftTargetLuminance(4,:), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [0.7 0.7 0.4], 'MarkerEdgeColor', [1.0 1.0 0.0]);
     hold off;
-    set(gca, 'YLim', [0.8 1.1]);
-    xlabel('time of measurement (minutes)');
-    ylabel('luminance');
-    title('LEFT TARGET');
+    set(gca, 'XLim', [-5 max(timeOfMeasurement(:))+5], 'XTick', [0:60:600], 'YLim', [-100 10], ...
+        'FontName', 'Helvetica', 'FontSize', 14);
     
-    subplot(2,1,2);
-    hold on;
-    for stimIndex = 1:size(leftTargetLuminance,2)
-        plot(timeOfMeasurement(:,stimIndex), rightTargetLuminance(:,stimIndex)/rightTargetLuminance(1,stimIndex), 'ks-');
+    xlabel('time of measurement (minutes)', 'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'b');
+    ylabel('delta luminance (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'b');
+    box on;
+    grid on;
+    
+    if (exportToPDF)
+        pdfFileName = sprintf('Fig_2.pdf');
+        dpi = 300;
+        ExportToPDF(pdfFileName, h, dpi);
     end
-    hold off;
-    set(gca, 'YLim', [0.8 1.1]);
-    xlabel('time of measurement (minutes)');
-    ylabel('luminance');
-    title('RIGHT TARGET');
     
     
     
-    
-    figure(1003);
+    h = figure(1003);
+    set(h, 'Position', [300 100 600 950]);
     clf;
     
     XLims = [430 620]; % [min(min(leftTargetLuminance)) max(max(leftTargetLuminance))];
     YLims = XLims;
     
-    subplot(3,2,1);
-    plot(leftTargetLuminance(1,:), leftTargetLuminance(2,:), 'k.');
+    subplot('Position', [0.09 0.7 0.40 0.3]);
+    plot(leftTargetLuminance(1,:), leftTargetLuminance(2,:),  'b.', 'MarkerSize', 16);
     hold on;
     plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
     hold off;
-    set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:100:1000], 'YTick', [0 :100:1000]);
+    set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:50:1000], 'YTick', [0:50:1000]);
+    set(gca, 'FontName', 'Helvetica', 'FontSize', 14);
     axis 'square'
-    xlabel('Repetition no. 1');
-    ylabel('Repetition no. 2');
+    xlabel('Repetition no. 1', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
+    ylabel('Repetition no. 2', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
+    box on;
+    grid on;
     
-    subplot(3,2,2);
-    plot(leftTargetLuminance(1,:), leftTargetLuminance(3,:), 'k.');
-    hold on;
-    plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
-    hold off;
-    set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:100:1000], 'YTick', [0 :100:1000]);
-    axis 'square'
-    xlabel('Repetition no. 1');
-    ylabel('Repetition no. 3');
     
-    subplot(3,2,3);
-    plot(leftTargetLuminance(1,:), leftTargetLuminance(4,:), 'k.');
+    subplot('Position', [0.59 0.7 0.40 0.3]);
+    plot(leftTargetLuminance(1,:), leftTargetLuminance(3,:),  'b.', 'MarkerSize', 16);
     hold on;
     plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
     hold off;
-    set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:100:1000], 'YTick', [0 :100:1000]);
+    set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:50:1000], 'YTick', [0 :50:1000]);
+    set(gca, 'FontName', 'Helvetica', 'FontSize', 14);
     axis 'square'
-    xlabel('Repetition no. 1');
-    ylabel('Repetition no. 4');
+    xlabel('Repetition no. 1', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
+    ylabel('Repetition no. 3', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
+    box on;
+    grid on;
     
-    subplot(3,2,4);
-    plot(leftTargetLuminance(2,:), leftTargetLuminance(3,:), 'k.');
+    subplot('Position', [0.09 0.4 0.40 0.3]);
+    plot(leftTargetLuminance(1,:), leftTargetLuminance(4,:),  'b.', 'MarkerSize', 16);
     hold on;
     plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
     hold off;
-    set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:100:1000], 'YTick', [0 :100:1000]);
+    set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:50:1000], 'YTick', [0 :50:1000]);
+    set(gca, 'FontName', 'Helvetica', 'FontSize', 14);
     axis 'square'
-    xlabel('Repetition no. 2');
-    ylabel('Repetition no. 3');
+    xlabel('Repetition no. 1', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
+    ylabel('Repetition no. 4', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
+    box on;
+    grid on;
     
-    subplot(3,2,5);
-    plot(leftTargetLuminance(2,:), leftTargetLuminance(4,:), 'k.');
+    subplot('Position', [0.59 0.4 0.40 0.3]);
+    plot(leftTargetLuminance(2,:), leftTargetLuminance(3,:),  'b.', 'MarkerSize', 16);
     hold on;
     plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
     hold off;
-    set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:100:1000], 'YTick', [0 :100:1000]);
+    set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:50:1000], 'YTick', [0 :50:1000]);
+    set(gca, 'FontName', 'Helvetica', 'FontSize', 14);
     axis 'square'
-    xlabel('Repetition no. 2');
-    ylabel('Repetition no. 4');
+    xlabel('Repetition no. 2', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
+    ylabel('Repetition no. 3', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
+    box on;
+    grid on;
     
-    subplot(3,2,6);
-    plot(leftTargetLuminance(3,:), leftTargetLuminance(4,:), 'k.');
+    subplot('Position', [0.09 0.06 0.40 0.3]);
+    plot(leftTargetLuminance(2,:), leftTargetLuminance(4,:),  'b.', 'MarkerSize', 16);
     hold on;
     plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
     hold off;
-    set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:100:1000], 'YTick', [0 :100:1000]);
+    set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:50:1000], 'YTick', [0 :50:1000]);
+    set(gca, 'FontName', 'Helvetica', 'FontSize', 14);
     axis 'square'
-    xlabel('Repetition no. 3');
-    ylabel('Repetition no. 4');
+    xlabel('Repetition no. 2', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
+    ylabel('Repetition no. 4', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
+    box on;
+    grid on;
+    
+    subplot('Position', [0.59 0.06 0.40 0.3]);
+    plot(leftTargetLuminance(3,:), leftTargetLuminance(4,:), 'b.', 'MarkerSize', 16);
+    hold on;
+    plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
+    hold off;
+    set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:50:1000], 'YTick', [0 :50:1000]);
+    set(gca, 'FontName', 'Helvetica', 'FontSize', 14);
+    axis 'square'
+    xlabel('Repetition no. 3', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
+    ylabel('Repetition no. 4', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
+    box on;
+    grid on;
     drawnow;
     
+    if (exportToPDF)
+        pdfFileName = sprintf('Fig_3.pdf');
+        dpi = 300;
+        ExportToPDF(pdfFileName, h, dpi);
+    end
+        
 end
 
 
