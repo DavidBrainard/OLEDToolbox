@@ -1,6 +1,5 @@
 function IntermiediateToFinalLocallySpectralLuminancePrediction
 
-    directory = '/Users/Shared/Matlab/Toolboxes/OLEDToolbox/Analysis/IntermediateData';
     
     sensorSigma   = 80;
     sensorSpacing = 2.0;
@@ -9,8 +8,10 @@ function IntermiediateToFinalLocallySpectralLuminancePrediction
     exportToPNG = false;
     showWeightDistribution = false;
     
+    intermediateDataDirectory = '/Users/Shared/Matlab/Toolboxes/OLEDToolbox/Analysis/IntermediateData';
     XdesignMatrixFileName = ...
-        sprintf('%s/intermediate_local_spectral_analysis_sensorSigma_%1.0f_sensorSpacing_%1.1f.mat', directory,sensorSigma, sensorSpacing);
+        sprintf('%s/intermediate_local_spectral_analysis_sensorSigma_%1.0f_sensorSpacing_%1.1f.mat', ...
+        intermediateDataDirectory,sensorSigma, sensorSpacing);
     
     % load the following:
     % 'XdesignMatrix1', 'XdesignMatrix2', ...
@@ -18,7 +19,9 @@ function IntermiediateToFinalLocallySpectralLuminancePrediction
     % 'leftTargetLuminance', 'rightTargetLuminance')
     load(XdesignMatrixFileName);
     
-    % Add two more design matrices with features = features1.^2
+    % Add two more design matrices
+    % XdesignMatrix3 is based on gammaIn RGB settings power
+    % XdesignMatrix4 is based on gammaOut RGB settings power
     XdesignMatrix3 = XdesignMatrix1.^2;
     XdesignMatrix4 = XdesignMatrix2.^2;
     

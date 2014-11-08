@@ -1,26 +1,33 @@
 function PerformLocallySpectralLuminancePrediction
 
+    useParallelEngine = input('Use parallel engine? [1=YES, default=NO] : '); 
+    
     % Load stimuli and responses (measured luminances)
     [stimuliGammaIn, stimuliGammaOut, leftTargetLuminance, rightTargetLuminance, ...
      trainingIndices, testingIndices] = loadStimuliAndResponses();
 
     fprintf('Training samples: %d\n', numel(trainingIndices))
-    fprintf('Testing  samples: %d\n', numel(testingIndices));
+    fprintf('Testing  samples: %d\n', numel(testingIndices)); 
+        
+    % Sensor sigmas (in pixels) to examine
+    sensorSigmas   = [40 50 60 80 100 120 160];
     
-    useParallelEngine = input('Use parallel engine? [1=YES, default=NO] : ');
-   
-    % Generate sensor
+    % Sensor spacings (multiples of sensor sigma) to examine
+    sensorSpacings = [1.0 1.5 2.0 3.0];
+    
+    % Grid search over sensor sigmas & sensor spacings
     bestOutOfSampleError = 10^14;
-    
-    sensorSigmas = [40 50 60 80 100 120 160];
     for sensorSigmaIndex = 1:numel(sensorSigmas)
-        sensorSpacings = [1.0 1.5 2.0 3.0];
-        for sensorSpacingIndex = 1:numel(sensorSpacings)   
-            sensorSigma = sensorSigmas(sensorSigmaIndex);
+        for sensorSpacingIndex = 1:numel(sensorSpacings)      
+            sensorSigma   = sensorSigmas(sensorSigmaIndex);
             sensorSpacing = sensorSpacings(sensorSpacingIndex);
-            [inSampleError, outOfSampleError] = testSensorPrediction(sensorSigma, sensorSpacing, useParallelEngine, ...
-            stimuliGammaIn, stimuliGammaOut, leftTargetLuminance, rightTargetLuminance, ...
-            trainingIndices, testingIndices);
+            
+            [inSampleError, outOfSampleError] = ...
+                testSensorPrediction(sensorSigma, sensorSpacing, ...
+                stimuliGammaIn, stimuliGammaOut, leftTargetLuminance, rightTargetLuminance, ...
+                trainingIndices, testingIndices, useParallelEngine);
+            
+            % find min error across all feature spaces
             for featureSpaceIndex = 1:numel(outOfSampleError)
                 error = min([outOfSampleError(featureSpaceIndex).leftTarget outOfSampleError(featureSpaceIndex).rightTarget]);
                 if (error < bestOutOfSampleError)
@@ -33,34 +40,32 @@ function PerformLocallySpectralLuminancePrediction
         end
     end
     
-    fprintf('Finished with grid search. Running final prediction with best sigma(%2.1f)/spacing(%2.2f) params', bestSigma, bestSpacing);
-    [inSampleError, outOfSampleError] = testSensorPrediction(bestSigma, bestSpacing,useParallelEngine, ...
+    fprintf('Finished with grid search. Running final prediction with best sigma (%2.1f) / spacing(%2.2f) params', bestSigma, bestSpacing);
+    [inSampleError, outOfSampleError] = testSensorPrediction(bestSigma, bestSpacing, ...
             stimuliGammaIn, stimuliGammaOut, leftTargetLuminance, rightTargetLuminance, ...
-            trainingIndices, testingIndices);
-        
-        
-
-
+            trainingIndices, testingIndices, useParallelEngine);
 end
 
-function [inSampleError, outOfSampleError] = testSensorPrediction(sensorSigma, sensorSpacing,useParallelEngine, ...
-    stimuliGammaIn, stimuliGammaOut, leftTargetLuminance, rightTargetLuminance, ...
-    trainingIndices, testingIndices)
 
-    [sensor, sensorSpectrum, sensorLocations] = generateSensor(1920, 1080, sensorSigma, sensorSpacing*sensorSigma);
+function [inSampleError, outOfSampleError] = testSensorPrediction(sensorSigma, sensorSpacing, ...
+stimuliGammaIn, stimuliGammaOut, leftTargetLuminance, rightTargetLuminance, ...
+trainingIndices, testingIndices, useParallelEngine)
+    %
+    [sensor, sensorSpectrum, sensorLocations] = ...
+        generateSensor(1920, 1080, sensorSigma, sensorSpacing*sensorSigma);
     
     % Construct design matrix
-    conditionsNum = size(stimuliGammaIn,1)
+    conditionsNum = size(stimuliGammaIn,1);
     featuresNum   = 1 + numel(sensorLocations.y) * numel(sensorLocations.x);
     
-    % We generate two design matrices, one based on gammaIn RGB settings
-    % and one based on gammaOut RGB settings
+    % We generate two design matrices:
+    % XdesignMatrix1 is based on gammaIn RGB settings
+    % XdesignMatrix2 is based on gammaOut RGB settings
     XdesignMatrix1 = zeros(conditionsNum, featuresNum);
     XdesignMatrix2 = zeros(conditionsNum, featuresNum);
     fprintf('Full design matrix     is %d x %d\n', size(XdesignMatrix1,1), size(XdesignMatrix1,2));
     fprintf('Training design matrix is %d x %d\n', numel(trainingIndices), size(XdesignMatrix1,2));
      
-    
     if (~isempty(useParallelEngine) && useParallelEngine)
         % Check if a parpool is open 
         poolobj = gcp('nocreate'); 
@@ -72,7 +77,7 @@ function [inSampleError, outOfSampleError] = testSensorPrediction(sensorSigma, s
         end
 
         % Start new parpool
-        parpool
+        parpool;
 
         % Loop over all conditions
         parfor conditionIndex = 1:conditionsNum
@@ -88,13 +93,19 @@ function [inSampleError, outOfSampleError] = testSensorPrediction(sensorSigma, s
         delete(gcp)
     else
         [xx,yy] = meshgrid(sensorLocations.x, sensorLocations.y);
+        
         for conditionIndex = 1:conditionsNum
             [conditionIndex conditionsNum]
             
+            % stimulus: uint8 -> double, normalized to [0..1]
             stimGammaIn  = double(squeeze(stimuliGammaIn(conditionIndex,:,:)))/255.0;
             stimGammaOut = double(squeeze(stimuliGammaOut(conditionIndex,:,:)))/255.0;
+            
+            % Compute features
             [featureVector1, filteredStimGammIn]  = extractFeatures(stimGammaIn, sensorSpectrum, sensorLocations);
             [featureVector2, filteredStimGammOut] = extractFeatures(stimGammaOut, sensorSpectrum, sensorLocations);
+            
+            % Update design matrices
             XdesignMatrix1(conditionIndex, :) = featureVector1;
             XdesignMatrix2(conditionIndex, :) = featureVector2;
             
@@ -132,15 +143,23 @@ function [inSampleError, outOfSampleError] = testSensorPrediction(sensorSigma, s
         end
     end
     
-
-    XdesignMatrixFileName = sprintf('intermediate_local_spectral_analysis_sensorSigma_%2.1f_sensorSpacing_%2.2f.mat', sensorSigma, sensorSpacing);
+    % Save design matrices
+    intermediateDataDirectory = '/Users/Shared/Matlab/Toolboxes/OLEDToolbox/Analysis/IntermediateData';
+    XdesignMatrixFileName = ...
+        sprintf('%s/intermediate_local_spectral_analysis_sensorSigma_%1.0f_sensorSpacing_%1.1f.mat', ...
+        intermediateDataDirectory, sensorSigma, sensorSpacing);
+    
     save(XdesignMatrixFileName, ...
         'XdesignMatrix1', 'XdesignMatrix2', ...
         'trainingIndices', 'testingIndices', ...
-        'leftTargetLuminance', 'rightTargetLuminance');
+        'leftTargetLuminance', 'rightTargetLuminance', ...
+        'sensor', 'sensorSpectrum', 'sensorLocations' ...
+        );
     
     
-    % Add two more design matrices with features = features1.^2
+    % Add two more design matrices
+    % XdesignMatrix3 is based on gammaIn RGB settings power
+    % XdesignMatrix4 is based on gammaOut RGB settings power
     XdesignMatrix3 = XdesignMatrix1.^2;
     XdesignMatrix4 = XdesignMatrix2.^2;
     
@@ -156,20 +175,19 @@ function [inSampleError, outOfSampleError] = testSensorPrediction(sensorSigma, s
             X = XdesignMatrix4;
         end
         
-        
+        % Spit design matrix into training (in-sample) and test
+        % (out-of-sample) portions
         Xtrain = X(trainingIndices,:);
         Xtest  = X(testingIndices,:);
-        
         Xdagger = pinv(Xtrain);
         
-        % check if Xtrain'*Xtrain is inverible
-        
+        % check if the covariance of Xtrain (i.e. Xtrain'*Xtrain) is inverible
         fprintf('\n\nRank and size of Xtrain (for feature space: %d):', featureSpace);
         rank(Xtrain)
         size(Xtrain)
         p = inv(Xtrain'*Xtrain);
         
-        
+        % Compute sensor weights
         weightsVectorLeftTarget  = Xdagger * leftTargetLuminance(trainingIndices);
         weightsVectorRightTarget = Xdagger * rightTargetLuminance(trainingIndices);
         
@@ -178,7 +196,6 @@ function [inSampleError, outOfSampleError] = testSensorPrediction(sensorSigma, s
         fitRightTargetLuminance = Xtrain * weightsVectorRightTarget;
         inSampleError(featureSpace).leftTarget  = sqrt(sum((leftTargetLuminance(trainingIndices)  - fitLeftTargetLuminance).^2)/numel(trainingIndices));
         inSampleError(featureSpace).rightTarget = sqrt(sum((rightTargetLuminance(trainingIndices) - fitRightTargetLuminance).^2)/numel(trainingIndices));
-        
         
         % Prediction of test data (out-of-sample)
         predictLeftTargetLuminance  = Xtest * weightsVectorLeftTarget;
@@ -200,7 +217,7 @@ function [inSampleError, outOfSampleError] = testSensorPrediction(sensorSigma, s
         ]);
     
         
-        figure(990+featureSpace);
+        figure(990+featureSpace);0
         clf;
       
         weightDistributionLeft = reshape(weightsVectorLeftTarget(2:end), numel(sensorLocations.y), numel(sensorLocations.x));
@@ -323,15 +340,12 @@ function [sensor, sensorSpectrum, sensorLocations] = generateSensor(columnsNum, 
     y = ((1:rowsNum)-rowsNum/2);
     [X,Y] = meshgrid(x,y);
     
-  
     xo = 0; yo = 0;
     sensor = exp(-0.5*((X-xo)/sigma).^2) .* exp(-0.5*((Y-yo)/sigma).^2);
     % Normalize to unit area
     sensor = sensor / sum(sensor(:));
     
-    
-     
-    
+    % image showing coverage of a 3x3 ensemble of neighboring sensors
     sensors3 = [];
     for i = -1:1
         for j = -1:1
@@ -343,8 +357,7 @@ function [sensor, sensorSpectrum, sensorLocations] = generateSensor(columnsNum, 
             end
         end
     end
-    
-    
+      
     fftSamplesNum = 2048;
     rowOffset = (fftSamplesNum -rowsNum)/2;
     colOffset = (fftSamplesNum -columnsNum)/2;
@@ -353,6 +366,7 @@ function [sensor, sensorSpectrum, sensorLocations] = generateSensor(columnsNum, 
     
     sensorSpectrum = doFFT(sensor, fftSamplesNum, rowOffset, colOffset, rowRange, colRange);
 
+    % Compute sensor locations based on sensorSpacing
     delta = (1:1000);
     delta = [-delta(end:-1:1) 0 delta];
     xcoords = delta*sensorSpacing;
@@ -387,7 +401,6 @@ function [sensor, sensorSpectrum, sensorLocations] = generateSensor(columnsNum, 
     hold off;
     
     drawnow;
-    
 end
 
 
@@ -477,6 +490,8 @@ function [stimuliGammaIn, stimuliGammaOut, leftTargetLuminance, rightTargetLumin
         end
         stimIndex = stimIndex + 1;
         
+        % testing indices: 0, 3, 6
+        % training indices: 1, 2, 4, 5, 7
         if (mod(frameIndex-1,3) == 0)
             testingIndices = [testingIndices stimIndex];
         else
@@ -499,13 +514,15 @@ function [stimuliGammaIn, stimuliGammaOut, leftTargetLuminance, rightTargetLumin
         spd = SplineSpd(nativeS, (runData.rightSPD)', desiredS);
         rightTargetLuminance(stimIndex) = sum(spd'.*vLambda,2);
         
-        
-        
+        % Gamma-in image
         f = double(runData.demoFrame)/255.0;
+        
+        % Gamma-out image
         ff = gammaFunction.output(1+round(f*(numel(gammaFunction.output)-1)));
         
         stimuliGammaIn(stimIndex,:,:)  = runData.demoFrame;
         stimuliGammaOut(stimIndex,:,:) = uint8(ff*255.0);
+        
         if (1==2)
             figure(555);
             subplot(2,1,1)
