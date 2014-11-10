@@ -1,14 +1,21 @@
 function PerformLocallySpectralLuminancePrediction
 
-    [rootDir, ~, ~] = fileparts(mfilename('fullpath'));
-    rootDir
+    % Spatio-spectrally based analysis
+    sensorSpacings = [1.5 2.0 2.5 3.0 4.0];
+    sensorSigmas  = [60 70 80 90 100 125 150 175 200 250 300 350 400 500 600];
+     
+    % Spectrally-only based analysis
+    sensorSpacings = [-1];  % this indicates to take the total energy of the filtered image
+    sensorSigmas  = [15 30 60 120 240 480 960];
+    
     
     useParallelEngine = input('Use parallel engine? [1=YES, default=NO] : '); 
+    [rootDir, ~, ~] = fileparts(mfilename('fullpath'));
+    calibrationFile = 'SamsungOLED_CloudsCalib4.mat';
     
-    calibrationFile = 'SamsungOLED_CloudsCalib3.mat';
-    
-    if (strcmp(calibrationFile, 'SamsungOLED_CloudsCalib3.mat'))
-    
+    if (strcmp(calibrationFile, 'SamsungOLED_CloudsCalib3.mat') || ...
+        strcmp(calibrationFile, 'SamsungOLED_CloudsCalib4.mat') ...
+       )
         [stimuliGammaIn, stimuliGammaOut, ...
          leftTargetLuminance, rightTargetLuminance, timeOfMeasurement, ...
          trainingIndices, testingIndices] = loadStimuliAndResponses(calibrationFile);
@@ -22,7 +29,7 @@ function PerformLocallySpectralLuminancePrediction
         theLeftTargetLuminance  = squeeze(leftTargetLuminance(repeatIndex,:));
         theRightTargetLuminance = squeeze(rightTargetLuminance(repeatIndex,:));
     
-        % average of first 3 trials
+        % The average of the first 3 trials
         repeatIndex = 1:3;
         theLeftTargetLuminance  = squeeze(mean(leftTargetLuminance(repeatIndex,:),1));
         theRightTargetLuminance = squeeze(mean(rightTargetLuminance(repeatIndex,:),1));
@@ -31,7 +38,6 @@ function PerformLocallySpectralLuminancePrediction
         theRightTargetLuminance = reshape(theRightTargetLuminance, [numel(theRightTargetLuminance) 1]);
     
     elseif (strcmp(calibrationFile, 'SamsungOLED_CloudsCalib2.mat'))
-    
         [stimuliGammaIn, stimuliGammaOut, ...
          leftTargetLuminance, rightTargetLuminance, ...
          trainingIndices, testingIndices] = OLDloadStimuliAndResponsesForCalib2(calibrationFile);
@@ -40,20 +46,8 @@ function PerformLocallySpectralLuminancePrediction
         theRightTargetLuminance = rightTargetLuminance;
     end
     
- 
     fprintf('Training samples: %d\n', numel(trainingIndices))
     fprintf('Testing  samples: %d\n', numel(testingIndices)); 
-    
-    
-    % Sensor sigmas (in pixels) to examine
-    sensorSpacings = [1.5 2.0 2.5 3.0 4.0];
-    sensorSigmas  = [60 70 80 90 100 125 150 175 200 250 300 350 400 500 600];
-    
-    
-    % Sensor spacings (multiples of sensor sigma) to examine
-    sensorSpacings = [-1];  % this indicates to take the total energy of the filtered image
-    sensorSigmas  = [15 30 60 120 240 480 960];
-    
     
     % Grid search over sensor sigmas & sensor spacings
     bestOutOfSampleError = 10^14;
@@ -132,8 +126,7 @@ trainingIndices, testingIndices, useParallelEngine, rootDir)
         
         % ALl done. Delete parallel pool object
         delete(gcp)
-    else
-        
+    else 
         for conditionIndex = 1:conditionsNum
             fprintf('\nNow processing condition %d out of a total of %d conds.', conditionIndex, conditionsNum);          
             % stimulus: uint8 -> double, normalized to [0..1]
@@ -154,29 +147,33 @@ trainingIndices, testingIndices, useParallelEngine, rootDir)
             hold on;
             plot(sensorLocations.x(:), sensorLocations.y(:), 'r+');
             hold off;
-            set(gca, 'CLim', [0 1], 'XLim', [1 1920], 'YLim', [1 1080]);
             axis 'image'
+            set(gca, 'CLim', [0 1], 'XLim', [1 1920], 'YLim', [1 1080]);
+            
             subplot(2,2,2);
             imagesc(stimGammaOut);
             hold on;
             plot(sensorLocations.x(:), sensorLocations.y(:), 'r+');
             hold off;
-            set(gca, 'CLim', [0 1], 'XLim', [1 1920], 'YLim', [1 1080]);
             axis 'image'
+            set(gca, 'CLim', [0 1], 'XLim', [1 1920], 'YLim', [1 1080]);
+            
             subplot(2,2,3);
             imagesc(filteredStimGammIn);
             hold on;
             plot(sensorLocations.x(:), sensorLocations.y(:), 'r+');
             hold off;
-            set(gca, 'CLim', [0 1], 'XLim', [1 1920], 'YLim', [1 1080]);
             axis 'image'
+            set(gca, 'CLim', [0 1], 'XLim', [1 1920], 'YLim', [1 1080]);
+            
             subplot(2,2,4);
             imagesc(filteredStimGammOut);
             hold on;
             plot(sensorLocations.x(:), sensorLocations.y(:), 'r+');
             hold off;
-            set(gca, 'CLim', [0 1], 'XLim', [1 1920], 'YLim', [1 1080]);
             axis 'image'
+            set(gca, 'CLim', [0 1], 'XLim', [1 1920], 'YLim', [1 1080]);
+            
             colormap(gray(256));
             drawnow;
         end
@@ -464,10 +461,8 @@ function [featureVector, sensorImage] = extractFeatures(frame, sensorSpectrum, s
     
     if ((numel(sensorLocations.x) == 1) && (sensorLocations.x < 0) && ...
         (numel(sensorLocations.y) == 1) && (sensorLocations.y < 0))
-        spectum = abs(spectrum);
-        imageEnergyWithinFrequencyBand = mean(spectrum(:));
         k = 1;
-        featureVector(1+k) = imageEnergyWithinFrequencyBand;
+        featureVector(1+k) = mean(sensorImage(:));
     else       
         % Sample according to sensor locations
         xx = sensorLocations.x(:);
@@ -569,15 +564,18 @@ function examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, time
     xlabel('Repetition no. 1');
     ylabel('Repetition no. 3');
     
-    subplot(3,2,3);
-    plot(leftTargetLuminance(1,:), leftTargetLuminance(4,:), 'k.');
-    hold on;
-    plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
-    hold off;
-    set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:100:1000], 'YTick', [0 :100:1000]);
-    axis 'square'
-    xlabel('Repetition no. 1');
-    ylabel('Repetition no. 4');
+    if (size(leftTargetLuminance,1) > 3)
+        subplot(3,2,3);
+        plot(leftTargetLuminance(1,:), leftTargetLuminance(4,:), 'k.');
+        hold on;
+        plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
+        hold off;
+        set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:100:1000], 'YTick', [0 :100:1000]);
+        axis 'square'
+        xlabel('Repetition no. 1');
+        ylabel('Repetition no. 4');
+    end
+    
     
     subplot(3,2,4);
     plot(leftTargetLuminance(2,:), leftTargetLuminance(3,:), 'k.');
@@ -589,26 +587,28 @@ function examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, time
     xlabel('Repetition no. 2');
     ylabel('Repetition no. 3');
     
-    subplot(3,2,5);
-    plot(leftTargetLuminance(2,:), leftTargetLuminance(4,:), 'k.');
-    hold on;
-    plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
-    hold off;
-    set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:100:1000], 'YTick', [0 :100:1000]);
-    axis 'square'
-    xlabel('Repetition no. 2');
-    ylabel('Repetition no. 4');
-    
-    subplot(3,2,6);
-    plot(leftTargetLuminance(3,:), leftTargetLuminance(4,:), 'k.');
-    hold on;
-    plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
-    hold off;
-    set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:100:1000], 'YTick', [0 :100:1000]);
-    axis 'square'
-    xlabel('Repetition no. 3');
-    ylabel('Repetition no. 4');
-    drawnow;
+    if (size(leftTargetLuminance,1) > 3)
+        subplot(3,2,5);
+        plot(leftTargetLuminance(2,:), leftTargetLuminance(4,:), 'k.');
+        hold on;
+        plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
+        hold off;
+        set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:100:1000], 'YTick', [0 :100:1000]);
+        axis 'square'
+        xlabel('Repetition no. 2');
+        ylabel('Repetition no. 4');
+
+        subplot(3,2,6);
+        plot(leftTargetLuminance(3,:), leftTargetLuminance(4,:), 'k.');
+        hold on;
+        plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
+        hold off;
+        set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:100:1000], 'YTick', [0 :100:1000]);
+        axis 'square'
+        xlabel('Repetition no. 3');
+        ylabel('Repetition no. 4');
+        drawnow;
+    end
     
 end
 
