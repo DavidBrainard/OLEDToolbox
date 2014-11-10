@@ -1,14 +1,23 @@
 function IntermiediateToFinalLocallySpectralLuminancePrediction
 
+    % Sensor sigmas (in pixels) to examine
+    sensorSigmas = [60 70 80 90 100 120 140 160 180 200 225 250 300 350 400 500 600];
     
-    sensorSigma   = 80;
-    sensorSpacing = 2.0;
+    % Sensor spacings (multiples of sensor sigma) to examine
+    sensorSpacings = [1.5 2.0 2.5 3.0 4.0];
+
+    for sigmaIndex = 1:numel(sensorSigmas)
+        for spacingIndex = 1:numel(sensorSpacings)
+            
+    sensorSigma   = sensorSigmas(sigmaIndex);
+    sensorSpacing = sensorSpacings(spacingIndex);
     
-    exportToPDF = true;
+    exportToPDF = false;
     exportToPNG = false;
-    showWeightDistribution = false;
+    showWeightDistribution = true;
     
-    intermediateDataDirectory = '/Users/Shared/Matlab/Toolboxes/OLEDToolbox/Analysis/IntermediateData';
+    [rootDir, ~, ~] = fileparts(mfilename('fullpath'));
+    intermediateDataDirectory = sprintf('%s/IntermediateData', rootDir);
     XdesignMatrixFileName = ...
         sprintf('%s/intermediate_local_spectral_analysis_sensorSigma_%1.0f_sensorSpacing_%1.1f.mat', ...
         intermediateDataDirectory,sensorSigma, sensorSpacing);
@@ -17,6 +26,7 @@ function IntermiediateToFinalLocallySpectralLuminancePrediction
     % 'XdesignMatrix1', 'XdesignMatrix2', ...
     % 'trainingIndices', 'testingIndices', ...
     % 'leftTargetLuminance', 'rightTargetLuminance')
+    % 'sensor', 'sensorSpectrum', 'sensorLocations'
     load(XdesignMatrixFileName);
     
     % Add two more design matrices
@@ -41,9 +51,7 @@ function IntermiediateToFinalLocallySpectralLuminancePrediction
         Xtrain  = X(trainingIndices,:);
         Xtest   = X(testingIndices,:);
         
-        fprintf('\n\nRank and size of Xtrain (for feature space: %d):', featureSpace);
-        rank(Xtrain)
-        size(Xtrain)
+        fprintf('\n\nRank and size of Xtrain (for feature space: %d) = %d, [%d x %d]', featureSpace, rank(Xtrain), size(Xtrain,1), size(Xtrain,2));
         p = inv(Xtrain'*Xtrain);
         
         % compute sensor weights from the training samples
@@ -64,6 +72,9 @@ function IntermiediateToFinalLocallySpectralLuminancePrediction
         outOfSampleError(featureSpace).leftTarget  = sqrt(sum((leftTargetLuminance(testingIndices)  - predictLeftTargetLuminance).^2)/numel(testingIndices));
         outOfSampleError(featureSpace).rightTarget = sqrt(sum((rightTargetLuminance(testingIndices) - predictRightTargetLuminance).^2)/numel(testingIndices));
         
+        outOfSampleLeftErrorMatrix(featureSpace, sigmaIndex, spacingIndex)  = outOfSampleError(featureSpace).leftTarget;
+        outOfSampleRightErrorMatrix(featureSpace, sigmaIndex, spacingIndex) = outOfSampleError(featureSpace).rightTarget;
+        
         minAll = min([ ...
             min(leftTargetLuminance)     min(rightTargetLuminance) ...
             min(fitLeftTargetLuminance)  min(fitRightTargetLuminance) ...
@@ -78,17 +89,52 @@ function IntermiediateToFinalLocallySpectralLuminancePrediction
     
         
         if (showWeightDistribution)
-            weightDistributionLeft  = reshape(weightsVectorLeftTarget(2:end),  numel(sensorLocations.y), numel(sensorLocations.x));
-            weightDistributionRight = reshape(weightsVectorRightTarget(2:end), numel(sensorLocations.y), numel(sensorLocations.x));
+            columnsNum = 1920;
+            rowsNum = 1080;
+            [X,Y] = meshgrid(1:1920, 1:1080);
+            weightDistributionLeft  = weightsVectorLeftTarget(2:end);
+            weightDistributionRight = weightsVectorRightTarget(2:end);
         
+            weightMapLeft = [];
+            weightMapRight = [];
+            xcoords = sensorLocations.x; - columnsNum/2;
+            ycoords = sensorLocations.y; - rowsNum/2;
+  
+            borderWidth = 200;
+            for i = 1:numel(sensorLocations.y)
+                xo = xcoords(i);
+                yo = ycoords(i);
+                if ((xo > borderWidth) && (xo < 1920-borderWidth) && (yo > borderWidth) && (yo < 1080-borderWidth)) 
+                if (isempty(weightMapLeft))
+                    weightMapLeft  = weightDistributionLeft(i) * exp(-0.5*((X-xo)/sensorSigma).^2) .* exp(-0.5*((Y-yo)/sensorSigma).^2);
+                else
+                    weightMapLeft = weightMapLeft + weightDistributionLeft(i) * exp(-0.5*((X-xo)/sensorSigma).^2) .* exp(-0.5*((Y-yo)/sensorSigma).^2);
+                end
+                if (isempty(weightMapRight))
+                    weightMapRight = weightDistributionRight(i) * exp(-0.5*((X-xo)/sensorSigma).^2) .* exp(-0.5*((Y-yo)/sensorSigma).^2);
+                else
+                    weightMapRight = weightMapRight + weightDistributionRight(i) * exp(-0.5*((X-xo)/sensorSigma).^2) .* exp(-0.5*((Y-yo)/sensorSigma).^2);
+                end
+                end
+                
+            end
+    
             figure(100+featureSpace);
             clf;
             subplot(1,2,1);
-            imagesc(weightDistributionLeft);
+            imagesc(1:1920, 1:1080, weightMapLeft);
+            hold on
+            plot(sensorLocations.x, sensorLocations.y, 'r+');
+            colorbar
+            hold off;
             axis 'image';
             subplot(1,2,2);
-            imagesc(weightDistributionRight);
+            imagesc(1:1920, 1:1080, weightMapRight);
+            hold on
+            plot(sensorLocations.x, sensorLocations.y, 'r+');
+            hold off;
             axis 'image';
+            colorbar
             colormap(gray);
             drawnow;
         end
@@ -265,6 +311,23 @@ function IntermiediateToFinalLocallySpectralLuminancePrediction
             imwrite(img.cdata, pngFileName);
         end
     end % featureSpace
+    
+    end
+    end
+    
+    figure(666);
+    clf;
+    CLims = [min(outOfSampleLeftErrorMatrix(:)) 40]; % max(outOfSampleLeftErrorMatrix(:))];
+    for featureSpace = 1:4
+        subplot(2,2,featureSpace);
+        imagesc(1:numel(sensorSigmas), 1:numel(sensorSpacings), (squeeze(outOfSampleLeftErrorMatrix(featureSpace, :,:)))');
+        set(gca, 'CLim', CLims);
+        colormap(gray);
+        colorbar
+        set(gca, 'XTick', 1:numel(sensorSigmas), 'XTickLabel', sensorSigmas,  'YTick', 1:numel(sensorSpacings), 'YTickLabel', sensorSpacings);
+    end
+    
+        
     
 end
 
