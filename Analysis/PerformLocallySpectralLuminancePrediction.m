@@ -154,28 +154,28 @@ trainingIndices, testingIndices, useParallelEngine, rootDir)
             hold on;
             plot(sensorLocations.x(:), sensorLocations.y(:), 'r+');
             hold off;
-            set(gca, 'CLim', [0 1]);
+            set(gca, 'CLim', [0 1], 'XLim', [1 1920], 'YLim', [1 1080]);
             axis 'image'
             subplot(2,2,2);
             imagesc(stimGammaOut);
             hold on;
             plot(sensorLocations.x(:), sensorLocations.y(:), 'r+');
             hold off;
-            set(gca, 'CLim', [0 1]);
+            set(gca, 'CLim', [0 1], 'XLim', [1 1920], 'YLim', [1 1080]);
             axis 'image'
             subplot(2,2,3);
             imagesc(filteredStimGammIn);
             hold on;
             plot(sensorLocations.x(:), sensorLocations.y(:), 'r+');
             hold off;
-            set(gca, 'CLim', [0 1]);
+            set(gca, 'CLim', [0 1], 'XLim', [1 1920], 'YLim', [1 1080]);
             axis 'image'
             subplot(2,2,4);
             imagesc(filteredStimGammOut);
             hold on;
             plot(sensorLocations.x(:), sensorLocations.y(:), 'r+');
             hold off;
-            set(gca, 'CLim', [0 1]);
+            set(gca, 'CLim', [0 1], 'XLim', [1 1920], 'YLim', [1 1080]);
             axis 'image'
             colormap(gray(256));
             drawnow;
@@ -465,7 +465,7 @@ function [featureVector, sensorImage] = extractFeatures(frame, sensorSpectrum, s
     if ((numel(sensorLocations.x) == 1) && (sensorLocations.x < 0) && ...
         (numel(sensorLocations.y) == 1) && (sensorLocations.y < 0))
         spectum = abs(spectrum);
-        imageEnergyWithinFrequencyBand = mean(spectrum);
+        imageEnergyWithinFrequencyBand = mean(spectrum(:));
         k = 1;
         featureVector(1+k) = imageEnergyWithinFrequencyBand;
     else       
