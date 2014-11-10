@@ -5,57 +5,54 @@ function PerformLocallySpectralLuminancePrediction
     
     useParallelEngine = input('Use parallel engine? [1=YES, default=NO] : '); 
     
-    if (1==2)
-    % Load stimuli and responses (measured luminances)
     calibrationFile = 'SamsungOLED_CloudsCalib3.mat';
     
-    [stimuliGammaIn, stimuliGammaOut, ...
-     leftTargetLuminance, rightTargetLuminance, timeOfMeasurement, ...
-     trainingIndices, testingIndices] = loadStimuliAndResponses(calibrationFile);
- 
-     % Examine repeatability
-    examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, timeOfMeasurement);
+    if (strcmp(calibrationFile, 'SamsungOLED_CloudsCalib3.mat'))
+    
+        [stimuliGammaIn, stimuliGammaOut, ...
+         leftTargetLuminance, rightTargetLuminance, timeOfMeasurement, ...
+         trainingIndices, testingIndices] = loadStimuliAndResponses(calibrationFile);
+
+        % Examine repeatability
+        examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, timeOfMeasurement);
    
+        % Select data set
+        % Just the first trial
+        repeatIndex = 1;
+        theLeftTargetLuminance  = squeeze(leftTargetLuminance(repeatIndex,:));
+        theRightTargetLuminance = squeeze(rightTargetLuminance(repeatIndex,:));
     
-    % Select data set
-    % Just the first trial
-    repeatIndex = 1;
-    theLeftTargetLuminance  = squeeze(leftTargetLuminance(repeatIndex,:));
-    theRightTargetLuminance = squeeze(rightTargetLuminance(repeatIndex,:));
+        % average of first 3 trials
+        repeatIndex = 1:3;
+        theLeftTargetLuminance  = squeeze(mean(leftTargetLuminance(repeatIndex,:),1));
+        theRightTargetLuminance = squeeze(mean(rightTargetLuminance(repeatIndex,:),1));
+
+        theLeftTargetLuminance  = reshape(theLeftTargetLuminance,  [numel(theLeftTargetLuminance) 1]);
+        theRightTargetLuminance = reshape(theRightTargetLuminance, [numel(theRightTargetLuminance) 1]);
     
-    % average of first 3 trials
-    repeatIndex = 1:3;
-    theLeftTargetLuminance  = squeeze(mean(leftTargetLuminance(repeatIndex,:),1));
-    theRightTargetLuminance = squeeze(mean(rightTargetLuminance(repeatIndex,:),1));
+    elseif (strcmp(calibrationFile, 'SamsungOLED_CloudsCalib2.mat'))
     
-    theLeftTargetLuminance  = reshape(theLeftTargetLuminance,  [numel(theLeftTargetLuminance) 1]);
-    theRightTargetLuminance = reshape(theRightTargetLuminance, [numel(theRightTargetLuminance) 1]);
-    
-    else
-        
-        calibrationFile = 'SamsungOLED_CloudsCalib2.mat';
-    [stimuliGammaIn, stimuliGammaOut, ...
-     leftTargetLuminance, rightTargetLuminance, ...
-     trainingIndices, testingIndices] = OLDloadStimuliAndResponsesForCalib2(calibrationFile);
- 
-    theLeftTargetLuminance  = leftTargetLuminance;
-    theRightTargetLuminance = rightTargetLuminance;
+        [stimuliGammaIn, stimuliGammaOut, ...
+         leftTargetLuminance, rightTargetLuminance, ...
+         trainingIndices, testingIndices] = OLDloadStimuliAndResponsesForCalib2(calibrationFile);
+
+        theLeftTargetLuminance  = leftTargetLuminance;
+        theRightTargetLuminance = rightTargetLuminance;
     end
-    
- 
     
  
     fprintf('Training samples: %d\n', numel(trainingIndices))
     fprintf('Testing  samples: %d\n', numel(testingIndices)); 
-     
     
     
     % Sensor sigmas (in pixels) to examine
-    sensorSigmas  = [60 70 80 90 100 120 140 160 180 200 225 250 300 350 400 500 600];
+    sensorSpacings = [1.5 2.0 2.5 3.0 4.0];
+    sensorSigmas  = [60 70 80 90 100 125 150 175 200 250 300 350 400 500 600];
+    
     
     % Sensor spacings (multiples of sensor sigma) to examine
-    sensorSpacings = [1.5 2.0 2.5 3.0 4.0];
-    
+    sensorSpacings = [-1];  % this indicates to take the total energy of the filtered image
+    sensorSigmas  = [15 30 60 120 240 480 960];
     
     
     % Grid search over sensor sigmas & sensor spacings
@@ -257,22 +254,22 @@ trainingIndices, testingIndices, useParallelEngine, rootDir)
         ]);
     
         
-    if (1==2)
-        figure(990+featureSpace);
-        clf;
-      
-        weightDistributionLeft = reshape(weightsVectorLeftTarget(2:end), numel(sensorLocations.y));
-        weightDistributionRight = reshape(weightsVectorRightTarget(2:end), numel(sensorLocations.y));
-        
-        subplot(1,2,1);
-        imagesc(weightDistributionLeft);
-        axis 'image';
-        subplot(1,2,2);
-        imagesc(weightDistributionRight);
-        axis 'image';
-        colormap(gray);
-        drawnow;
-    end
+        if (1==2)
+            figure(990+featureSpace);
+            clf;
+
+            weightDistributionLeft = reshape(weightsVectorLeftTarget(2:end), numel(sensorLocations.y));
+            weightDistributionRight = reshape(weightsVectorRightTarget(2:end), numel(sensorLocations.y));
+
+            subplot(1,2,1);
+            imagesc(weightDistributionLeft);
+            axis 'image';
+            subplot(1,2,2);
+            imagesc(weightDistributionRight);
+            axis 'image';
+            colormap(gray);
+            drawnow;
+        end
     
         
         figure(100+featureSpace);
@@ -395,47 +392,55 @@ function [sensor, sensorSpectrum, sensorLocations] = generateSensor(columnsNum, 
     
     sensorSpectrum = doFFT(sensor, fftSamplesNum, rowOffset, colOffset, rowRange, colRange);
 
-    % Compute sensor locations based on sensorSpacing
-    sensorLocations = GenerateHexagonalSamplingGrid(sensorSpacing,columnsNum, rowsNum);
-    
-    % Generate demo image showing coverage of a 3x3 ensemble of neighboring sensors
-    sensorCoverage = [];
-    lambda  = sensorSpacing/2.0;
-    xcoords = sensorLocations.x - columnsNum/2;
-    ycoords = sensorLocations.y - rowsNum/2;
-    radii = sqrt((xcoords).^2 + (ycoords).^2);
-    centerIndices = find (radii <= 2.1*lambda);
-  
-    for i = 1:numel(centerIndices)
-        xo = xcoords(centerIndices(i));
-        yo = ycoords(centerIndices(i));
-        if (isempty(sensorCoverage))
-            sensorCoverage = exp(-0.5*((X-xo)/sigma).^2) .* exp(-0.5*((Y-yo)/sigma).^2);
-        else
-            sensorCoverage =  sensorCoverage + exp(-0.5*((X-xo)/sigma).^2) .* exp(-0.5*((Y-yo)/sigma).^2);
+    if (sensorSpacing < 0)
+        sensorLocations.x = -columnsNum/2;
+        sensorLocations.y = -rowsNum/2;
+    else
+        % Compute sensor locations based on sensorSpacing
+        sensorLocations = GenerateHexagonalSamplingGrid(sensorSpacing,columnsNum, rowsNum);
+
+        % Generate demo image showing coverage of a 3x3 ensemble of neighboring sensors
+        sensorCoverage = [];
+        lambda  = sensorSpacing/2.0;
+        xcoords = sensorLocations.x - columnsNum/2;
+        ycoords = sensorLocations.y - rowsNum/2;
+        radii = sqrt((xcoords).^2 + (ycoords).^2);
+        centerIndices = find (radii <= 2.1*lambda);
+
+        for i = 1:numel(centerIndices)
+            xo = xcoords(centerIndices(i));
+            yo = ycoords(centerIndices(i));
+            if (isempty(sensorCoverage))
+                sensorCoverage = exp(-0.5*((X-xo)/sigma).^2) .* exp(-0.5*((Y-yo)/sigma).^2);
+            else
+                sensorCoverage =  sensorCoverage + exp(-0.5*((X-xo)/sigma).^2) .* exp(-0.5*((Y-yo)/sigma).^2);
+            end
         end
+    
+    
+        figure(55);
+        clf;
+        subplot(2,1,1)
+        imagesc(sensor);
+        axis 'image'
+        colormap(gray);
+        hold on
+        plot(sensorLocations.x, sensorLocations.y, 'r+');
+        hold off;
+
+        subplot(2,1,2)
+        imagesc(sensorCoverage);
+        axis 'image'
+        colormap(gray);
+        hold on
+        plot(sensorLocations.x, sensorLocations.y, 'r+');
+        hold off;
+
+        drawnow;
+        
     end
     
     
-    figure(55);
-    clf;
-    subplot(2,1,1)
-    imagesc(sensor);
-    axis 'image'
-    colormap(gray);
-    hold on
-    plot(sensorLocations.x, sensorLocations.y, 'r+');
-    hold off;
-    
-    subplot(2,1,2)
-    imagesc(sensorCoverage);
-    axis 'image'
-    colormap(gray);
-    hold on
-    plot(sensorLocations.x, sensorLocations.y, 'r+');
-    hold off;
-    
-    drawnow;
 end
 
 
@@ -455,18 +460,24 @@ function [featureVector, sensorImage] = extractFeatures(frame, sensorSpectrum, s
     % make sure it is all positive
     sensorImage(sensorImage<0) = 0;
     
-    % Sample according to sensor locations
-    xx = sensorLocations.x(:);
-    yy = sensorLocations.y(:);
-    
-
     featureVector(1) = 1;
-    for k = 1:numel(xx)
-        featureVector(1+k) = sensorImage(yy(k), xx(k));
+    
+    if ((numel(sensorLocations.x) == 1) && (sensorLocations.x < 0) && ...
+        (numel(sensorLocations.y) == 1) && (sensorLocations.y < 0))
+        spectum = abs(spectrum);
+        imageEnergyWithinFrequencyBand = mean(spectrum);
+        k = 1;
+        featureVector(1+k) = imageEnergyWithinFrequencyBand;
+    else       
+        % Sample according to sensor locations
+        xx = sensorLocations.x(:);
+        yy = sensorLocations.y(:);
+        for k = 1:numel(xx)
+            featureVector(1+k) = sensorImage(yy(k), xx(k));
+        end
     end
     
     featureVector = reshape(featureVector, [numel(featureVector) 1]);
-    
 end
 
 
