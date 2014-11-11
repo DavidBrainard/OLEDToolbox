@@ -5,8 +5,8 @@ function PerformLocallySpectralLuminancePrediction
     sensorSigmas  = [60 70 80 90 100 125 150 175 200 250 300 350 400 500 600];
      
     % Spectrally-only based analysis
-    %sensorSpacings = [-1];  % this indicates to take the total energy of the filtered image
-    %sensorSigmas  = [0 15 30 60 120 240 480 960];
+    sensorSpacings = [-1];  % this indicates to take the total energy of the filtered image
+    sensorSigmas  = [0 10 20 30 40 50 60 70 80 90 100 125 150 175 200 250 300 350 400 500 600];
     
     
     useParallelEngine = input('Use parallel engine? [1=YES, default=NO] : '); 
