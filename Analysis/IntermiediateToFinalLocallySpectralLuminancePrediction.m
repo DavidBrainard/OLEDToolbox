@@ -2,11 +2,11 @@ function IntermiediateToFinalLocallySpectralLuminancePrediction
 
  
     sensorSpacings = [1.5 2.0 2.5 3.0 4.0];
-    sensorSigmas = [60 70 80 90 100 120 140 160 180 200 225 250 300 350 400 500 600];
+    sensorSigmas = [60 70 80 90 100 125 150 175 200 250 300 350 400 500 600];
     
 
-    sensorSpacings = [-1];  % this indicates to take the total energy of the filtered image
-    sensorSigmas  = [0 15 30 60 120 240 480 960];
+    %sensorSpacings = [-1];  % this indicates to take the total energy of the filtered image
+    %sensorSigmas  = [0 15 30 60 120 240 480 960];
     
     
     for sigmaIndex = 1:numel(sensorSigmas)
