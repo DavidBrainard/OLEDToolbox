@@ -22,22 +22,21 @@ function PerformLocallySpectralLuminancePrediction
 
         % Examine repeatability
         examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, timeOfMeasurement);
-   
-        pause;
+ 
         
         % Select data set
         % Just the first trial
         repeatIndex = 1;
-        theLeftTargetLuminance  = squeeze(leftTargetLuminance(repeatIndex,:));
-        theRightTargetLuminance = squeeze(rightTargetLuminance(repeatIndex,:));
+        theLeftTargetLuminance  = leftTargetLuminance(repeatIndex,:);
+        theRightTargetLuminance = rightTargetLuminance(repeatIndex,:);
     
         % The average of the first 3 trials
-        repeatIndex = 1:3;
-        theLeftTargetLuminance  = squeeze(mean(leftTargetLuminance(repeatIndex,:),1));
-        theRightTargetLuminance = squeeze(mean(rightTargetLuminance(repeatIndex,:),1));
-
-        theLeftTargetLuminance  = reshape(theLeftTargetLuminance,  [numel(theLeftTargetLuminance) 1]);
-        theRightTargetLuminance = reshape(theRightTargetLuminance, [numel(theRightTargetLuminance) 1]);
+%         repeatIndex = 1:3;
+%         theLeftTargetLuminance  = squeeze(mean(leftTargetLuminance(repeatIndex,:),1));
+%         theRightTargetLuminance = squeeze(mean(rightTargetLuminance(repeatIndex,:),1));
+% 
+%         theLeftTargetLuminance  = reshape(theLeftTargetLuminance,  [numel(theLeftTargetLuminance) 1]);
+%         theRightTargetLuminance = reshape(theRightTargetLuminance, [numel(theRightTargetLuminance) 1]);
     
     elseif (strcmp(calibrationFile, 'SamsungOLED_CloudsCalib2.mat'))
         [stimuliGammaIn, stimuliGammaOut, ...
@@ -506,13 +505,14 @@ function examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, time
     plot(timeOfMeasurement(4,:), leftTargetLuminance(4,:), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [0.7 0.7 0.4], 'MarkerEdgeColor', [1.0 1.0 0.0]);
     end
     hold off;
-    set(gca, 'YLim', [400 630]);
-    xlabel('time of measurement (minutes)');
-    ylabel('luminance');
-    title('LEFT TARGET');
+    set(gca, 'YLim', [300 620]);
+    xlabel('time of measurement (minutes)','FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'b');
+    ylabel('luminance (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'b');
+    box on;
+    grid on;
     
-    
-    figure(1002);
+    h = figure(1002);
+    set(h, 'Position', [100 100 670 950]);
     clf;
     
     subplot('Position', [0.09 0.04 0.90 0.95]);
@@ -528,7 +528,7 @@ function examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, time
     plot(timeOfMeasurement(4,:), deltaLeftTargetLuminance(4,:), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [0.7 0.7 0.4], 'MarkerEdgeColor', [1.0 1.0 0.0]);
     end
     hold off;
-    set(gca, 'XLim', [-5 max(timeOfMeasurement(:))+5], 'XTick', [0:60:600], 'YLim', [-100 100], ...
+    set(gca, 'XLim', [-5 max(timeOfMeasurement(:))+5], 'XTick', [0:60:600], 'YLim', [-120 20], ...
         'FontName', 'Helvetica', 'FontSize', 14);
 
     xlabel('time of measurement (minutes)', 'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'b');
@@ -571,6 +571,7 @@ function examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, time
     plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
     hold off;
     set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:50:1000], 'YTick', [0 :50:1000]);
+    axis 'square'
     set(gca, 'FontName', 'Helvetica', 'FontSize', 14);
     xlabel('Repetition no. 1', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
     ylabel('Repetition no. 3', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
@@ -586,7 +587,6 @@ function examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, time
         hold off;
         set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:50:1000], 'YTick', [0 :50:1000]);
         set(gca, 'FontName', 'Helvetica', 'FontSize', 14);
-
         axis 'square'
         xlabel('Repetition no. 1', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
         ylabel('Repetition no. 4', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
@@ -615,22 +615,21 @@ function examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, time
         plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
         hold off;
         set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:50:1000], 'YTick', [0 :50:1000]);
-    set(gca, 'FontName', 'Helvetica', 'FontSize', 14);
-
+        set(gca, 'FontName', 'Helvetica', 'FontSize', 14);
         axis 'square'
         xlabel('Repetition no. 2', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
-    ylabel('Repetition no. 4', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
-    box on;
-    grid on;
+        ylabel('Repetition no. 4', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
+        box on;
+        grid on;
 
 
         subplot('Position', [0.59 0.06 0.40 0.3]);
-    plot(leftTargetLuminance(3,:), leftTargetLuminance(4,:), 'b.', 'MarkerSize', 16);
+        plot(leftTargetLuminance(3,:), leftTargetLuminance(4,:), 'b.', 'MarkerSize', 16);
         hold on;
         plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
         hold off;
         set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:50:1000], 'YTick', [0 :50:1000]);
-    set(gca, 'FontName', 'Helvetica', 'FontSize', 14);
+        set(gca, 'FontName', 'Helvetica', 'FontSize', 14);
         axis 'square'
         xlabel('Repetition no. 3', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
         ylabel('Repetition no. 4', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
