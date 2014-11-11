@@ -11,18 +11,24 @@ function PerformLocallySpectralLuminancePrediction
     
     useParallelEngine = input('Use parallel engine? [1=YES, default=NO] : '); 
     [rootDir, ~, ~] = fileparts(mfilename('fullpath'));
-    calibrationFile = 'SamsungOLED_CloudsCalib4.mat';
+    calibrationFile = 'SamsungOLED_CloudsCalib5.mat';
     
-    if (strcmp(calibrationFile, 'SamsungOLED_CloudsCalib3.mat') || ...
-        strcmp(calibrationFile, 'SamsungOLED_CloudsCalib4.mat') ...
-       )
+    if (strcmp(calibrationFile, 'SamsungOLED_CloudsCalib2.mat'))
+        [stimuliGammaIn, stimuliGammaOut, ...
+         leftTargetLuminance, rightTargetLuminance, ...
+         trainingIndices, testingIndices] = OLDloadStimuliAndResponsesForCalib2(calibrationFile);
+
+        theLeftTargetLuminance  = leftTargetLuminance;
+        theRightTargetLuminance = rightTargetLuminance;
+    else
+    
         [stimuliGammaIn, stimuliGammaOut, ...
          leftTargetLuminance, rightTargetLuminance, timeOfMeasurement, ...
          trainingIndices, testingIndices] = loadStimuliAndResponses(calibrationFile);
 
         % Examine repeatability
         examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, timeOfMeasurement);
- 
+        pause;
         
         % Select data set
         % Just the first trial
@@ -35,13 +41,6 @@ function PerformLocallySpectralLuminancePrediction
 %         theLeftTargetLuminance  = squeeze(mean(leftTargetLuminance(repeatIndex,:),1));
 %         theRightTargetLuminance = squeeze(mean(rightTargetLuminance(repeatIndex,:),1));
 % 
-    elseif (strcmp(calibrationFile, 'SamsungOLED_CloudsCalib2.mat'))
-        [stimuliGammaIn, stimuliGammaOut, ...
-         leftTargetLuminance, rightTargetLuminance, ...
-         trainingIndices, testingIndices] = OLDloadStimuliAndResponsesForCalib2(calibrationFile);
-
-        theLeftTargetLuminance  = leftTargetLuminance;
-        theRightTargetLuminance = rightTargetLuminance;
     end
     
     theLeftTargetLuminance  = reshape(theLeftTargetLuminance,  [numel(theLeftTargetLuminance) 1]);
