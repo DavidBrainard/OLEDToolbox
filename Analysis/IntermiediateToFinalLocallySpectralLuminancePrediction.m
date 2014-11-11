@@ -1,11 +1,14 @@
 function IntermiediateToFinalLocallySpectralLuminancePrediction
 
-    % Sensor sigmas (in pixels) to examine
+ 
+    sensorSpacings = [1.5 2.0 2.5 3.0 4.0];
     sensorSigmas = [60 70 80 90 100 120 140 160 180 200 225 250 300 350 400 500 600];
     
-    % Sensor spacings (multiples of sensor sigma) to examine
-    sensorSpacings = [1.5 2.0 2.5 3.0 4.0];
 
+    sensorSpacings = [-1];  % this indicates to take the total energy of the filtered image
+    sensorSigmas  = [0 15 30 60 120 240 480 960];
+    
+    
     for sigmaIndex = 1:numel(sensorSigmas)
         for spacingIndex = 1:numel(sensorSpacings)
             
@@ -88,7 +91,7 @@ function IntermiediateToFinalLocallySpectralLuminancePrediction
         ]);
     
         
-        if (showWeightDistribution)
+        if (showWeightDistribution) && (sensorSpacing > 0)
             columnsNum = 1920;
             rowsNum = 1080;
             [X,Y] = meshgrid(1:1920, 1:1080);
@@ -320,11 +323,17 @@ function IntermiediateToFinalLocallySpectralLuminancePrediction
     CLims = [min(outOfSampleLeftErrorMatrix(:)) 40]; % max(outOfSampleLeftErrorMatrix(:))];
     for featureSpace = 1:4
         subplot(2,2,featureSpace);
-        imagesc(1:numel(sensorSigmas), 1:numel(sensorSpacings), (squeeze(outOfSampleLeftErrorMatrix(featureSpace, :,:)))');
-        set(gca, 'CLim', CLims);
-        colormap(gray);
-        colorbar
-        set(gca, 'XTick', 1:numel(sensorSigmas), 'XTickLabel', sensorSigmas,  'YTick', 1:numel(sensorSpacings), 'YTickLabel', sensorSpacings);
+        if (numel(sensorSpacings) == 1) 
+            stairs(sensorSigmas, squeeze(outOfSampleLeftErrorMatrix(featureSpace, :,1)), 'k-');
+            xlabel('sensor sigma');
+        else
+            imagesc(1:numel(sensorSigmas), 1:numel(sensorSpacings), (squeeze(outOfSampleLeftErrorMatrix(featureSpace, :,:)))');
+            set(gca, 'CLim', CLims);
+            colormap(gray);
+            colorbar
+            set(gca, 'XTick', 1:numel(sensorSigmas), 'XTickLabel', sensorSigmas,  'YTick', 1:numel(sensorSpacings), 'YTickLabel', sensorSpacings);
+        end
+        
     end
     
         
