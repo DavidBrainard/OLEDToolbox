@@ -8,8 +8,13 @@ function PerformLocallySpectralLuminancePrediction
     sensorSpacings = [-1];  % this indicates to take the total energy of the filtered image
     sensorSigmas  = [0 10 20 30 40 50 60 70 80 90 100 125 150 175 200 250 300 350 400 500 600];
     
-    sensorSpacings = [2.5]; 
-    sensorSigmas  = [100]; 
+    sensorSpacings = [2.0]; 
+    sensorSigmas  = [175]; 
+        
+    showEmployedGammaFunction = true;
+    showRepresentativeStimuli = true;
+    showRGBsettingsHistogram = true;
+    exportToPDF = true;
         
     useParallelEngine = input('Use parallel engine? [1=YES, default=NO] : '); 
     [rootDir, ~, ~] = fileparts(mfilename('fullpath'));
@@ -23,12 +28,6 @@ function PerformLocallySpectralLuminancePrediction
         theLeftTargetLuminance  = leftTargetLuminance;
         theRightTargetLuminance = rightTargetLuminance;
     else
-    
-        showEmployedGammaFunction = true;
-        showRepresentativeStimuli = true;
-        showRGBsettingsHistogram = true;
-        exportToPDF = true;
-        
         [stimuliGammaIn, stimuliGammaOut, ...
          leftTargetLuminance, rightTargetLuminance, timeOfMeasurement, ...
          trainingIndices, testingIndices] = ...
@@ -39,8 +38,8 @@ function PerformLocallySpectralLuminancePrediction
         pause;
         
         % Select data set
-        % Just the first trial
-        repeatIndex = 1;
+        % Select which trial to analyze
+        repeatIndex = 2;
         theLeftTargetLuminance  = leftTargetLuminance(repeatIndex,:);
         theRightTargetLuminance = rightTargetLuminance(repeatIndex,:);
     
@@ -49,6 +48,7 @@ function PerformLocallySpectralLuminancePrediction
 %         theLeftTargetLuminance  = squeeze(mean(leftTargetLuminance(repeatIndex,:),1));
 %         theRightTargetLuminance = squeeze(mean(rightTargetLuminance(repeatIndex,:),1));
 % 
+
     end
     
     theLeftTargetLuminance  = reshape(theLeftTargetLuminance,  [numel(theLeftTargetLuminance) 1]);
@@ -547,6 +547,8 @@ function examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, time
     for stimIndex = 1:size(leftTargetLuminance,2)
         stairs(timeOfMeasurement(:,stimIndex), leftTargetLuminance(:,stimIndex), 'k-');
     end
+
+    
     plot(timeOfMeasurement(1,:), leftTargetLuminance(1,:), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [1.0 0.7 0.7], 'MarkerEdgeColor', [1.0 0.0 0.0]);
     plot(timeOfMeasurement(2,:), leftTargetLuminance(2,:), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [0.5 0.7 0.5], 'MarkerEdgeColor', [0.0 1.0 0.0]);
     plot(timeOfMeasurement(3,:), leftTargetLuminance(3,:), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [0.7 0.7 1.0], 'MarkerEdgeColor', [0.0 0.0 1.0]);
@@ -858,6 +860,7 @@ function [stimuliGammaIn, stimuliGammaOut, ...
         end
         end
     end
+
     
     if (showRGBsettingsHistogram)
         fig3Handle = figure(3);
