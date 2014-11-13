@@ -7,6 +7,8 @@ function IntermiediateToFinalLocallySpectralLuminancePrediction
     %sensorSpacings = [-1];  % this indicates to take the total energy of the filtered image
     %sensorSigmas  = [0 10 20 30 40 50 60 70 80 90 100 125 150 175 200 250 300 350 400 500 600];
     
+    sensorSpacings = 2.0;
+    sensorSigmas = 175;
     
     for sigmaIndex = 1:numel(sensorSigmas)
         for spacingIndex = 1:numel(sensorSpacings)
@@ -14,10 +16,10 @@ function IntermiediateToFinalLocallySpectralLuminancePrediction
     sensorSigma   = sensorSigmas(sigmaIndex);
     sensorSpacing = sensorSpacings(spacingIndex);
     
-    exportToPDF = false;
+    exportToPDF = true;
     exportToPNG = false;
-    showWeightDistribution = false;
-    generateScatterPlotsForEachCondition = false;
+    showWeightDistribution = true;
+    generateScatterPlotsForEachCondition = true;
     
     [rootDir, ~, ~] = fileparts(mfilename('fullpath'));
     intermediateDataDirectory = sprintf('%s/IntermediateData/Clouds4', rootDir);
@@ -37,6 +39,10 @@ function IntermiediateToFinalLocallySpectralLuminancePrediction
     % XdesignMatrix4 is based on gammaOut RGB settings power
     XdesignMatrix3 = XdesignMatrix1.^2;
     XdesignMatrix4 = XdesignMatrix2.^2;
+    
+    hh = figure(100);
+    set(hh, 'Position', [100 100 750 860]);
+    clf;
     
     for featureSpace = 1:4
         
@@ -122,24 +128,60 @@ function IntermiediateToFinalLocallySpectralLuminancePrediction
                 
             end
     
-            figure(100+featureSpace);
-            clf;
-            subplot(1,2,1);
+            figure(100);
+            margin = 0.02;
+            height = 0.9/4;
+            width  = 0.47;
+            
+            
+            subplot('Position', [0.03 1-featureSpace*(height+margin) width height]);
+            % If left-right targets are reverse use:imagesc(1:1920, 1:1080, weightMapRight);
             imagesc(1:1920, 1:1080, weightMapLeft);
             hold on
             plot(sensorLocations.x, sensorLocations.y, 'r+');
             colorbar
             hold off;
+            set(gca, 'XTick', [], 'YTick', []);
             axis 'image';
-            subplot(1,2,2);
+            if (featureSpace == 1)
+                title('LEFT TARGET - Gamma-in', 'FontName', 'Helvetica', 'FontSize', 18, 'FontWeight', 'b');
+            elseif (featureSpace == 2)
+                title('LEFT TARGET - Gamma-out', 'FontName', 'Helvetica', 'FontSize', 18, 'FontWeight', 'b');
+            elseif (featureSpace == 3)
+                title('LEFT TARGET - Gamma-in (power)', 'FontName', 'Helvetica', 'FontSize', 18, 'FontWeight', 'b');
+            elseif (featureSpace == 4)
+                title('LEFT TARGET - Gamma-out (power)', 'FontName', 'Helvetica', 'FontSize', 18, 'FontWeight', 'b');
+            end
+            
+            subplot('Position', [0.51 1-featureSpace*(height+margin) width height]);
+            
+            % If left-right targets are reverse use:imagesc(1:1920, 1:1080, weightMapLeft);
             imagesc(1:1920, 1:1080, weightMapRight);
             hold on
             plot(sensorLocations.x, sensorLocations.y, 'r+');
+            set(gca, 'XTick', [], 'YTick', []);
             hold off;
             axis 'image';
+            if (featureSpace == 1)
+                title('RIGHT TARGET - Gamma-in', 'FontName', 'Helvetica', 'FontSize', 18, 'FontWeight', 'b');
+            elseif (featureSpace == 2)
+                title('RIGHT TARGET - Gamma-out', 'FontName', 'Helvetica', 'FontSize', 18, 'FontWeight', 'b');
+            elseif (featureSpace == 3)
+                title('RIGHT TARGET - Gamma-in (power)', 'FontName', 'Helvetica', 'FontSize', 18, 'FontWeight', 'b');
+            elseif (featureSpace == 4)
+                title('RIGHT TARGET - Gamma-out (power)', 'FontName', 'Helvetica', 'FontSize', 18, 'FontWeight', 'b');
+            end
+            
             colorbar
-            colormap(gray);
+            colormap(parula);
             drawnow;
+            
+            if (exportToPDF)
+                pdfFileName = sprintf('Weights.pdf');
+                dpi = 300;
+                ExportToPDF(pdfFileName, hh, dpi);
+            end
+            
         end
         
         if (generateScatterPlotsForEachCondition)
@@ -304,13 +346,13 @@ function IntermiediateToFinalLocallySpectralLuminancePrediction
             end
 
             if (exportToPDF)
-                pdfFileName = sprintf('Fig_%d.pdf', featureSpace);
+                pdfFileName = sprintf('PredictedVSmeasured_FeatureSpace_%d.pdf', featureSpace);
                 dpi = 300;
                 ExportToPDF(pdfFileName, h, dpi);
             end
 
             if (exportToPNG)
-                pngFileName = sprintf('Fig_%d.png', featureSpace);
+                pngFileName = sprintf('PredictedVSmeasured_FeatureSpace_%d.png', featureSpace);
                 img = getframe(gcf);
                 imwrite(img.cdata, pngFileName);
             end
@@ -353,16 +395,25 @@ function IntermiediateToFinalLocallySpectralLuminancePrediction
             set(gca, 'XTick', 1:numel(sensorSigmas), 'XTickLabel', sensorSigmas);
             set(gca, 'FontName', 'Helvetica', 'FontSize', 12);
             if ((featureSpace == 3) || (featureSpace == 4))
-                xlabel('sensor sigma', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'bold');
+                xlabel('sensor sigma', 'FontName', 'Helvetica', 'FontSize', 22, 'FontWeight', 'bold');
             end
             if ((featureSpace == 1) || (featureSpace == 3))
-                ylabel('Out-of-sample RMS error (cd/m^2)', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'bold');
+                ylabel('Out-of-sample RMS error (cd/m^2)', 'FontName', 'Helvetica', 'FontSize', 22, 'FontWeight', 'bold');
             end
             
         else
             width = 1.0;
             barHandle = bar3(errorMap, width);
             box on;
+            
+            errorMap
+            [m, rows] = min(errorMap);
+            [mVal, j] = min(m);
+            colOfMax = j;
+            rowOfMax = rows(j);
+            fprintf('Featurespace: %d:  Min (%f) at sigma = %f and separation: %f', featureSpace, mVal, sensorSigmas(colOfMax), sensorSpacings(rowOfMax));
+         
+            
             
             % colormap
             hx=get(barHandle(1),'parent');
@@ -380,16 +431,16 @@ function IntermiediateToFinalLocallySpectralLuminancePrediction
             
             
             hColorBar = colorbar('westoutside', ...
-                'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'bold', ...
+                'FontName', 'Helvetica', 'FontSize', 22, 'FontWeight', 'bold', ...
                 'Ticks', [0:5:100]);
             hColorBar.Label.String = 'Out-of-sample RMS error (cd/m^2)';
             
                 
-            set(gca, 'FontName', 'Helvetica', 'FontSize', 12);
+            set(gca, 'FontName', 'Helvetica', 'FontSize', 16);
             
             if ((featureSpace == 3) || (featureSpace == 4))
-                xlabel('sensor sigma', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'bold');
-                ylabel('sensor spacing (x sigma)', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'bold');
+                xlabel('sensor sigma', 'FontName', 'Helvetica', 'FontSize', 22, 'FontWeight', 'bold');
+                ylabel('sensor spacing (x sigma)', 'FontName', 'Helvetica', 'FontSize', 22, 'FontWeight', 'bold');
             end
             
         end
@@ -397,13 +448,13 @@ function IntermiediateToFinalLocallySpectralLuminancePrediction
         view([-52 30]);
         
         if (featureSpace == 1)
-            title('Feature space: Gamma-in', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'bold');
+            title('Feature space: Gamma-in', 'FontName', 'Helvetica', 'FontSize', 26, 'FontWeight', 'bold');
         elseif (featureSpace == 2)
-            title('Feature space: Gamma-out', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'bold');
+            title('Feature space: Gamma-out', 'FontName', 'Helvetica', 'FontSize', 26, 'FontWeight', 'bold');
         elseif (featureSpace == 3)
-            title('Feature space: Gamma-in (Power)', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'bold');
+            title('Feature space: Gamma-in (Power)', 'FontName', 'Helvetica', 'FontSize', 26, 'FontWeight', 'bold');
         elseif (featureSpace == 4)
-            title('Feature space: Gamma-out (Power)', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'bold');
+            title('Feature space: Gamma-out (Power)', 'FontName', 'Helvetica', 'FontSize', 26, 'FontWeight', 'bold');
         end 
     end
     

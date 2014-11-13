@@ -8,10 +8,12 @@ function PerformLocallySpectralLuminancePrediction
     sensorSpacings = [-1];  % this indicates to take the total energy of the filtered image
     sensorSigmas  = [0 10 20 30 40 50 60 70 80 90 100 125 150 175 200 250 300 350 400 500 600];
     
-    
+    sensorSpacings = [2.5]; 
+    sensorSigmas  = [100]; 
+        
     useParallelEngine = input('Use parallel engine? [1=YES, default=NO] : '); 
     [rootDir, ~, ~] = fileparts(mfilename('fullpath'));
-    calibrationFile = 'SamsungOLED_CloudsCalib5.mat';
+    calibrationFile = 'SamsungOLED_CloudsCalib4.mat';
     
     if (strcmp(calibrationFile, 'SamsungOLED_CloudsCalib2.mat'))
         [stimuliGammaIn, stimuliGammaOut, ...
@@ -22,9 +24,15 @@ function PerformLocallySpectralLuminancePrediction
         theRightTargetLuminance = rightTargetLuminance;
     else
     
+        showEmployedGammaFunction = true;
+        showRepresentativeStimuli = true;
+        showRGBsettingsHistogram = true;
+        exportToPDF = true;
+        
         [stimuliGammaIn, stimuliGammaOut, ...
          leftTargetLuminance, rightTargetLuminance, timeOfMeasurement, ...
-         trainingIndices, testingIndices] = loadStimuliAndResponses(calibrationFile);
+         trainingIndices, testingIndices] = ...
+         loadStimuliAndResponses(calibrationFile, showEmployedGammaFunction, showRepresentativeStimuli, showRGBsettingsHistogram, exportToPDF);
 
         % Examine repeatability
         examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, timeOfMeasurement);
@@ -56,13 +64,14 @@ function PerformLocallySpectralLuminancePrediction
             sensorSigma   = sensorSigmas(sensorSigmaIndex);
             sensorSpacing = sensorSpacings(sensorSpacingIndex);
             
+            displayGraphicalOutput = true;
             [inSampleError, outOfSampleError] = ...
                 testSensorPrediction(sensorSigma, sensorSpacing, ...
                     stimuliGammaIn, ...
                     stimuliGammaOut, ...
                     theLeftTargetLuminance, ... 
                     theRightTargetLuminance, ...
-                    trainingIndices, testingIndices, useParallelEngine, rootDir);
+                    trainingIndices, testingIndices, useParallelEngine, rootDir, displayGraphicalOutput);
             
             % find min error across all feature spaces
             for featureSpaceIndex = 1:numel(outOfSampleError)
@@ -83,10 +92,11 @@ end
 
 function [inSampleError, outOfSampleError] = testSensorPrediction(sensorSigma, sensorSpacing, ...
 stimuliGammaIn, stimuliGammaOut, leftTargetLuminance, rightTargetLuminance, ...
-trainingIndices, testingIndices, useParallelEngine, rootDir)
+trainingIndices, testingIndices, useParallelEngine, rootDir, displayGraphicalOutput)
     %
+
     [sensor, sensorSpectrum, sensorLocations] = ...
-        generateSensor(1920, 1080, sensorSigma, sensorSpacing*sensorSigma);
+        generateSensor(1920, 1080, sensorSigma, sensorSpacing*sensorSigma, displayGraphicalOutput);
     
     % Construct design matrix
     conditionsNum = size(stimuliGammaIn,1);
@@ -116,10 +126,11 @@ trainingIndices, testingIndices, useParallelEngine, rootDir)
 
         % Loop over all conditions
         parfor conditionIndex = 1:conditionsNum
+            displayGraphicalOutput = false;
             stimGammaIn  = double(squeeze(stimuliGammaIn(conditionIndex,:,:)))/255.0;
             stimGammaOut = double(squeeze(stimuliGammaOut(conditionIndex,:,:)))/255.0;
-            [featureVector1, filteredStimGammIan] = extractFeatures(stimGammaIn, sensorSpectrum, sensorLocations);
-            [featureVector2, filteredStimGammOut] = extractFeatures(stimGammaOut, sensorSpectrum, sensorLocations);
+            [featureVector1, filteredStimGammIan] = extractFeatures(stimGammaIn, sensorSpectrum, sensorLocations, displayGraphicalOutput);
+            [featureVector2, filteredStimGammOut] = extractFeatures(stimGammaOut, sensorSpectrum, sensorLocations, displayGraphicalOutput);
             XdesignMatrix1(conditionIndex, :) = featureVector1;
             XdesignMatrix2(conditionIndex, :) = featureVector2;
         end
@@ -134,8 +145,8 @@ trainingIndices, testingIndices, useParallelEngine, rootDir)
             stimGammaOut = double(squeeze(stimuliGammaOut(conditionIndex,:,:)))/255.0;
             
             % Compute features
-            [featureVector1, filteredStimGammIn]  = extractFeatures(stimGammaIn, sensorSpectrum, sensorLocations);
-            [featureVector2, filteredStimGammOut] = extractFeatures(stimGammaOut, sensorSpectrum, sensorLocations);
+            [featureVector1, filteredStimGammIn]  = extractFeatures(stimGammaIn, sensorSpectrum, sensorLocations, displayGraphicalOutput);
+            [featureVector2, filteredStimGammOut] = extractFeatures(stimGammaOut, sensorSpectrum, sensorLocations, displayGraphicalOutput);
             
             % Update design matrices
             XdesignMatrix1(conditionIndex, :) = featureVector1;
@@ -370,7 +381,7 @@ trainingIndices, testingIndices, useParallelEngine, rootDir)
 end
 
 
-function [sensor, sensorSpectrum, sensorLocations] = generateSensor(columnsNum, rowsNum, sigma, sensorSpacing)
+function [sensor, sensorSpectrum, sensorLocations] = generateSensor(columnsNum, rowsNum, sigma, sensorSpacing, displayGraphicalOutput)
 
     x = ((1:columnsNum)-columnsNum/2);
     y = ((1:rowsNum)-rowsNum/2);
@@ -421,26 +432,31 @@ function [sensor, sensorSpectrum, sensorLocations] = generateSensor(columnsNum, 
             end
         end
     
-    
-        figure(55);
-        clf;
-        subplot(2,1,1)
-        imagesc(sensor);
-        axis 'image'
-        colormap(gray);
-        hold on
-        plot(sensorLocations.x, sensorLocations.y, 'r+');
-        hold off;
+        if (displayGraphicalOutput)
+            h = figure(122);
+            set(h, 'Position', [100 100 960 620]);
+            clf;
+            subplot('Position', [0.01 0.505 0.48 0.47]);
+            imagesc(sensor);
+            axis 'image'
+            colormap(gray);
+            hold on
+            plot(sensorLocations.x, sensorLocations.y, 'r+');
+            title(sprintf('Sensor receptive field (sigma: %2.0f pixels)',sigma), 'FontName', 'Helvetica', 'FontSize', 20, 'FontWeight', 'b');
+            set(gca, 'CLim', [0 max(sensor(:))], 'XTick', [], 'YTick', [], 'XLim', [1 1920], 'YLim', [0 1080]);
+            hold off;
 
-        subplot(2,1,2)
-        imagesc(sensorCoverage);
-        axis 'image'
-        colormap(gray);
-        hold on
-        plot(sensorLocations.x, sensorLocations.y, 'r+');
-        hold off;
-
-        drawnow;
+            subplot('Position', [0.01 0.005 0.48 0.47]);
+            imagesc(sensorCoverage);
+            axis 'image'
+            colormap(gray);
+            hold on
+            plot(sensorLocations.x, sensorLocations.y, 'r+');
+            hold off;
+             title(sprintf('Sensor coverage (spacing: %2.0f pixels)', sensorSpacing), 'FontName', 'Helvetica', 'FontSize', 20, 'FontWeight', 'b');
+            set(gca, 'CLim', [0 max(sensorCoverage(:))], 'XTick', [], 'YTick', [], 'XLim', [1 1920], 'YLim', [0 1080]);
+            drawnow;
+        end
         
     end
     
@@ -448,7 +464,7 @@ function [sensor, sensorSpectrum, sensorLocations] = generateSensor(columnsNum, 
 end
 
 
-function [featureVector, sensorImage] = extractFeatures(frame, sensorSpectrum, sensorLocations)
+function [featureVector, sensorImage] = extractFeatures(frame, sensorSpectrum, sensorLocations, displayGraphicalOutput)
     fftSamplesNum = 2048;
     rowOffset = (fftSamplesNum -1080)/2;
     colOffset = (fftSamplesNum -1920)/2;
@@ -480,6 +496,35 @@ function [featureVector, sensorImage] = extractFeatures(frame, sensorSpectrum, s
     end
     
     featureVector = reshape(featureVector, [numel(featureVector) 1]);
+    
+    
+    if (displayGraphicalOutput)
+        h = figure(122);
+        subplot('Position', [0.51 0.505 0.48 0.47]);
+        imagesc(frame)
+        axis 'image'
+        set(gca, 'CLim', [0 1], 'XTick', [], 'YTick', [], 'XLim', [1 1920], 'YLim', [0 1080]);
+        title('Calibration stimulus (input)','FontName', 'Helvetica', 'FontSize', 20, 'FontWeight', 'b');
+
+        subplot('Position', [0.51 0.005 0.48 0.47]);
+        imagesc(sensorImage);
+        hold on;
+        plot(sensorLocations.x, sensorLocations.y, 'r+');
+        hold off;
+        title('Low-passed calibration stimulus (sensor image)', 'FontName', 'Helvetica', 'FontSize', 20, 'FontWeight', 'b');
+        axis 'image'
+        set(gca, 'CLim', [0 1], 'XTick', [], 'YTick', [], 'XLim', [1 1920], 'YLim', [0 1080]);
+        drawnow;
+
+        exportToPDF = true;
+        if (exportToPDF)
+            pdfFileName = sprintf('FeatureExtraction.pdf');
+            dpi = 300;
+            ExportToPDF(pdfFileName, h, dpi);
+            pause
+        end
+    end
+    
 end
 
 
@@ -509,11 +554,17 @@ function examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, time
     plot(timeOfMeasurement(4,:), leftTargetLuminance(4,:), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [0.7 0.7 0.4], 'MarkerEdgeColor', [1.0 1.0 0.0]);
     end
     hold off;
-    set(gca, 'YLim', [300 620]);
+    set(gca, 'YLim', [300 620], 'XLim', [min(timeOfMeasurement(:))-10 max(timeOfMeasurement(:)) + 10], 'XTick', [0:50:600]);
     xlabel('time of measurement (minutes)','FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'b');
     ylabel('luminance (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'b');
     box on;
     grid on;
+    if (exportToPDF)
+        pdfFileName = sprintf('Repeatability_RawTimeSeries.pdf');
+        dpi = 300;
+        ExportToPDF(pdfFileName, h, dpi);
+    end
+    
     
     h = figure(1002);
     set(h, 'Position', [100 100 670 950]);
@@ -532,7 +583,7 @@ function examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, time
     plot(timeOfMeasurement(4,:), deltaLeftTargetLuminance(4,:), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [0.7 0.7 0.4], 'MarkerEdgeColor', [1.0 1.0 0.0]);
     end
     hold off;
-    set(gca, 'XLim', [-5 max(timeOfMeasurement(:))+5], 'XTick', [0:60:600], 'YLim', [-120 20], ...
+    set(gca, 'XLim', [-5 max(timeOfMeasurement(:))+5], 'XLim', [min(timeOfMeasurement(:))-10 max(timeOfMeasurement(:)) + 10], 'XTick', [0:50:600], 'YLim', [-120 20], ...
         'FontName', 'Helvetica', 'FontSize', 14);
 
     xlabel('time of measurement (minutes)', 'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'b');
@@ -541,14 +592,12 @@ function examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, time
     grid on;
     
     if (exportToPDF)
-        pdfFileName = sprintf('Fig_2.pdf');
+        pdfFileName = sprintf('Repeatibility_NormalizedTimeSeries.pdf');
         dpi = 300;
         ExportToPDF(pdfFileName, h, dpi);
     end
     
-    
-    
-    
+
     
     h = figure(1003);
     set(h, 'Position', [300 100 600 950]);
@@ -643,9 +692,8 @@ function examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, time
     grid on;
     
     
-    
     if (exportToPDF)
-        pdfFileName = sprintf('Fig_3.pdf');
+        pdfFileName = sprintf('Repeatability_CorrespondenceAnalysis.pdf');
         dpi = 300;
         ExportToPDF(pdfFileName, h, dpi);
     end
@@ -655,16 +703,40 @@ end
 
 function [stimuliGammaIn, stimuliGammaOut, ...
     leftTargetLuminance, rightTargetLuminance, timeOfMeasurement, ...
-    trainingIndices, testingIndices] = loadStimuliAndResponses(calibrationFile)
+    trainingIndices, testingIndices] = loadStimuliAndResponses(calibrationFile, showEmployedGammaFunction, showRepresentativeStimuli, showRGBsettingsHistogram, exportToPDF)
+
     % Load calibration file from /Users1
     calibrationDir  = '/Users1/Shared/Matlab/Experiments/SamsungOLED/PreliminaryData';
     gammaFunctionFile = 'GammaFunction.mat';
     
     % Load gamma function
     load(sprintf('%s/%s', calibrationDir,gammaFunctionFile));
-    %figure(1)
-    %plot(gammaFunction.input, gammaFunction.output, 'rs-');
-    %drawnow;
+    
+    if (showEmployedGammaFunction)
+        fig1Handle = figure(1);
+        set(fig1Handle, 'Position', [100 100 425 355]);
+        clf;
+        plot(gammaFunction.input, gammaFunction.output, 'r-');
+        set(gca, 'FontName', 'Helvetica', 'FontSize', 12);
+        set(gca, 'XTick', [0:0.1:1.0], 'YTick', [0:0.1:1.0]);
+        xlabel('RGB settings (gamma-in)', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
+        ylabel('RGB settings (gamma-out)', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
+        axis 'square';
+        box on;
+        grid on;
+        drawnow;
+        if (exportToPDF)
+           dpi = 300;
+           pdfFileName = sprintf('GammaFunction.pdf');
+           ExportToPDF(pdfFileName, fig1Handle, dpi);
+        end
+    end
+    
+    if (showRepresentativeStimuli)
+        fig2Handle = figure(2);
+        set(fig2Handle, 'Position', [100 100 940 750]);
+        clf;
+    end
     
     calibrationDataSet = loadCalibrationFile(calibrationDir,calibrationFile);
     stimParams         = calibrationDataSet.runParams.stimParams;
@@ -696,6 +768,7 @@ function [stimuliGammaIn, stimuliGammaOut, ...
     % Initialize training (in-sample) and testing (out-of-sample) indices
     trainingIndices = [];
     testingIndices  = [];
+    meanSettings = [];
     
     for repeatIndex = 1:repeatsNum
         
@@ -753,21 +826,31 @@ function [stimuliGammaIn, stimuliGammaOut, ...
                 stimuliGammaOut(stimIndex,:,:) = uint8(ff*255.0);
             end
             
-            if (1==2) && (repeatIndex == 1)
-                figure(555);
-                subplot(2,1,1)
-                imagesc(squeeze(stimuliGammaIn(stimIndex,:,:)));
-                set(gca, 'CLim', [0 255]);
-                axis 'image'
-                colormap(gray)
-
-                subplot(2,1,2)
-                imagesc(squeeze(stimuliGammaOut(stimIndex,:,:)));
-                set(gca, 'CLim', [0 255]);
-                axis 'image'
-                drawnow
+            if ((showRepresentativeStimuli) && (repeatIndex == 1))
+                figure(2);
+                if ((exponentOfOneOverFIndex == 1) && ...
+                    (oriBiasIndex == 1) && ...
+                    (orientationIndex == orientationsNum) && ...
+                    (frameIndex == 3))
+                        width = 0.96/3;
+                        height = 0.93/4;
+                        margin = 0.01;
+                        subplotRow = floor((variantIndex-1)/3) + 1;
+                        subplotCol = mod(variantIndex-1,3) + 1;
+                        subplot('Position', [0.01 + (subplotCol-1)*(width+margin) 1-(subplotRow)*(height+margin) width height]);
+                        imagesc(squeeze(stimuliGammaIn(stimIndex,:,:)));
+                        set(gca, 'CLim', [0 255]);
+                        set(gca, 'XTick', [], 'YTick', []);
+                        axis 'image'
+                        colormap(gray)
+                        drawnow;
+                end
             end
         
+            if (repeatIndex == 1)
+                settings = stimuliGammaIn(stimIndex,:,:);
+                meanSettings =[ meanSettings mean(settings(:))];
+            end
         end
         end
         end
@@ -776,6 +859,34 @@ function [stimuliGammaIn, stimuliGammaOut, ...
         end
     end
     
+    if (showRGBsettingsHistogram)
+        fig3Handle = figure(3);
+        set(fig3Handle, 'Position', [100 100 420 350]);
+        subplot('Position', [0.07 0.07 0.93 0.93]);
+        clf;
+        meanSettingsBins = 0:10:255;
+        h = histogram(meanSettings, meanSettingsBins);
+        h.FaceColor = [0.5 0.5 0.5];
+        h.EdgeColor = 'r';
+        set(gca, 'FontName', 'Helvetica', 'FontSize', 12);
+        set(gca, 'XTick', [0:32:256], 'YTick', [0:50:1000]);
+        box on;
+        grid on
+        xlabel('mean RGB settings', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
+        ylabel('# of stimuli', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
+        drawnow;
+    end
+    
+    
+    if (exportToPDF)
+       
+       pdfFileName = sprintf('RepresentativeStimuli.pdf');
+       ExportToPDF(pdfFileName, fig2Handle, dpi);
+       
+       pdfFileName = sprintf('MeanRGBsettingsHistogram.pdf');
+       ExportToPDF(pdfFileName, fig3Handle, dpi);
+    end
+            
     % start at t = 0, measure in minutes;
     timeOfMeasurement = (timeOfMeasurement - timeOfMeasurement(1,1))/60;
     
