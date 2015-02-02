@@ -18,7 +18,7 @@ function PerformLocallySpectralLuminancePrediction
         
     useParallelEngine = input('Use parallel engine? [1=YES, default=NO] : '); 
     [rootDir, ~, ~] = fileparts(mfilename('fullpath'));
-    calibrationFile = 'SamsungOLED_CloudsCalib4.mat';
+    calibrationFile = 'SonyOLED_CloudsCalib10.mat';
     
     if (strcmp(calibrationFile, 'SamsungOLED_CloudsCalib2.mat'))
         [stimuliGammaIn, stimuliGammaOut, ...
@@ -548,7 +548,8 @@ function examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, time
         stairs(timeOfMeasurement(:,stimIndex), leftTargetLuminance(:,stimIndex), 'k-');
     end
 
-    
+    YLims = [300 620]; % Samsung
+    YLims = [193 202]; % Sony
     plot(timeOfMeasurement(1,:), leftTargetLuminance(1,:), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [1.0 0.7 0.7], 'MarkerEdgeColor', [1.0 0.0 0.0]);
     plot(timeOfMeasurement(2,:), leftTargetLuminance(2,:), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [0.5 0.7 0.5], 'MarkerEdgeColor', [0.0 1.0 0.0]);
     plot(timeOfMeasurement(3,:), leftTargetLuminance(3,:), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [0.7 0.7 1.0], 'MarkerEdgeColor', [0.0 0.0 1.0]);
@@ -556,7 +557,7 @@ function examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, time
     plot(timeOfMeasurement(4,:), leftTargetLuminance(4,:), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [0.7 0.7 0.4], 'MarkerEdgeColor', [1.0 1.0 0.0]);
     end
     hold off;
-    set(gca, 'YLim', [300 620], 'XLim', [min(timeOfMeasurement(:))-10 max(timeOfMeasurement(:)) + 10], 'XTick', [0:50:600]);
+    set(gca, 'YLim', YLims, 'XLim', [min(timeOfMeasurement(:))-10 max(timeOfMeasurement(:)) + 10], 'XTick', [0:50:600]);
     xlabel('time of measurement (minutes)','FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'b');
     ylabel('luminance (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'b');
     box on;
@@ -585,7 +586,7 @@ function examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, time
     plot(timeOfMeasurement(4,:), deltaLeftTargetLuminance(4,:), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [0.7 0.7 0.4], 'MarkerEdgeColor', [1.0 1.0 0.0]);
     end
     hold off;
-    set(gca, 'XLim', [-5 max(timeOfMeasurement(:))+5], 'XLim', [min(timeOfMeasurement(:))-10 max(timeOfMeasurement(:)) + 10], 'XTick', [0:50:600], 'YLim', [-120 20], ...
+    set(gca, 'XLim', [-5 max(timeOfMeasurement(:))+5], 'XLim', [min(timeOfMeasurement(:))-10 max(timeOfMeasurement(:)) + 10], 'XTick', [0:50:600], 'YLim', [-5 5], ...
         'FontName', 'Helvetica', 'FontSize', 14);
 
     xlabel('time of measurement (minutes)', 'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'b');
