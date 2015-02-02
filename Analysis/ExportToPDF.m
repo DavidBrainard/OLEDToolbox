@@ -37,7 +37,7 @@ function ExportToPDF(pdfFileName,handle,dpi)
     set(handle,'PaperSize',position(3:4));
 
     % Save the pdf (this is the same method used by "saveas")
-    print(handle,'-dpdf',pdfFileName,sprintf('-r%d',dpi))
+    print(handle,'-dpdf', '-noui', pdfFileName,sprintf('-r%d',dpi))
 
     % Restore the previous settings
     set(handle,'PaperType',prePaperType);
