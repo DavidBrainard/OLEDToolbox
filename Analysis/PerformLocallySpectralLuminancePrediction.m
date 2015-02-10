@@ -18,7 +18,10 @@ function PerformLocallySpectralLuminancePrediction
         
     useParallelEngine = input('Use parallel engine? [1=YES, default=NO] : '); 
     [rootDir, ~, ~] = fileparts(mfilename('fullpath'));
-    calibrationFile = 'SonyOLED_CloudsCalib10.mat';
+    calibrationFile = 'SonyOLED_CloudsCalib10.mat'; 
+    %calibrationFile = 'SamsungOLED_CloudsCalib11.mat';
+    %calibrationFile = 'SamsungOLED_CloudsCalib4.mat';     % data on which report is based on
+    
     
     if (strcmp(calibrationFile, 'SamsungOLED_CloudsCalib2.mat'))
         [stimuliGammaIn, stimuliGammaOut, ...
@@ -544,22 +547,29 @@ function examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, time
     
     subplot('Position', [0.09 0.04 0.90 0.95]);
     hold on;
-    for stimIndex = 1:size(leftTargetLuminance,2)
+    
+    selectStimIndices = 1:4:size(leftTargetLuminance,2);
+    
+    for k= 1:numel(selectStimIndices);
+        stimIndex = selectStimIndices(k);
         stairs(timeOfMeasurement(:,stimIndex), leftTargetLuminance(:,stimIndex), 'k-');
     end
 
-    YLims = [300 620]; % Samsung
-    YLims = [193 202]; % Sony
-    plot(timeOfMeasurement(1,:), leftTargetLuminance(1,:), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [1.0 0.7 0.7], 'MarkerEdgeColor', [1.0 0.0 0.0]);
-    plot(timeOfMeasurement(2,:), leftTargetLuminance(2,:), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [0.5 0.7 0.5], 'MarkerEdgeColor', [0.0 1.0 0.0]);
-    plot(timeOfMeasurement(3,:), leftTargetLuminance(3,:), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [0.7 0.7 1.0], 'MarkerEdgeColor', [0.0 0.0 1.0]);
+    YLims = [200 500]; % Samsung
+    YLims = [350 620]; % Samsung
+    YLims = [0 270]; % Sony
+    
+    plot(timeOfMeasurement(1,selectStimIndices), leftTargetLuminance(1,selectStimIndices), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [1.0 0.7 0.7], 'MarkerEdgeColor', [1.0 0.0 0.0]);
+    plot(timeOfMeasurement(2,selectStimIndices), leftTargetLuminance(2,selectStimIndices), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [0.5 0.7 0.5], 'MarkerEdgeColor', [0.0 1.0 0.0]);
+    plot(timeOfMeasurement(3,selectStimIndices), leftTargetLuminance(3,selectStimIndices), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [0.7 0.7 1.0], 'MarkerEdgeColor', [0.0 0.0 1.0]);
     if (size(leftTargetLuminance,1) > 3)
-    plot(timeOfMeasurement(4,:), leftTargetLuminance(4,:), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [0.7 0.7 0.4], 'MarkerEdgeColor', [1.0 1.0 0.0]);
+        plot(timeOfMeasurement(4,selectStimIndices), leftTargetLuminance(4,selectStimIndices), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [0.7 0.7 0.4], 'MarkerEdgeColor', [1.0 1.0 0.0]);
     end
     hold off;
-    set(gca, 'YLim', YLims, 'XLim', [min(timeOfMeasurement(:))-10 max(timeOfMeasurement(:)) + 10], 'XTick', [0:50:600]);
+    set(gca, 'FontName', 'Helvetica', 'FontSize', 14);
+    set(gca, 'YLim', YLims, 'XLim', [min(timeOfMeasurement(:))-10 max(timeOfMeasurement(:)) + 10], 'XTick', [0:30:600], 'YTick', [0:50:1000]);
     xlabel('time of measurement (minutes)','FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'b');
-    ylabel('luminance (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'b');
+    ylabel('measured luminance (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'b');
     box on;
     grid on;
     if (exportToPDF)
@@ -586,7 +596,7 @@ function examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, time
     plot(timeOfMeasurement(4,:), deltaLeftTargetLuminance(4,:), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [0.7 0.7 0.4], 'MarkerEdgeColor', [1.0 1.0 0.0]);
     end
     hold off;
-    set(gca, 'XLim', [-5 max(timeOfMeasurement(:))+5], 'XLim', [min(timeOfMeasurement(:))-10 max(timeOfMeasurement(:)) + 10], 'XTick', [0:50:600], 'YLim', [-5 5], ...
+    set(gca, 'XLim', [-2 max(timeOfMeasurement(:))+2], 'XLim', [min(timeOfMeasurement(:))-10 max(timeOfMeasurement(:)) + 10], 'XTick', [0:50:600], 'YLim', [-5 5], ...
         'FontName', 'Helvetica', 'FontSize', 14);
 
     xlabel('time of measurement (minutes)', 'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'b');
@@ -603,43 +613,28 @@ function examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, time
 
     
     h = figure(1003);
-    set(h, 'Position', [300 100 600 950]);
+    clf;
+    set(h, 'Position', [300 100 600 630]);
     
     XLims = [min(min(leftTargetLuminance)) max(max(leftTargetLuminance))];
     YLims = XLims;
     
-    subplot('Position', [0.09 0.7 0.40 0.3]);
+    subplot('Position', [0.06 0.59 0.42 0.37]);
     plot(leftTargetLuminance(1,:), leftTargetLuminance(2,:),  'b.', 'MarkerSize', 16);
     hold on;
     plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
     hold off;
-    set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:100:1000], 'YTick', [0 :100:1000]);
+    set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:50:1000], 'YTick', [0 :50:1000]);
     axis 'square'
     set(gca, 'FontName', 'Helvetica', 'FontSize', 14);
-    xlabel('Repetition no. 1', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
-    ylabel('Repetition no. 2', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
-    title('LEFT TARGET',  'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'b');
+    xlabel('measured luminance - rep. 1 (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
+    ylabel('measured luminance - rep. 2 (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
+    title('left target',  'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'b');
     box on;
     grid on;
     
  
-    subplot('Position', [0.59 0.7 0.40 0.3]);
-    plot(rightTargetLuminance(1,:), rightTargetLuminance(2,:),  'b.', 'MarkerSize', 16);
-    hold on;
-    plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
-    hold off;
-    set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:100:1000], 'YTick', [0 :100:1000]);
-    axis 'square'
-    set(gca, 'FontName', 'Helvetica', 'FontSize', 14);
-    xlabel('Repetition no. 1', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
-    ylabel('Repetition no. 2', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
-    title('RIGHT TARGET',  'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'b');
-    box on;
-    grid on;
-    
-    
-    
-    subplot('Position', [0.09 0.4 0.40 0.3]);
+    subplot('Position', [0.57 0.59 0.42 0.37]);
     plot(leftTargetLuminance(1,:), leftTargetLuminance(3,:),  'b.', 'MarkerSize', 16);
     hold on;
     plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
@@ -647,50 +642,39 @@ function examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, time
     set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:50:1000], 'YTick', [0 :50:1000]);
     axis 'square'
     set(gca, 'FontName', 'Helvetica', 'FontSize', 14);
-    xlabel('Repetition no. 1', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
-    ylabel('Repetition no. 3', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
+    xlabel('measured luminance - rep. 1 (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
+    ylabel('measuredluminance - rep. 3 (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
+    title('left target',  'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'b');
+    box on;
+    grid on;
+    
+
+    subplot('Position', [0.06 0.06 0.42 0.37]);
+    plot(rightTargetLuminance(1,:), leftTargetLuminance(1,:),  'b.', 'MarkerSize', 16);
+    hold on;
+    plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
+    hold off;
+    set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:50:1000], 'YTick', [0 :50:1000]);
+    axis 'square'
+    set(gca, 'FontName', 'Helvetica', 'FontSize', 14);
+    xlabel('right target luminance (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
+    ylabel('left target luminance (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
+    title('left vs. right target (rep. 1)',  'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'b');
     box on;
     grid on;
     
    
-    subplot('Position', [0.59 0.4 0.40 0.3]);
-    plot(rightTargetLuminance(1,:), rightTargetLuminance(3,:),  'b.', 'MarkerSize', 16);
+    subplot('Position', [0.57 0.06 0.42 0.37]);
+    plot(rightTargetLuminance(3,:), leftTargetLuminance(3,:),  'b.', 'MarkerSize', 16);
     hold on;
     plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
     hold off;
     set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:50:1000], 'YTick', [0 :50:1000]);
     axis 'square'
     set(gca, 'FontName', 'Helvetica', 'FontSize', 14);
-    xlabel('Repetition no. 1', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
-    ylabel('Repetition no. 3', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
-    box on;
-    grid on;
-    
-    
-    
-    subplot('Position', [0.09 0.06 0.40 0.3]);
-    plot(leftTargetLuminance(2,:), leftTargetLuminance(3,:),  'b.', 'MarkerSize', 16);
-    hold on;
-    plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
-    hold off;
-    set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:50:1000], 'YTick', [0 :50:1000]);
-    set(gca, 'FontName', 'Helvetica', 'FontSize', 14);
-    axis 'square'
-    xlabel('Repetition no. 2', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
-    ylabel('Repetition no. 3', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
-    box on;
-    grid on;
-    
-    subplot('Position', [0.59 0.06 0.40 0.3]);
-    plot(rightTargetLuminance(2,:), rightTargetLuminance(3,:),  'b.', 'MarkerSize', 16);
-    hold on;
-    plot([XLims(1) XLims(2)], [YLims(1) YLims(2)], 'r-');
-    hold off;
-    set(gca, 'XLim', XLims, 'YLim', YLims, 'XTick', [0:50:1000], 'YTick', [0 :50:1000]);
-    set(gca, 'FontName', 'Helvetica', 'FontSize', 14);
-    axis 'square'
-    xlabel('Repetition no. 2', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
-    ylabel('Repetition no. 3', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
+    xlabel('right target luminance (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
+    ylabel('left target luminance (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'b');
+    title('left vs. right target (rep. 3)',  'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'b');
     box on;
     grid on;
     
