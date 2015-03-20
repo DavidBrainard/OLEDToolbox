@@ -3,17 +3,14 @@
 % 3/20/2015   npc   Wrote it.
 
 function analyzeDynamicRangeOfBlobbieStimulusSet
+
     global shapeConds
     global alphaConds
     global specularSPDconds
     global lightingConds
     global luminanceMaps
     
-    shapeConds       = {'VeryLow', 'Low', 'Medium', 'High', 'VeryHigh'};
-    %alphaConds      = {'0.005', '0.010', '0.020', '0.040', '0.080', '0.160', '0.320'};
-    alphaConds       = {'0.005', '0.020', '0.040', '0.080', '0.160', '0.320'};
-    specularSPDconds = {'0.15', '0.30', '0.60'};
-    lightingConds    = {'area0_front0_ceiling1', 'area1_front0_ceiling0'};
+    utils.loadBlobbieConditions();
 
     % Where to read/write the luminanceMap
     luminanceMapLocation = 'ColorShare1';
@@ -21,7 +18,6 @@ function analyzeDynamicRangeOfBlobbieStimulusSet
     
     % Whether to recompute the luminance maps or load existing ones
     reComputeLuminanceMaps = false;
-    
     
     if (strcmp(luminanceMapLocation,'ColorShare1'))
         % Generate luminance maps cache filename
@@ -32,10 +28,14 @@ function analyzeDynamicRangeOfBlobbieStimulusSet
     end
     
     if (reComputeLuminanceMaps)
+        
+        % Compute luminance maps from multispectral data.
+        % This takes about 1 hour
         for lightingCondIndex = 1:numel(lightingConds)
             computeLuminanceMaps(lightingCondIndex);
         end
         
+        % Save computed luminance maps
         if (strcmp(luminanceMapLocation,'ColorShare1'))
             
             hWaitBar = waitbar(0.3,'Saving to ColorShare. Please wait ...');
@@ -62,6 +62,8 @@ function analyzeDynamicRangeOfBlobbieStimulusSet
             save(cacheFilename, 'luminanceMaps');
         end
     else
+        
+        % Load previously-computed luminance maps
         if isempty(luminanceMaps)
 
             fprintf('Fetching %s. Please wait ...', cacheFilename);
@@ -98,6 +100,8 @@ function analyzeDynamicRangeOfBlobbieStimulusSet
     
     % Select presentation mode
     guiPresentation = true;
+    
+    % Show the data
     if (guiPresentation)
         for lightingIndex = 1:numel(lightingConds)
             a = luminanceMaps(lightingIndex ,:,:,:,:,:,:);
@@ -119,6 +123,35 @@ function analyzeDynamicRangeOfBlobbieStimulusSet
     end
 end
 
+
+
+function computeLuminanceMaps(lightingCondIndex)    
+    
+    global shapeConds
+    global alphaConds
+    global specularSPDconds
+    global lightingConds
+    global luminanceMaps
+
+    % make sensor image
+    % Load CIE '31 CMFs
+    sensorXYZ = utils.loadXYZCMFs();
+    
+    for shapeIndex = 1:numel(shapeConds)
+        for alphaIndex = 1:numel(alphaConds)
+            for specularSPDindex = 1:numel(specularSPDconds)
+                fprintf('%d %d %d %d\n', lightingCondIndex, shapeIndex, alphaIndex, specularSPDindex);
+                [multiSpectralImage, multiSpectralImageS] = utils.loadMultispectralImage(shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex);
+                sensorXYZimage = MultispectralToSensorImage(multiSpectralImage, multiSpectralImageS, sensorXYZ.T, sensorXYZ.S);
+                if isempty(luminanceMaps)
+                    luminanceMaps = zeros(numel(lightingConds), numel(shapeConds), numel(alphaConds), numel(specularSPDconds), size(sensorXYZimage,1), size(sensorXYZimage,2), 'single');
+                end
+                % store luminance maps
+                luminanceMaps(lightingCondIndex, shapeIndex, alphaIndex, specularSPDindex,:,:) = single(squeeze(sensorXYZimage(:,:,2)));
+            end
+        end
+    end   
+end
 
 
 
@@ -193,111 +226,9 @@ function plotLuminanceMapsForShapeIndex(shapeIndex, lightingCondIndex,  lumRange
     end
     % background to black
     set(h, 'Color', 'k');
+    
+    % Make the LUT length = max luminance, so the index values (in
+    % datacursor mode) correspond to actual luminance value
     colormap(gray(round(lumRange(2)))); 
 
-end
-
-
-function computeLuminanceMaps(lightingCondIndex)    
-    % make sensor image
-    % Load CIE '31 CMFs
-    sensorXYZ = loadXYZCMFs();
-    
-    global shapeConds
-    global alphaConds
-    global specularSPDconds
-    global lightingConds
-    global luminanceMaps
-    
-    %[shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex] = getSelectionIndices();
-
-    for shapeIndex = 1:numel(shapeConds)
-        for alphaIndex = 1:numel(alphaConds)
-            for specularSPDindex = 1:numel(specularSPDconds)
-                fprintf('%d %d %d %d\n', lightingCondIndex, shapeIndex, alphaIndex, specularSPDindex);
-                [multiSpectralImage, multiSpectralImageS] = loadMultispectralImage(shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex);
-                sensorXYZimage = MultispectralToSensorImage(multiSpectralImage, multiSpectralImageS, sensorXYZ.T, sensorXYZ.S);
-                if isempty(luminanceMaps)
-                    luminanceMaps = zeros(numel(lightingConds), numel(shapeConds), numel(alphaConds), numel(specularSPDconds), size(sensorXYZimage,1), size(sensorXYZimage,2), 'single');
-                end
-                % store luminance maps
-                luminanceMaps(lightingCondIndex, shapeIndex, alphaIndex, specularSPDindex,:,:) = single(squeeze(sensorXYZimage(:,:,2)));
-            end
-        end
-    end   
-end
-
-function [multiSpectralImage, S] = loadMultispectralImage(shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex)
-    global shapeConds
-    global alphaConds
-    global specularSPDconds
-    global lightingConds
-       
-    % Assemble image file name
-    imageName = sprintf('Blobbie9Subs%sFreq_Samsung_FlatSpecularReflectance_%s.spd___Samsung_NeutralDay_BlueGreen_0.60.spd___alpha_%s___Lights_%s_rotationAngle_0.mat', ...
-        shapeConds{shapeIndex}, specularSPDconds{specularSPDindex}, alphaConds{alphaIndex},  lightingConds{lightingCondIndex});
-    
-    % Load the image
-    fprintf('Fetching image from ColorShare1. Please wait ...\n');
-    HDRdata = load(fullfile('/Volumes/ColorShare1/Users/Shared/Matlab/Analysis/SamsungProject',imageName));
-    
-    % extract image data
-    multiSpectralImage = HDRdata.multispectralImage * HDRdata.radiometricScaleFactor;
-    % return S vector
-    S = HDRdata.S;
-end
-
-
-function calXYZ = loadDisplayCal(sensorXYZ)
-    cal    = LoadCalFile('SamsungOLED_MirrorScreen');
-    cal    = SetGammaMethod(cal, 0);
-    calXYZ = SetSensorColorSpace(cal, sensorXYZ.T, sensorXYZ.S);
-end
-
-
-function sensorXYZ = loadXYZCMFs()
-    % scaling factor from watt-valued spectra to lumen-valued luminances (Y-values); 1 Lumen = 1 Candella * sr
-    wattsToLumens = 683;  
-    colorMatchingData = load('T_xyz1931.mat');
-    sensorXYZ = struct;
-    sensorXYZ.S = colorMatchingData.S_xyz1931;
-    sensorXYZ.T = wattsToLumens * colorMatchingData.T_xyz1931;
-    clear 'colorMatchingData';
-end
-
-
-
-
-function [shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex] = getSelectionIndices()
-    global shapeConds
-    global alphaConds
-    global specularSPDconds
-    global lightingConds
-    
-    shapeIndex          = getSelectionIndex('Perturbation frequency', shapeConds);
-    alphaIndex          = getSelectionIndex('Anisotropic  roughness', alphaConds);
-    specularSPDindex    = getSelectionIndex('Specular reflectance #', specularSPDconds);
-    lightingCondIndex   = getSelectionIndex('Lighting arrangement  ', lightingConds);
-end
-
-
-function selectedIndex = getSelectionIndex(conditionName, conditionValues)
-    
-    s = sprintf('%s:', conditionName);
-    for k = 1:numel(conditionValues)
-        s2 = sprintf('<strong> (%d) </strong>%-10s ', k, conditionValues{k});
-        s = sprintf('%s%s',s,s2);
-    end
-    inputString = sprintf('%s','<strong>Enter selection [1]:</strong>');
-    
-    totalString = sprintf('%s %s', s, inputString);
-    selectedIndex = str2num(input(sprintf('%s', totalString), 's'));
-
-    if isempty(selectedIndex)
-        selectedIndex = getSelectionIndex(conditionName, conditionValues);
-    else
-        if (selectedIndex < 1) || (selectedIndex > numel(conditionValues))
-            selectedIndex = getSelectionIndex(conditionName, conditionValues);
-        end
-    end
 end
