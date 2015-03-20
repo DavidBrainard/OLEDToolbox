@@ -10,21 +10,24 @@ function generateStimuliForSamsungFrameBuffer
     
     % Load CIE '31 CMFs
     sensorXYZ = utils.loadXYZCMFs();
-    % divide by 683, because loadXYZCMFs multiples by it
-    wattsToLumens = 683;
-    sensorXYZ.T = sensorXYZ.T / wattsToLumens;
     
-    % Load calStructOBJ for Samsung OLED     
-    calStructOBJ = loadDisplayCal();
+    % Load calStructOBJ for Samsung OLED  
+    displayCalFileName = 'SamsungOLED_MirrorScreen';
+    displayCalFileName = 'ViewSonicProbe';
+    calStructOBJ = loadDisplayCal(displayCalFileName);
     
     % Change calStructOBJ's sensors to XYZ sensors
     SetSensorColorSpace(calStructOBJ, sensorXYZ.T,  sensorXYZ.S);
     
     % Compute max realizable luminance for this display
     maxRealizableXYZ = SettingsToSensor(calStructOBJ, [1 1 1]');
-    maxRealizableLuminanceForSamsungDisplay = maxRealizableXYZ(2);
+    maxRealizableLuminanceForDisplay = maxRealizableXYZ(2);
     
-    
+    % Print max realizable luminance in cd/m2
+    wattsToLumens = 683;
+    maxRealizableLuminanceForDisplayInCdPerM2 = maxRealizableLuminanceForDisplay * wattsToLumens;
+    fprintf('Max realizable lum for display: %2.2f Cd/m2\n',maxRealizableLuminanceForDisplayInCdPerM2);
+
     % Set the gamma correction mode to be used. 
     % gammaMode == 0 - search table using linear interpolation
     SetGammaMethod(calStructOBJ, 0);
@@ -54,7 +57,7 @@ function generateStimuliForSamsungFrameBuffer
     
     % Scale so max is equal to display's max realizable luminance.
     % Note that we do not scale so that min luminance = 0;
-    scaledLumMap1D = lumMap1D/maxLumMap * maxRealizableLuminanceForSamsungDisplay;
+    scaledLumMap1D = lumMap1D/maxLumMap * maxRealizableLuminanceForDisplay;
     
     minLumMapAfter = min(scaledLumMap1D);
     maxLumMapAfter = max(scaledLumMap1D);
@@ -64,10 +67,10 @@ function generateStimuliForSamsungFrameBuffer
     tmp(3,:) = scaledLumMap1D;
     
     % Back to XYZ
-    tmp = xyYToXYZ(tmp);
+    tmpSensorXYZ = xyYToXYZ(tmp);
     
     % Get scaled lumMap (as image)
-    tmp3D = CalFormatToImage(tmp, m, n);
+    tmp3D = CalFormatToImage(tmpSensorXYZ, m, n);
     lumMap = tmp3D(:,:,2)*wattsToLumens ;
     
     % Plot luminanceMap
@@ -77,13 +80,13 @@ function generateStimuliForSamsungFrameBuffer
     title(sprintf('Luminance map (min = %2.1f, max = %2.1f', min(lumMap(:)), max(lumMap(:))));
      
     % XYZsensor to RGB primaries
-    tmp = SensorToPrimary(calStructOBJ, tmp);
+    tmp = SensorToPrimary(calStructOBJ, tmpSensorXYZ);
     
     % the gamma-uncorrected image
     primariesImage = CalFormatToImage(tmp, m, n);
     
     % RGB primaries to RGB settings
-    tmp = SensorToSettings(calStructOBJ, tmp); 
+    tmp = SensorToSettings(calStructOBJ, tmpSensorXYZ); 
     
     % CalFormat to Image
     frameBufferImage = CalFormatToImage(tmp, m, n);
@@ -99,12 +102,99 @@ function generateStimuliForSamsungFrameBuffer
     imshow(primariesImage, [0 1]); axis 'image'
     title('Primares image');
     
+    ShowImageUsingPsychImaging(frameBufferImage);
+    
 end
 
 
-function calStructOBJ = loadDisplayCal()
+function ShowImageUsingPsychImaging(frameBufferImage)
+
+    screenIndex = max(Screen('screens'));  % secondary
+    stereoMode = []; % 10; 
+    
+    % Following for opening a full-screen window
+    screenRect = []; 
+    
+    % Specify pixelSize (30 for 10-bit color, 24 for 8-bit color)
+    pixelSize = 24;
+    
+    try
+        Screen('Preference', 'SkipSyncTests', 1);
+
+        % Start PsychImaging
+        PsychImaging('PrepareConfiguration');
+
+
+        % Open master display (screen to be calibrated)
+        [masterWindowPtr, screenRect] = ...
+            PsychImaging('OpenWindow', screenIndex, [0 0 0], screenRect, pixelSize, [], stereoMode);
+        
+        % Identity LUT
+        LoadIdentityClut(masterWindowPtr);
+
+        global texturePointer
+        if (~isempty(texturePointer))
+           %fprintf('\nClosing existing textures (%d).\n', numel(obj.texturePointers));
+           Screen('Close', texturePointer);
+           texturePointer= [];
+        end
+
+        optimizeForDrawAngle = []; specialFlags = []; floatprecision = 2;
+
+        % Generate background texture
+        backgroundRGBstimMatrix = zeros(screenRect(4), screenRect(3), 3);
+        for k = 1:3
+            backgroundRGBstimMatrix(:,:,k) = 0.5;
+        end
+        backgroundTexturePtr = Screen('MakeTexture', masterWindowPtr, backgroundRGBstimMatrix, optimizeForDrawAngle, specialFlags, floatprecision);
+        % update the list of existing texture pointers
+        texturePointer = [texturePointer backgroundTexturePtr];
+
+
+        targetTexturePtr = Screen('MakeTexture', masterWindowPtr, frameBufferImage, optimizeForDrawAngle, specialFlags, floatprecision);
+        %update the list of existing texture pointers
+        texturePointer = [texturePointer targetTexturePtr];    
+
+        % Draw Background texture
+        sourceRect = []; destRect = []; rotationAngle = 0; filterMode = []; globalAlpha = 1.0;
+        Screen('DrawTexture', masterWindowPtr, backgroundTexturePtr, sourceRect, destRect, rotationAngle, filterMode, globalAlpha);       % background
+
+        % Draw Target texture
+        x0 = screenRect(3)/2;
+        y0 = screenRect(4)/2;
+        targetDestRect = CenterRectOnPointd(...
+            [0 0 size(frameBufferImage,2) size(frameBufferImage,1)], ...
+            x0,y0...
+            );
+        Screen('DrawTexture', masterWindowPtr, targetTexturePtr, sourceRect, targetDestRect, rotationAngle, filterMode, globalAlpha);     % foreground
+
+
+
+        % Flip master display
+        Screen('Flip', masterWindowPtr); 
+
+        Speak('Hit enter to exit');
+        pause
+        
+    catch err
+        restorePTB();
+        rethrow(err)
+    end
+    
+    restorePTB();
+    
+end
+
+function restorePTB
+    sca
+    clearvars -global texturePointer
+end
+
+
+
+function calStructOBJ = loadDisplayCal(displayCalFileName)
     % Load calibration data for Samsung OLED panel
-    calStruct = LoadCalFile('SamsungOLED_MirrorScreen');
+    calStruct = LoadCalFile(displayCalFileName);
     
     % Instantiate a @CalStruct object that will handle controlled access to the calibration data.
     [calStructOBJ, ~] = ObjectToHandleCalOrCalStruct(calStruct); 
