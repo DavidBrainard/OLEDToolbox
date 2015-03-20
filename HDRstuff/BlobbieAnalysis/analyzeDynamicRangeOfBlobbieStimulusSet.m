@@ -1,3 +1,7 @@
+% Function for interactive visualization and analysis of the dynamic range of Blobbie stimuli
+%
+% 3/20/2015   npc   Wrote it.
+
 function analyzeDynamicRangeOfBlobbieStimulusSet
     global shapeConds
     global alphaConds
@@ -85,8 +89,11 @@ function generateGUI(lumRange, lightingIndex, dataType)
 
         frh = uimenu(menuHandle ,'Label','Luminance range ...');                 
         uimenu(frh,'Label','Full range',            'Callback', {@fullLumRangeCallBackFunction, lightingIndex});
+        uimenu(frh,'Label','Percentile (99)',       'Callback', {@percentileLumRangeCallBackFunction, 99, lightingIndex});
+        uimenu(frh,'Label','Percentile (98)',       'Callback', {@percentileLumRangeCallBackFunction, 98, lightingIndex});
         uimenu(frh,'Label','Percentile (95)',       'Callback', {@percentileLumRangeCallBackFunction, 95, lightingIndex});
         uimenu(frh,'Label','Percentile (90)',       'Callback', {@percentileLumRangeCallBackFunction, 90, lightingIndex});
+        uimenu(frh,'Label','Percentile (80)',       'Callback', {@percentileLumRangeCallBackFunction, 80, lightingIndex});
         uimenu(frh,'Label','Percentile (70)',       'Callback', {@percentileLumRangeCallBackFunction, 70, lightingIndex});
         uimenu(frh,'Label','Percentile (50)',       'Callback', {@percentileLumRangeCallBackFunction, 50, lightingIndex});
         
@@ -120,7 +127,7 @@ function generateGUI(lumRange, lightingIndex, dataType)
                     imshow(lumMap);
                     set(gca, 'CLim', lumRange);
                     cRatio = max(lumMap(:))/min(lumMap(:));
-                    text(620,70, sprintf('CR=%2.1f', cRatio), 'FontSize', 14, 'FontName', 'system', 'Color',  'r');
+                    text(620,70, sprintf('LR=%2.1f', cRatio), 'FontSize', 14, 'FontName', 'system', 'Color',  [0.2 0.99 0.8]);
                     axis 'image'
                     drawnow;
                 end
@@ -132,11 +139,12 @@ function generateGUI(lumRange, lightingIndex, dataType)
         
         global maxHistCount
         
-        maxHistCount(1) = 30000;
-        maxHistCount(2) = 100000;
+        histScaleFactor = 4;
+        maxHistCount(1) = 30000/histScaleFactor;
+        maxHistCount(2) = 350000/histScaleFactor;
         
         % Determine histogram edges
-        luminanceHistogramBinsNum = 256;
+        luminanceHistogramBinsNum = 256*histScaleFactor;
         deltaLum = (lumRange(2)-lumRange(1))/luminanceHistogramBinsNum;
         luminanceEdges = lumRange(1):deltaLum:lumRange(2);
     
@@ -182,7 +190,6 @@ function generateGUI(lumRange, lightingIndex, dataType)
             ah = axes('Parent',tabHandle(tabIndex));
 
             logPlotting = false;
-            
             % do the plotting
             for specularSPDindex = 1:numel(specularSPDconds)
                 for alphaIndex = 1:numel(alphaConds)
@@ -194,17 +201,17 @@ function generateGUI(lumRange, lightingIndex, dataType)
                     else
                         YLims = [0 maxHistCount(lightingIndex)];
                     end
-                    h_hist = area(luminanceEdges(1:end-1), N);
-                    %h_hist = histogram(lumMap(:),luminanceEdges);
-                    h_hist.FaceColor = [0.6 0.8 1.0];
-                    h_hist.EdgeColor = [0.0 0.0 1.0];
+                    [x,y] = stairs(luminanceEdges(1:end-1),N);
+                    plot(x,y,'-', 'Color', [0.99 0.42 0.2]);
+                    %h_hist.FaceColor = [0.99 0.42 0.2];
+                    %h_hist.EdgeColor = [0.99 0.42 0.2];
                     if (logPlotting)
-                        set(gca, 'Color', 'w', 'YScale', 'log', 'YLim', YLims, 'XLim', lumRange, 'YTick', 10.^(0:1:6));
+                        set(gca, 'Color', 'k', 'XColor', [0.2 0.9 0.8], 'YColor', [0.2 0.9 0.8], 'YScale', 'log', 'YLim', YLims, 'XLim', lumRange, 'XTick', [0:500:lumRange(2)], 'YTick', 10.^(0:1:6), 'YTickLabel', {}, 'XTickLabel', {});
                     else
-                        set(gca, 'Color', 'w', 'YScale', 'linear', 'YLim', YLims, 'XLim', lumRange, 'YTick', [0:1000:maxHistCount(lightingIndex)], 'YTickLabel', {});
+                        set(gca, 'Color', 'k', 'XColor', [0.2 0.9 0.8], 'YColor', [0.2 0.9 0.8], 'YScale', 'linear', 'YLim', YLims, 'XLim', lumRange, 'XTick', [0:500:lumRange(2)], 'YTick', [0:1000:maxHistCount(lightingIndex)], 'YTickLabel', {}, 'XTickLabel', {});
                     end
                     cRatio = max(lumMap(:))/min(lumMap(:));
-                    text(double(luminanceEdges(180)),4200, sprintf('CR=%2.1f', cRatio), 'FontSize', 14, 'FontName', 'system', 'Color',  'r');
+                    text(double(luminanceEdges(round(numel(luminanceEdges)*0.77))), maxHistCount(lightingIndex)*0.01, sprintf('LR=%2.1f', cRatio), 'FontSize', 14, 'FontName', 'system', 'Color',  [0.2 0.99 0.8]);
                     box off; grid on;
                     drawnow;
                 end
@@ -228,9 +235,9 @@ function dataCursorCallBackFunction(src, eventdata, status, hFig)
     if (status)
         set(dcm_obj, 'Enable', 'on');
         set(dcm_obj, 'DisplayStyle', 'datatip');
+       %set(dcm_obj, 'DisplayStyle', 'window');
     else
         set(dcm_obj, 'Enable', 'off');
-        datacursormode off
     end
 end
 
