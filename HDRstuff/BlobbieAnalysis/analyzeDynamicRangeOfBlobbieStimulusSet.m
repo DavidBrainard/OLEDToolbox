@@ -38,25 +38,25 @@ function analyzeDynamicRangeOfBlobbieStimulusSet
         % Save computed luminance maps
         if (strcmp(luminanceMapLocation,'ColorShare1'))
             
-            hWaitBar = waitbar(0.3,'Saving to ColorShare. Please wait ...');
+            hWaitBar = waitbar(0.3,'Saving to ColorShare. Please wait ...\n');
             pause(0.01);
     
             % Try to save the computed luminanceMaps to ColorShare1
             try
                 save(cacheFilename, 'luminanceMaps');
-            catch err
                 close(hWaitBar);
                 delete(hWaitBar);
+            catch err
                 cancelOperation = gui.waitWithDialog('ColorShare1 not mounted?');
                 if (cancelOperation)
                     return;
                 end
                 fprintf('Trying to save the computed luminanceMaps once again ...\n');
                 save(cacheFilename, 'luminanceMaps');
+                close(hWaitBar);
+                delete(hWaitBar);
             end
-            
-            close(hWaitBar);
-            delete(hWaitBar);
+
         else
             % Save locally
             save(cacheFilename, 'luminanceMaps');
@@ -69,25 +69,25 @@ function analyzeDynamicRangeOfBlobbieStimulusSet
             fprintf('Fetching %s. Please wait ...', cacheFilename);
             if (strcmp(luminanceMapLocation,'ColorShare1'))
                 
-                hWaitBar = waitbar(0.3,'Loading from ColorShare. Please wait ...');
+                hWaitBar = waitbar(0.3,'Loading from ColorShare. Please wait ...\n');
                 pause(0.01);
             
                  % Try to laod the computed luminanceMaps from ColorShare1
                 try
                     load(cacheFilename);
-                catch err
                     close(hWaitBar);
                     delete(hWaitBar);
+                catch err
                     cancelOperation = gui.waitWithDialog('ColorShare1 not mounted?');
                     if (cancelOperation)
                         return;
                     end
                     fprintf('Trying to load the computed luminanceMaps once again ...\n');
                     load(cacheFilename);
+                    close(hWaitBar);
+                    delete(hWaitBar);
                 end
-                
-                close(hWaitBar);
-                delete(hWaitBar);
+
             else
                 % Load locally
                 load(cacheFilename);
