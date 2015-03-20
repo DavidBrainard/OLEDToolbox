@@ -22,7 +22,7 @@ function analyzeDynamicRangeOfBlobbieStimulusSet
     if (strcmp(luminanceMapLocation,'ColorShare1'))
         % Generate luminance maps cache filename
         fullPath = '/Volumes/ColorShare1/Users/Shared/Matlab/Analysis/SamsungProject/AnalyzedData';
-        cacheFilename = fullfile(fullPath,'luminanceMaps2.mat');
+        cacheFilename = fullfile(fullPath,'luminanceMaps.mat');
     else
         cacheFilename = 'luminanceMaps.mat';
     end
