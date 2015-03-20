@@ -18,10 +18,13 @@ function PerformLocallySpectralLuminancePrediction
         
     useParallelEngine = input('Use parallel engine? [1=YES, default=NO] : '); 
     [rootDir, ~, ~] = fileparts(mfilename('fullpath'));
-    calibrationFile = 'SonyOLED_CloudsCalib10.mat'; 
-    %calibrationFile = 'SamsungOLED_CloudsCalib11.mat';
-    %calibrationFile = 'SamsungOLED_CloudsCalib4.mat';     % data on which report is based on
+    calibrationFile = 'SonyOLED_CloudsCalib10.mat';  YLims = [0 270]; % Sony
+    calibrationFile = 'SamsungOLED_CloudsCalib11.mat'; YLims = [200 500]; % Samsung  % Samsung
+    %calibrationFile = 'SamsungOLED_CloudsCalib4.mat';     % data on which report is based on YLims = [350 620];
     
+    
+        
+        
     
     if (strcmp(calibrationFile, 'SamsungOLED_CloudsCalib2.mat'))
         [stimuliGammaIn, stimuliGammaOut, ...
@@ -37,7 +40,8 @@ function PerformLocallySpectralLuminancePrediction
          loadStimuliAndResponses(calibrationFile, showEmployedGammaFunction, showRepresentativeStimuli, showRGBsettingsHistogram, exportToPDF);
 
         % Examine repeatability
-        examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, timeOfMeasurement);
+        
+        examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, timeOfMeasurement, YLims);
         pause;
         
         % Select data set
@@ -537,7 +541,7 @@ function spectrum = doFFT(frame, fftSamplesNum, rowOffset, colOffset, rowRange, 
     spectrum = fft2(fftFrame);      
 end
 
-function examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, timeOfMeasurement)
+function examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, timeOfMeasurement, YLims)
     
     exportToPDF = true;
     
@@ -555,9 +559,7 @@ function examineTimeVariability(leftTargetLuminance,  rightTargetLuminance, time
         stairs(timeOfMeasurement(:,stimIndex), leftTargetLuminance(:,stimIndex), 'k-');
     end
 
-    YLims = [200 500]; % Samsung
-    YLims = [350 620]; % Samsung
-    YLims = [0 270]; % Sony
+    
     
     plot(timeOfMeasurement(1,selectStimIndices), leftTargetLuminance(1,selectStimIndices), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [1.0 0.7 0.7], 'MarkerEdgeColor', [1.0 0.0 0.0]);
     plot(timeOfMeasurement(2,selectStimIndices), leftTargetLuminance(2,selectStimIndices), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [0.5 0.7 0.5], 'MarkerEdgeColor', [0.0 1.0 0.0]);
