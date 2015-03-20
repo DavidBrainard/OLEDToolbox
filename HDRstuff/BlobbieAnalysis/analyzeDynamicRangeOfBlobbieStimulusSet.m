@@ -17,14 +17,14 @@ function analyzeDynamicRangeOfBlobbieStimulusSet
     %luminanceMapLocation = 'Local';
     
     % Whether to recompute the luminance maps or load existing ones
-    reComputeLuminanceMaps = false;
+    reComputeLuminanceMaps = true;
     
     if (strcmp(luminanceMapLocation,'ColorShare1'))
         % Generate luminance maps cache filename
         fullPath = '/Volumes/ColorShare1/Users/Shared/Matlab/Analysis/SamsungProject/AnalyzedData';
-        cacheFilename = fullfile(fullPath,'luminanceMaps.mat');
+        cacheFilename = fullfile(fullPath,'luminanceMaps2.mat');
     else
-        cacheFilename = luminanceMaps.mat';
+        cacheFilename = 'luminanceMaps.mat';
     end
     
     if (reComputeLuminanceMaps)
@@ -137,6 +137,9 @@ function computeLuminanceMaps(lightingCondIndex)
     % Load CIE '31 CMFs
     sensorXYZ = utils.loadXYZCMFs();
     
+    % scaling factor from watt-valued spectra to lumen-valued luminances (Y-values); 1 Lumen = 1 Candella * sr
+    wattsToLumens = 683; 
+    
     for shapeIndex = 1:numel(shapeConds)
         for alphaIndex = 1:numel(alphaConds)
             for specularSPDindex = 1:numel(specularSPDconds)
@@ -147,7 +150,7 @@ function computeLuminanceMaps(lightingCondIndex)
                     luminanceMaps = zeros(numel(lightingConds), numel(shapeConds), numel(alphaConds), numel(specularSPDconds), size(sensorXYZimage,1), size(sensorXYZimage,2), 'single');
                 end
                 % store luminance maps
-                luminanceMaps(lightingCondIndex, shapeIndex, alphaIndex, specularSPDindex,:,:) = single(squeeze(sensorXYZimage(:,:,2)));
+                luminanceMaps(lightingCondIndex, shapeIndex, alphaIndex, specularSPDindex,:,:) = single(wattsToLumens * squeeze(sensorXYZimage(:,:,2)));
             end
         end
     end   
