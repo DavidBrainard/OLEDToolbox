@@ -38,7 +38,7 @@ function analyzeDynamicRangeOfBlobbieStimulusSet
         % Save computed luminance maps
         if (strcmp(luminanceMapLocation,'ColorShare1'))
             
-            hWaitBar = waitbar(0.3,'Saving to ColorShare. Please wait ...\n');
+            hWaitBar = waitbar(0.3,'Saving to ColorShare. Please wait ...');
             pause(0.01);
     
             % Try to save the computed luminanceMaps to ColorShare1
@@ -66,10 +66,10 @@ function analyzeDynamicRangeOfBlobbieStimulusSet
         % Load previously-computed luminance maps
         if isempty(luminanceMaps)
 
-            fprintf('Fetching %s. Please wait ...', cacheFilename);
+            fprintf('Fetching %s. Please wait ...\n', cacheFilename);
             if (strcmp(luminanceMapLocation,'ColorShare1'))
                 
-                hWaitBar = waitbar(0.3,'Loading from ColorShare. Please wait ...\n');
+                hWaitBar = waitbar(0.3,'Loading from ColorShare. Please wait ...');
                 pause(0.01);
             
                  % Try to laod the computed luminanceMaps from ColorShare1
