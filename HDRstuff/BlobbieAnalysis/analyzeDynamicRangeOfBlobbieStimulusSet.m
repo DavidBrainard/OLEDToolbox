@@ -13,18 +13,19 @@ function analyzeDynamicRangeOfBlobbieStimulusSet
     utils.loadBlobbieConditions();
 
     % Where to read/write the luminanceMap
-    luminanceMapLocation = 'ColorShare1';
-    %luminanceMapLocation = 'Local';
+    %luminanceMapLocation = 'ColorShare1';
+    luminanceMapLocation = 'Local';
     
     % Whether to recompute the luminance maps or load existing ones
-    reComputeLuminanceMaps = true;
+    reComputeLuminanceMaps = false;
     
     if (strcmp(luminanceMapLocation,'ColorShare1'))
         % Generate luminance maps cache filename
         fullPath = '/Volumes/ColorShare1/Users/Shared/Matlab/Analysis/SamsungProject/AnalyzedData';
         cacheFilename = fullfile(fullPath,'luminanceMaps.mat');
     else
-        cacheFilename = 'luminanceMaps.mat';
+        fullPath = '~/Desktop';
+        cacheFilename = fullfile(fullPath,'luminanceMaps.mat');
     end
     
     if (reComputeLuminanceMaps)
