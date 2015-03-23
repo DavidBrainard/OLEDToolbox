@@ -1,0 +1,28 @@
+function scaledSensorXYZcalFormat = scaleSensorCalFormatForLumRange(sensorXYZcalFormat,lumRange)
+    
+    % To xyY sensor space
+    tmp = XYZToxyY(sensorXYZcalFormat);
+    
+    % Retrieve luminance (Y) channel
+    wattsToLumens = 683;
+    lumMap = wattsToLumens*squeeze(tmp(3,:));
+
+    maxLumMap = max(lumMap(:));
+    minLumMap = min(lumMap(:));
+    
+    % Scale lum map, so that max value = displayLumRange(2)
+    scaledLumMap = lumMap*(lumRange(2)/max(lumMap(:)));
+   
+    % if (min(scaledLumMap) < lumRange(1) add the difference
+    lumDiff = lumRange(1)-min(scaledLumMap(:));
+    if (lumDiff >0)
+        
+    end
+    
+    % Replace lum map with scaled lum map
+    tmp(3,:) = scaledLumMap/wattsToLumens;
+    
+    % Back to XYZ sensor space
+    scaledSensorXYZcalFormat  = xyYToXYZ(tmp);
+
+end
