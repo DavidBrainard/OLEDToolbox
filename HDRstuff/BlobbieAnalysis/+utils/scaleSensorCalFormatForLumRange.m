@@ -1,4 +1,4 @@
-function [scaledSensorXYZcalFormat, scaledLumRange] = scaleSensorCalFormatForLumRange(sensorXYZcalFormat,lumRange)
+function [scaledSensorXYZcalFormat, scaledLumRange] = scaleSensorCalFormatForLumRange(sensorXYZcalFormat, stimEnsemleLumRange, displayLumRange)
     
     % To xyY sensor space
     tmp = XYZToxyY(sensorXYZcalFormat);
@@ -7,13 +7,8 @@ function [scaledSensorXYZcalFormat, scaledLumRange] = scaleSensorCalFormatForLum
     wattsToLumens = 683;
     lumMap = wattsToLumens*squeeze(tmp(3,:));
 
-    maxLumMap = max(lumMap(:));
-    minLumMap = min(lumMap(:));
-    
-    % Scale lum map, so that 
-    % maxScaledLum = lumRange(2) and
-    % minScaledLum = lumRange(1)
-    scaledLumMap = (lumMap - minLumMap)/(maxLumMap-minLumMap)*(lumRange(2)-lumRange(1)) + lumRange(1);
+    % Scale lum map so that the ensemble of stimuli map to displayLumRange
+    scaledLumMap = (lumMap - stimEnsemleLumRange(1))/(stimEnsemleLumRange(2)-stimEnsemleLumRange(1))*(displayLumRange(2)-displayLumRange(1)) + displayLumRange(1);
     
     scaledLumRange = [min(scaledLumMap(:)) max(scaledLumMap(:))];
     
