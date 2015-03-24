@@ -1,5 +1,5 @@
 % Load the multispectral image data
-function [multiSpectralImage, S] = loadMultispectralImage(shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex)
+function [multiSpectralImage, S] = loadMultispectralImage(dataPath, shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex)
     global shapeConds
     global alphaConds
     global specularSPDconds
@@ -10,8 +10,8 @@ function [multiSpectralImage, S] = loadMultispectralImage(shapeIndex, alphaIndex
         shapeConds{shapeIndex}, specularSPDconds{specularSPDindex}, alphaConds{alphaIndex},  lightingConds{lightingCondIndex});
     
     % Load the image
-    fprintf('Fetching image from ColorShare1. Please wait ...\n');
-    HDRdata = load(fullfile('/Volumes/ColorShare1/Users/Shared/Matlab/Analysis/SamsungProject/RawData/MultispectralData_0deg',imageName));
+    fprintf('Fetching image from ''%s'' Please wait ...\n', dataPath);
+    HDRdata = load(fullfile(dataPath,imageName));
     
     % extract image data
     multiSpectralImage = HDRdata.multispectralImage * HDRdata.radiometricScaleFactor;

@@ -1,5 +1,7 @@
 function prepareEngine()
 
+    sca;
+     
     global PsychImagingEngine
     PsychImagingEngine = [];
     
@@ -12,18 +14,20 @@ function prepareEngine()
     % Specify pixelSize (30 for 10-bit color, 24 for 8-bit color)
     pixelSize = 24;
 
+   
+    
     try 
         Screen('Preference', 'SkipSyncTests', 1);
 
         % Start PsychImaging
         PsychImaging('PrepareConfiguration');
 
-
         % Open master display (screen to be calibrated)
         [masterWindowPtr, screenRect] = ...
             PsychImaging('OpenWindow', screenIndex, [0 0 0], screenRect, pixelSize, [], stereoMode);
 
-        % Identity LUT
+        % Identity LUT - so we do not apply any gamma correction
+        % This is how we calibrate as well
         LoadIdentityClut(masterWindowPtr);
 
         PsychImagingEngine.masterWindowPtr = masterWindowPtr;
@@ -33,8 +37,6 @@ function prepareEngine()
         PsychImagingEngine.thumbsizeTextureDestRects = {};
         PsychImagingEngine.screenIndex = screenIndex;
 
-        
-        
         % Generate background texture
         backgroundRGBstimMatrix = zeros(PsychImagingEngine.screenRect(4), PsychImagingEngine.screenRect(3), 3);
         for k = 1:3
