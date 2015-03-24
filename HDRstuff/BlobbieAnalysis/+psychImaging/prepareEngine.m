@@ -1,10 +1,12 @@
 function prepareEngine()
 
+    Screen('Preference', 'SkipSyncTests', 2);
     sca;
      
     global PsychImagingEngine
     PsychImagingEngine = [];
     
+
     screenIndex = max(Screen('screens'));  % secondary
     stereoMode = []; % 10; 
     

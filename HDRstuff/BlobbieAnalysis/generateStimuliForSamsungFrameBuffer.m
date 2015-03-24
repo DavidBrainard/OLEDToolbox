@@ -25,19 +25,38 @@ function generateStimuliForSamsungFrameBuffer
     else
         lightingCondIndex = str2num(choice);
     end
-    lightingCondIndex
+
     
     
     % Load calStructOBJ for Samsung OLED  
     displayCalFileName = 'SamsungOLED_MirrorScreen';
     calStructOBJ_Samsung = loadDisplayCal(displayCalFileName);
-    lumRangeSamsung = utils.computeRealizableLumRangeForDisplay(calStructOBJ_Samsung);
+    [lumRangeSamsung, lumRGBSamsung] = utils.computeRealizableLumRangeForDisplay(calStructOBJ_Samsung);
     
-    displayCalFileName = 'StereoLCDLeft';
+    displayCalFileName = 'ViewSonicProbe';
     calStructOBJ_LCD = loadDisplayCal(displayCalFileName);
-    lumRangeLCD = utils.computeRealizableLumRangeForDisplay(calStructOBJ_LCD);
+    [lumRangeLCD, lumRGBLCD] = utils.computeRealizableLumRangeForDisplay(calStructOBJ_LCD);
     
+    % Specify luminance limiting factors so that no stimuli require primary values > 1 for their realization
+    if (lightingCondIndex == 1)
+        lumRangeLimitingFactorSamsung = 1.0;
+        lumRangeLimitingFactorLCD =  1.0;
+    else
+        lumRangeLimitingFactorSamsung = 0.86; %0.8;
+        lumRangeLimitingFactorLCD =  0.86;
+    end
     
+    limitedForRealizationLumRangeSamsung = lumRangeSamsung;
+    limitedForRealizationLumRangeSamsung(2) = lumRangeLimitingFactorSamsung*limitedForRealizationLumRangeSamsung(2);
+    
+    limitedForRealizationLumRangeLCD = lumRangeLCD;
+    limitedForRealizationLumRangeLCD(2) = lumRangeLimitingFactorLCD*limitedForRealizationLumRangeLCD(2);
+    
+    fprintf('Realizable lum range for SAMSUNG display: [%2.2f - %2.2f] Cd/m2\n', lumRangeSamsung(1), lumRangeSamsung(2));
+    fprintf('Limited lum range for SAMSUNG display: [%2.2f - %2.2f] Cd/m2\n', limitedForRealizationLumRangeSamsung(1), limitedForRealizationLumRangeSamsung(2));
+    
+    fprintf('Realizable lum range for LCD display: [%2.2f - %2.2f] Cd/m2\n', lumRangeLCD(1), lumRangeLCD(2));
+    fprintf('Limited lum range for LCD display: [%2.2f - %2.2f] Cd/m2\n', limitedForRealizationLumRangeLCD(1), limitedForRealizationLumRangeLCD(2));
     
     
 
@@ -75,7 +94,7 @@ function generateStimuliForSamsungFrameBuffer
     end
     
     
-    % Compute scaled framebuffer images
+    % Compute luminance scaled images
     x0 = 0; y0 = 0;
     stimIndex = 0;
     luminanceRatio = zeros(numel(shapeConds), numel(alphaConds), numel(specularSPDconds));
@@ -92,9 +111,9 @@ function generateStimuliForSamsungFrameBuffer
                 luminanceRatio(stimIndex) = max(lum(:))/min(lum(:));
                 
                 % Compute settings and primaries images for the two display renderings
-                [settingsImageSamsung, settingsImageLCD, primariesImageSamsung, primariesImageLCD] = ...
-                    computeSettingsAndPrimaryImages(sensorXYZimage, stimEnsemleLumRange, calStructOBJ_Samsung, lumRangeSamsung, lumRangeLCD,  ...
-                                                    shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex);
+                [settingsImageSamsung, settingsImageLCD] = ...
+                    computeSettingsImages(sensorXYZimage, stimEnsemleLumRange, calStructOBJ_Samsung, calStructOBJ_LCD, limitedForRealizationLumRangeSamsung, limitedForRealizationLumRangeLCD,  ...
+                                                    lumRGBSamsung, lumRGBLCD, dataPath, shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex);
 
                 % coordinates for thumbsize images of stimuli
                 stimAcrossWidth = 15;
@@ -116,16 +135,7 @@ function generateStimuliForSamsungFrameBuffer
                     y0 = thumbsizeHeight/2;
                 end
 
-                LUTisLinearized = false;
-                if (LUTisLinearized)
-                     % Use this with a linearized LUT 
-                     psychImaging.generateStimTextures(double(primariesImageSamsung), double(primariesImageLCD), stimIndex, ...
-                        x0, y0, thumbsizeWidth, thumbsizeHeight);
-                else
-                    % Use this when the LUT is at its default gamma
-                    psychImaging.generateStimTextures(double(settingsImageSamsung), double(settingsImageLCD), stimIndex, ...
-                        x0, y0, thumbsizeWidth, thumbsizeHeight);
-                end
+                psychImaging.generateStimTextures(double(settingsImageSamsung), double(settingsImageLCD), stimIndex, x0, y0, thumbsizeWidth, thumbsizeHeight);
  
             end % alphaIndex
         end % shapeIndex
@@ -188,6 +198,8 @@ function generateStimuliForSamsungFrameBuffer
 end
 
 
+
+    
 function [stimEnsemleLumRange, sensorXYZimage] = updateStimEnsembleLumRange(oldStimEnsembleLumRange, sensorXYZ, dataPath, shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex)
 
     % load corresponding multispectral image
@@ -195,7 +207,7 @@ function [stimEnsemleLumRange, sensorXYZimage] = updateStimEnsembleLumRange(oldS
     
     % compute sensorXYZ image
     sensorXYZimage = MultispectralToSensorImage(multiSpectralImage, multiSpectralImageS, sensorXYZ.T, sensorXYZ.S);
-
+    
     % extract lum map
     lumMap = squeeze(sensorXYZimage(:,:,2));
     
@@ -217,7 +229,7 @@ function [stimEnsemleLumRange, sensorXYZimage] = updateStimEnsembleLumRange(oldS
 end
 
 
-function [settingsImageSamsung, settingsImageLCD, primariesImageSamsung, primariesImageLCD] = computeSettingsAndPrimaryImages(sensorXYZimage, stimEnsemleLumRange, calStructOBJ_Samsung, lumRangeSamsung, lumRangeLCD, dataPath, shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex)
+function [settingsImageSamsung, settingsImageLCD] = computeSettingsImages(sensorXYZimage, stimEnsemleLumRange, calStructOBJ_Samsung, calStructOBJ_LCD, lumRangeSamsung, lumRangeLCD, lumRGBSamsung, lumRGBLCD, dataPath, shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex)
       
     % Image to calFormat
     [sensorXYZcalFormat, mRows, nCols] = ImageToCalFormat(sensorXYZimage);
@@ -230,36 +242,48 @@ function [settingsImageSamsung, settingsImageLCD, primariesImageSamsung, primari
     % Set the gamma correction mode to be used. 
     % gammaMode == 1 - search table using linear interpolation
     SetGammaMethod(calStructOBJ_Samsung, 0);
-
-    % Compute primary images
-    % XYZsensor to RGB primaries (gamma-uncorrected image)
-    % Samsung - rendering
-    primariesImageSamsung = single(CalFormatToImage(...
-        SensorToPrimary(calStructOBJ_Samsung, scaledSensorXYZcalFormatSamsung), ...
-        mRows, nCols));
-
-    % XYZsensor to RGB primaries (gamma-uncorrected image)
-    % LCD - rendering
-    primariesImageLCD = single(CalFormatToImage(...
-        SensorToPrimary(calStructOBJ_Samsung, scaledSensorXYZcalFormatLCD), ...
-        mRows, nCols));
-
-
+    SetGammaMethod(calStructOBJ_LCD, 0);
+   
     
     % Compute frame buffer images
     % XYZsensor to RGB primaries (gamma-corrected image)
     % Samsung - rendering
-    settingsImageSamsung = single(CalFormatToImage(...
-        mySensorToSettings(calStructOBJ_Samsung, scaledSensorXYZcalFormatSamsung), ...
-        mRows, nCols));
-
+    try
+        % For realization on the the samsung display
+        settingsImageSamsung = single(CalFormatToImage(...
+            mySensorToSettings(calStructOBJ_Samsung, scaledSensorXYZcalFormatSamsung), ...
+            mRows, nCols));
+    catch err
+        fprintf(2, 'Failed to realize settings image for Samsung (shape: %d, alpha:%d, specular: %d, lighting: %d)', shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex);
+        rethrow(err);
+    end
 
     % XYZsensor to RGB primaries (gamma-corrected image)
-    % LCD -rendering
-    settingsImageLCD = single(CalFormatToImage(...
-        mySensorToSettings(calStructOBJ_Samsung, scaledSensorXYZcalFormatLCD), ...
-        mRows, nCols));
+    % LCD - rendering
+    try
+        % For realization on the LCD display
+        LCDprimary =  mySensorToPrimary(calStructOBJ_Samsung,scaledSensorXYZcalFormatLCD);
+        % offset will be due to brighter black of the LCD
+        offset = 0.0;  % this has to be calculated somehow
+        
+        SamsungPrimary = 0*LCDprimary;
+        gain   = sum(lumRGBLCD(1:3))/sum(lumRGBSamsung(1:3));
+        for channel = 1:3
+            SamsungPrimary(channel,:) = offset + LCDprimary(channel,:) * gain;
+        end
+        
+        gamut = SamsungPrimary;
+        % GamutToSettings does the actual gamma-correction via the inverse LUT
+        settings = GamutToSettings(calStructOBJ_Samsung,gamut);
     
+        settingsImageLCD = single(CalFormatToImage(...
+            settings, ...
+            mRows, nCols));
+        
+    catch err
+        fprintf(2, 'Failed to realize settings image for LCD (shape: %d, alpha:%d, specular: %d, lighting: %d)', shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex);
+        rethrow(err);
+    end
     
     % Display images
     displayImages = false;
@@ -284,12 +308,28 @@ function [settingsImageSamsung, settingsImageLCD, primariesImageSamsung, primari
     
 end
 
-function settings = mySensorToSettings(calStructOBJ,sensor)
+function primary = mySensorToPrimary(calStructOBJ,sensor)
     primary = SensorToPrimary(calStructOBJ,sensor);
+    
+    tolerance = 1000*eps;
+    indices = find(primary(:) < -tolerance);
+    if (~isempty(indices))
+        fprintf(2,'%d pixels have primary values less than zero.\n', numel(indices));
+    end
+    
+    indices = find(primary(:) > 1+tolerance);
+    if (~isempty(indices))
+        error('%d pixels have primary values greater than one (max primary: %f). Setting them to 1.0', numel(indices), max(primary(:)));
+        primary(indices) = 1;
+    end
+
+end
+
+
+function settings = mySensorToSettings(calStructOBJ,sensor)
+    primary =  mySensorToPrimary(calStructOBJ,sensor);
     gamut = primary;
-    fprintf('Less than 0 pixels no: %d\n', numel(find(gamut < 0)));
-    fprintf('Greater than 1 pixels no: %d\n', numel(find(gamut> 1)));
-    pause
+    % GamutToSettings does the actual gamma-correction via the inverse LUT
     settings = GamutToSettings(calStructOBJ,gamut);
 end
 
