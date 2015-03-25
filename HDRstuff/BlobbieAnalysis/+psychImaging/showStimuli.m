@@ -1,4 +1,4 @@
-function showStimuli(stimIndex, stimWidth, stimHeight, lumRatio)
+function showStimuli(stimIndex, stimWidth, stimHeight, realizableLumRatio, originalLumRatio)
 
     global PsychImagingEngine
     
@@ -33,7 +33,8 @@ function showStimuli(stimIndex, stimWidth, stimHeight, lumRatio)
         Screen('DrawText',  PsychImagingEngine.masterWindowPtr,'LCD rendering', x0-140, PsychImagingEngine.screenRect(4)/2-100, [255 230 250], [0 0 0]);
          
         
-        Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('LR: %2.1f', lumRatio), 1920/2-80, PsychImagingEngine.screenRect(4)/2-180, [255 230 0], [0 0 0]);
+        Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('realizable LR: %2.1f', realizableLumRatio), 1920/2-200, PsychImagingEngine.screenRect(4)/2-180, [255 230 0], [0 0 0]);
+        Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('original   LR: %2.1f', originalLumRatio),   1920/2-200, PsychImagingEngine.screenRect(4)/2-150, [255 230 0], [0 0 0]);
          
         
         

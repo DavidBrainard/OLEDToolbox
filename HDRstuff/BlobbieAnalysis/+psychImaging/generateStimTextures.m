@@ -8,11 +8,11 @@ function generateStimTextures(frameBufferImageSamsung, frameBufferImageLCD, stim
 
      
     try
-        texturePtr1 = Screen('MakeTexture', PsychImagingEngine.masterWindowPtr, double(frameBufferImageSamsung), optimizeForDrawAngle, specialFlags, floatprecision);
+        texturePtr1 = Screen('MakeTexture', PsychImagingEngine.masterWindowPtr, frameBufferImageSamsung, optimizeForDrawAngle, specialFlags, floatprecision);
         %update the list of Samsung texture pointers
         PsychImagingEngine.texturePointersSamsung(stimIndex) = texturePtr1;
 
-        texturePtr2 = Screen('MakeTexture', PsychImagingEngine.masterWindowPtr, double(frameBufferImageLCD), optimizeForDrawAngle, specialFlags, floatprecision);
+        texturePtr2 = Screen('MakeTexture', PsychImagingEngine.masterWindowPtr, frameBufferImageLCD, optimizeForDrawAngle, specialFlags, floatprecision);
         %update the list of LCD texture pointers
         PsychImagingEngine.texturePointersLCD(stimIndex) = texturePtr2;
         
