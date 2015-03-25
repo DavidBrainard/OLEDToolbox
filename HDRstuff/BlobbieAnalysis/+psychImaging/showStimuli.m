@@ -1,4 +1,4 @@
-function showStimuli(stimIndex, stimWidth, stimHeight, realizableLumRatio, originalLumRatio)
+function showStimuli(stimIndex, stimWidth, stimHeight, realizableLumRatioSamsung, realizableLumRatioLCD, originalLumRatio)
 
     global PsychImagingEngine
     
@@ -17,7 +17,7 @@ function showStimuli(stimIndex, stimWidth, stimHeight, realizableLumRatio, origi
         Screen('TextSize',  PsychImagingEngine.masterWindowPtr, 30);
         Screen('TextFont',  PsychImagingEngine.masterWindowPtr,'Monaco');
         Screen('TextStyle', PsychImagingEngine.masterWindowPtr, 1);
-        Screen('DrawText',  PsychImagingEngine.masterWindowPtr,'Samsung rendering', x0-180, PsychImagingEngine.screenRect(4)/2-100, [255 230 250], [0 0 0]);
+        %Screen('DrawText',  PsychImagingEngine.masterWindowPtr,'Samsung rendering', x0-180, PsychImagingEngine.screenRect(4)/2-100, [255 230 250], [0 0 0]);
         
         % Draw Target (LCD) texture on the right
         x0 = PsychImagingEngine.screenRect(3)/2+stimWidth/2+5;
@@ -30,11 +30,12 @@ function showStimuli(stimIndex, stimWidth, stimHeight, realizableLumRatio, origi
         Screen('TextSize',  PsychImagingEngine.masterWindowPtr, 30);
         Screen('TextFont',  PsychImagingEngine.masterWindowPtr,'Monaco');
         Screen('TextStyle', PsychImagingEngine.masterWindowPtr, 1);
-        Screen('DrawText',  PsychImagingEngine.masterWindowPtr,'LCD rendering', x0-140, PsychImagingEngine.screenRect(4)/2-100, [255 230 250], [0 0 0]);
+        %Screen('DrawText',  PsychImagingEngine.masterWindowPtr,'LCD rendering', x0-140, PsychImagingEngine.screenRect(4)/2-100, [255 230 250], [0 0 0]);
          
         
-        Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('realizable LR: %2.1f', realizableLumRatio), 1920/2-200, PsychImagingEngine.screenRect(4)/2-180, [255 230 0], [0 0 0]);
-        Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('original   LR: %2.1f', originalLumRatio),   1920/2-200, PsychImagingEngine.screenRect(4)/2-150, [255 230 0], [0 0 0]);
+        Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('Samsung LR: %2.1f', realizableLumRatioSamsung), 1920/2-200-550, PsychImagingEngine.screenRect(4)/2-190, [255 230 0], [0 0 0]);
+        Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('LCD LR: %2.1f', realizableLumRatioLCD), 1920/2-200+650, PsychImagingEngine.screenRect(4)/2-190, [255 230 0], [0 0 0]);
+        Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('scene LR: %2.1f', originalLumRatio),   1920/2-140, PsychImagingEngine.screenRect(4)/2-190, [255 230 0], [0 0 0]);
          
         
         

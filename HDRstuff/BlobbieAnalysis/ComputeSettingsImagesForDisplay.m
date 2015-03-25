@@ -2,7 +2,7 @@ function ComputeSettingsImagesForDisplay(displayCalFileName)
 
     % Load calStructOBJ for Samsung OLED and set the sensor to XYZ
     % displayCalFileName = 'ViewSonicProbe'; % 'SamsungOLED_MirrorScreen';
-    calStructOBJ_Samsung = loadDisplayCal(displayCalFileName);
+    calStructOBJ_Samsung = utils.loadDisplayCalXYZ(displayCalFileName);
     
     [redGunxyY, greenGunxyY, blueGunxyY] = computeDisplayLimits(calStructOBJ_Samsung);
     
@@ -36,6 +36,8 @@ function ComputeSettingsImagesForDisplay(displayCalFileName)
     
     
     primaryRGBimageEnsemble = [];
+    luminanceXYZimageEnsemble = [];
+    
     originalLuminanceRatio = zeros(numel(shapeConds), numel(alphaConds), numel(specularSPDconds));
     stimIndex = 1;
     
@@ -57,25 +59,29 @@ function ComputeSettingsImagesForDisplay(displayCalFileName)
     
                 % compute and store the original luminance ratio
                 lum = squeeze(sensorXYZcalFormat(2,:));
-                originalLuminanceRatio(stimIndex) = max(lum(:))/min(lum(:));  
+                minLum = min(lum(:));
+                maxLum = max(lum(:));
+                originalLuminanceRatio(stimIndex) = maxLum/minLum;
                 stimIndex = stimIndex + 1;
                 
                 if (isempty(primaryRGBimageEnsemble))
-                    primaryRGBimageEnsemble = zeros(numel(shapeConds), numel(alphaConds),numel(specularSPDconds), numel(lightingConds), size(sensorXYZcalFormat,1), size(sensorXYZcalFormat,2));
+                    primaryRGBimageEnsemble    = zeros(numel(shapeConds), numel(alphaConds),numel(specularSPDconds), numel(lightingConds), size(sensorXYZcalFormat,1), size(sensorXYZcalFormat,2));
+                    luminanceXYZimageEnsemble  = zeros(numel(shapeConds), numel(alphaConds),numel(specularSPDconds), numel(lightingConds), 2);
                 end
                 
                 primaryRGBcalFormat = SensorToPrimary(calStructOBJ_Samsung, sensorXYZcalFormat);
                 primaryRGBimageEnsemble(shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex,:,:) = primaryRGBcalFormat;
-                
+                luminanceXYZimageEnsemble(shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex,1) = minLum;
+                luminanceXYZimageEnsemble(shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex,2) = maxLum;
             end
         end
     end
     
+
     % Linear scaling of primaries (across the entire stimulus ensemble) to [0 1].
     maxPrimaryForTheEnsemble = max(primaryRGBimageEnsemble(:));
     minPrimaryForTheEnsemble = min(primaryRGBimageEnsemble(:));
     primaryRGBimageEnsemble  = (primaryRGBimageEnsemble - minPrimaryForTheEnsemble )/(maxPrimaryForTheEnsemble  - minPrimaryForTheEnsemble);
-    
     
     disp('Before scaling');
     [minPrimaryForTheEnsemble maxPrimaryForTheEnsemble]
@@ -83,8 +89,16 @@ function ComputeSettingsImagesForDisplay(displayCalFileName)
     PrimariesAfterScaling = [min(primaryRGBimageEnsemble(:)) max(primaryRGBimageEnsemble(:))]
     
     
+    % Luminance scaling to a point, then clipping
+    minLums = luminanceXYZimageEnsemble(:, :, :, :,1);
+    maxLums = luminanceXYZimageEnsemble(:, :, :, :,2);
+    minLumForEnsemble = min(minLums(:))
+    maxLumForEnsemble = max(maxLums(:))
+    
+
+    
     % Second pass: compute settingsImages
-    settingsImageEnsemble = zeros(numel(shapeConds), numel(alphaConds), numel(specularSPDconds), numel(lightingConds), mRows, nCols, 3);
+    settingsImageEnsembleLinearScaling = zeros(numel(shapeConds), numel(alphaConds), numel(specularSPDconds), numel(lightingConds), mRows, nCols, 3);
     realizableLuminanceRatio = zeros(numel(shapeConds), numel(alphaConds), numel(specularSPDconds));
     stimIndex = 1;
     
@@ -92,6 +106,8 @@ function ComputeSettingsImagesForDisplay(displayCalFileName)
         for shapeIndex = 1:numel(shapeConds)
             for alphaIndex = 1:numel(alphaConds)
 
+                
+                % linear scaling
                 % compute sensor image
                 primaryRGBcalFormat = squeeze(primaryRGBimageEnsemble(shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex,:,:));
                 sensorXYZcalFormat = PrimaryToSensor(calStructOBJ_Samsung, primaryRGBcalFormat);
@@ -102,11 +118,14 @@ function ComputeSettingsImagesForDisplay(displayCalFileName)
                 stimIndex = stimIndex + 1;
                 
                 % compute settings image from the sensor image
-                settingsCalFormat = mySensorToSettings(calStructOBJ_Samsung, sensorXYZcalFormat);
+                settingsCalFormat = utils.mySensorToSettings(calStructOBJ_Samsung, sensorXYZcalFormat);
                 % transform to image format
                 settingsImage = CalFormatToImage(settingsCalFormat, nCols, mRows);
                 % save it
-                settingsImageEnsemble(shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex,:,:,:) = settingsImage;
+                settingsImageEnsembleLinearScaling(shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex,:,:,:) = settingsImage;
+                
+
+                
                 % plot it
                 figure(2);
                 clf;
@@ -118,54 +137,13 @@ function ComputeSettingsImagesForDisplay(displayCalFileName)
 
     
     dataFile = sprintf('SettingsImagesForDisplay_%sAndLightingCond_%d',displayCalFileName, lightingCondIndex);
-    save(dataFile, 'specularSPDconds', 'shapeConds', 'alphaConds', 'settingsImageEnsemble', 'realizableLuminanceRatio', 'originalLuminanceRatio');
+    save(dataFile, 'specularSPDconds', 'shapeConds', 'alphaConds', 'settingsImageEnsembleLinearScaling', 'realizableLuminanceRatio', 'originalLuminanceRatio');
     
 end
 
 
 
 
-function primary = mySensorToPrimary(calStructOBJ,sensor)
-    primary = SensorToPrimary(calStructOBJ,sensor);
-    
-    tolerance = 1000*eps;
-    redPrimary = squeeze(primary(1,:));
-    indices = find(redPrimary  < -tolerance);
-    if (~isempty(indices))
-        fprintf(2,'%d pixels have RED primary values less than zero (min = %2.4f). Making them 1\n', numel(indices), min(redPrimary(indices)));
-        primary(1,indices) = 1;
-    end
-    
-    greenPrimary = squeeze(primary(2,:));
-    indices = find(greenPrimary  < -tolerance);
-    if (~isempty(indices))
-        fprintf(2,'%d pixels have GREEN primary values less than zero (min = %2.4f). Making them 1\n', numel(indices), min(greenPrimary(indices)));
-        primary(2,indices) = 1;
-    end
-    
-    bluePrimary = squeeze(primary(3,:));
-    indices = find(bluePrimary  < -tolerance);
-    if (~isempty(indices))
-        fprintf(2,'%d pixels have BLUE primary values less than zero (min = %2.4f). Making them 1\n', numel(indices), min(bluePrimary(indices)));
-        primary(3,indices) = 1;
-    end
-    
-    
-    indices = find(primary(:) > 1+tolerance);
-    if (~isempty(indices))
-        error('%d pixels have primary values greater than one (max primary: %f). Setting them to 1.0', numel(indices), max(primary(:)));
-        primary(indices) = 1;
-    end
-
-end
-
-
-function settings = mySensorToSettings(calStructOBJ,sensor)
-    primary =  mySensorToPrimary(calStructOBJ,sensor);
-    gamut = primary;
-    % GamutToSettings does the actual gamma-correction via the inverse LUT
-    settings = GamutToSettings(calStructOBJ,gamut);
-end
 
 
 
@@ -224,28 +202,4 @@ function [redGunxyY, greenGunxyY, blueGunxyY] = computeDisplayLimits(calStructOB
     
     drawnow;
     
-end
-
-function calStructOBJ = loadDisplayCal(displayCalFileName)
-    % Load calibration data for Samsung OLED panel
-    calStruct = LoadCalFile(displayCalFileName);
-    
-    % Instantiate a @CalStruct object that will handle controlled access to the calibration data.
-    [calStructOBJ, ~] = ObjectToHandleCalOrCalStruct(calStruct); 
-    % Clear the imported calStruct. From now on, all access to cal data is via the calStructOBJ.
-    clear 'calStruct';
-    
-    % Generate 1024-level LUTs 
-    nInputLevels = 1024;
-    CalibrateFitGamma(calStructOBJ, nInputLevels);
-    
-    % Set the gamma correction mode to be used. 
-    % gammaMode == 1 - search table using linear interpolation
-    SetGammaMethod(calStructOBJ, 0);
-    
-    % Load CIE '31 CMFs
-    sensorXYZ = utils.loadXYZCMFs();
-    
-    % Change calStructOBJ's sensors to XYZ sensors
-    SetSensorColorSpace(calStructOBJ, sensorXYZ.T,  sensorXYZ.S);
 end
