@@ -9,7 +9,7 @@ function VisualizeSettingsImagesForDisplays(lightingCondIndex)
     calStructLCD     = utils.loadDisplayCalXYZ(displayCalFileName2);
     
     
-    dataFile1 = sprintf('SettingsImagesForDisplay_%sAndLightingCond_%d',displayCalFileName1, lightingCondIndex);
+    dataFile1 = sprintf('SettingsImages/SettingsImagesForDisplay_%sAndLightingCond_%d',displayCalFileName1, lightingCondIndex);
     load(dataFile1); % this loads 'specularSPDconds', 'shapeConds', 'alphaConds', 'settingsImageEnsemble', 'realizableLuminanceRatio', 'originalLuminanceRatio');
     
     settingsImageEnsembleSamsung = settingsImageEnsemble;
