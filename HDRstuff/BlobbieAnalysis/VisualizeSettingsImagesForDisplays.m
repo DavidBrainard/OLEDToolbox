@@ -1,20 +1,37 @@
-
 function VisualizeSettingsImagesForDisplays(lightingCondIndex)
     
-    clear global all;
+    clear global
     
     displayCalFileName1 = 'SamsungOLED_MirrorScreen';
     displayCalFileName2 = 'ViewSonicProbe';
     
-    dataFile = sprintf('SettingsImagesForDisplay_%sAndLightingCond_%d',displayCalFileName1, lightingCondIndex);
-    load(dataFile); % this loads 'specularSPDconds', 'shapeConds', 'alphaConds', 'settingsImageEnsemble', 'realizableLuminanceRatio', 'originalLuminanceRatio');
+    calStructSamsung = utils.loadDisplayCalXYZ(displayCalFileName1);
+    calStructLCD     = utils.loadDisplayCalXYZ(displayCalFileName2);
     
+    
+    dataFile1 = sprintf('SettingsImagesForDisplay_%sAndLightingCond_%d',displayCalFileName1, lightingCondIndex);
+    load(dataFile1); % this loads 'specularSPDconds', 'shapeConds', 'alphaConds', 'settingsImageEnsemble', 'realizableLuminanceRatio', 'originalLuminanceRatio');
+    
+    settingsImageEnsembleSamsung = settingsImageEnsemble;
+    realizableLuminanceRatioSamsung = realizableLuminanceRatio;
+    originalLuminanceRatioSamsung = originalLuminanceRatio;
+    
+    dataFile2 = sprintf('SettingsImagesForDisplay_%sAndLightingCond_%d',displayCalFileName2, lightingCondIndex);
+    load(dataFile2); % this loads 'specularSPDconds', 'shapeConds', 'alphaConds', 'settingsImageEnsemble', 'realizableLuminanceRatio', 'originalLuminanceRatio');
+    
+    settingsImageEnsembleLCD = settingsImageEnsemble;
+    realizableLuminanceRatioLCD = realizableLuminanceRatio;
+    originalLuminanceRatioLCD = originalLuminanceRatio;
+    
+    clear 'settingsImageEnsemble';
+    clear 'realizableLuminanceRatio';
+    clear 'originalLuminanceRatio';
     
     global PsychImagingEngine
     psychImaging.prepareEngine();
     
-    fullsizeWidth = size(settingsImageEnsemble,6);
-    fullsizeHeight = size(settingsImageEnsemble,5);
+    fullsizeWidth = size(settingsImageEnsembleSamsung,6);
+    fullsizeHeight = size(settingsImageEnsembleSamsung,5);
     % show 15 thumbsize images palong the display's width
     stimAcrossWidth = 15;
     thumbsizeWidth  = PsychImagingEngine.screenRect(3)/stimAcrossWidth;
@@ -43,8 +60,19 @@ function VisualizeSettingsImagesForDisplays(lightingCondIndex)
                     stimCoords.y = thumbsizeHeight/2;
                 end
 
-                settingsImageSamsung = squeeze(settingsImageEnsemble(shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex,:,:,:));
-                settingsImageLCD = settingsImageSamsung;
+                settingsImageSamsung = squeeze(settingsImageEnsembleSamsung(shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex,:,:,:));
+               
+                % Settings for rendering on the LCD display
+                settingsImageLCD = squeeze(settingsImageEnsembleLCD(shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex,:,:,:));
+               
+                % Transform these into XYZ
+                [settingsLCDcalFormat, nCols, mRows] = ImageToCalFormat(settingsImageLCD);
+                sensorCalFormat = SettingsToSensor(calStructLCD, settingsLCDcalFormat);
+                
+                % Them into settings on the Samsung display
+                settingsCalFormat = utils.mySensorToSettings(calStructSamsung,sensorCalFormat);
+                settingsImageLCD = CalFormatToImage(settingsCalFormat,nCols, mRows);
+                
                 psychImaging.generateStimTextures(settingsImageSamsung, settingsImageLCD, stimIndex, stimCoords.x, stimCoords.y, thumbsizeWidth, thumbsizeHeight);
             end
         end
@@ -54,7 +82,10 @@ function VisualizeSettingsImagesForDisplays(lightingCondIndex)
     % Start interactive stimulus visualization
     keepGoing = true;
     stimIndex = 1;
-    psychImaging.showStimuli(stimIndex, fullsizeWidth, fullsizeHeight,  realizableLuminanceRatio(stimIndex), originalLuminanceRatio(stimIndex));
+    psychImaging.showStimuli(stimIndex, fullsizeWidth, fullsizeHeight, ...
+        realizableLuminanceRatioSamsung(stimIndex), ...
+        realizableLuminanceRatioLCD(stimIndex), ...
+        originalLuminanceRatioLCD(stimIndex));
     
     while (keepGoing)
         
@@ -71,7 +102,10 @@ function VisualizeSettingsImagesForDisplays(lightingCondIndex)
                     dist(k) = (x0 - x).^2 + (y0-y).^2;
                 end
                 [~,stimIndex] = min(dist); 
-                psychImaging.showStimuli(stimIndex, fullsizeWidth, fullsizeHeight,  realizableLuminanceRatio(stimIndex), originalLuminanceRatio(stimIndex));
+                psychImaging.showStimuli(stimIndex, fullsizeWidth, fullsizeHeight,  ...
+                     realizableLuminanceRatioSamsung(stimIndex), ...
+                     realizableLuminanceRatioLCD(stimIndex), ...
+                     originalLuminanceRatioLCD(stimIndex));
             else
                keepGoing = false; 
             end
@@ -85,4 +119,6 @@ function VisualizeSettingsImagesForDisplays(lightingCondIndex)
     sca;
     
 end
+
+
 
