@@ -6,7 +6,7 @@ function VisualizeSettingsImagesForDisplays(lightingCondIndex)
     displayCalFileName1 = 'SamsungOLED_MirrorScreen';
     displayCalFileName2 = 'ViewSonicProbe';
     
-    dataFile = sprintf('SettingsImagesForDisplay_%sAndLightingCond_%d',displayCalFileName1, lightingCondIndex);
+    dataFile = sprintf('SettingsImages/SettingsImagesForDisplay_%sAndLightingCond_%d',displayCalFileName1, lightingCondIndex);
     load(dataFile); % this loads 'specularSPDconds', 'shapeConds', 'alphaConds', 'settingsImageEnsemble', 'realizableLuminanceRatio', 'originalLuminanceRatio');
     
     
