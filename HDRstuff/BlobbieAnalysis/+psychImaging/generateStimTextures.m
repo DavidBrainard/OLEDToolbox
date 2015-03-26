@@ -1,4 +1,4 @@
-function generateStimTextures(frameBufferImageSamsung, frameBufferImageLCD, stimIndex, x0, y0, width, height)
+function generateStimTextures(frameBufferImageSamsung, frameBufferImageLCD, maxLumIndex, stimIndex, x0, y0, width, height)
 
     global PsychImagingEngine
         
@@ -10,11 +10,11 @@ function generateStimTextures(frameBufferImageSamsung, frameBufferImageLCD, stim
     try
         texturePtr1 = Screen('MakeTexture', PsychImagingEngine.masterWindowPtr, frameBufferImageSamsung, optimizeForDrawAngle, specialFlags, floatprecision);
         %update the list of Samsung texture pointers
-        PsychImagingEngine.texturePointersSamsung(stimIndex) = texturePtr1;
+        PsychImagingEngine.texturePointersSamsung(maxLumIndex,stimIndex) = texturePtr1;
 
         texturePtr2 = Screen('MakeTexture', PsychImagingEngine.masterWindowPtr, frameBufferImageLCD, optimizeForDrawAngle, specialFlags, floatprecision);
         %update the list of LCD texture pointers
-        PsychImagingEngine.texturePointersLCD(stimIndex) = texturePtr2;
+        PsychImagingEngine.texturePointersLCD(maxLumIndex,stimIndex) = texturePtr2;
         
         % Save target destination rect
         targetDestRect = CenterRectOnPointd(...
@@ -22,7 +22,7 @@ function generateStimTextures(frameBufferImageSamsung, frameBufferImageLCD, stim
                 x0, y0...
         );
     
-        PsychImagingEngine.thumbsizeTextureDestRects{stimIndex} = targetDestRect;
+        PsychImagingEngine.thumbsizeTextureDestRects{maxLumIndex,stimIndex} = targetDestRect;
 
     catch err
         psychImaging.restoreState();

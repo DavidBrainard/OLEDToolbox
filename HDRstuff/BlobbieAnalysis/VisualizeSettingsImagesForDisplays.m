@@ -10,17 +10,26 @@ function VisualizeSettingsImagesForDisplays(lightingCondIndex)
     
     
     dataFile1 = sprintf('SettingsImages/SettingsImagesForDisplay_%sAndLightingCond_%d',displayCalFileName1, lightingCondIndex);
-    load(dataFile1); % this loads  'specularSPDconds', 'shapeConds', 'alphaConds', 'desiredMaxLum', 'settingsImageEnsembleLinearScaling', 'settingsImageEnsembleLuminanceClippingAtSpecifiedLevel' 'realizableLuminanceRatioLinearScaling', 'realizableLuminanceRatioClippingAtSpecifiedLevel', 'originalLuminanceRatio');
+    load(dataFile1); 
+    % this loads  
+    %'specularSPDconds', 'shapeConds', 'alphaConds', 'maxSceneLumsForLinearScaling', ...
+    %'settingsImageEnsembleLinearPrimaryScaling', 'settingsImageEnsembleLuminanceClipAtSpecLevelForThisDisplay', 'settingsImageEnsembleLuminanceClipAtSpecLevelForOtherDisplay', ...
+    %'realizableLuminanceRatioLinearScaling', 'realizableLuminanceRatioClippingAtSpecLevelForThisDisplay', 'realizableLuminanceRatioClippingAtSpecLevelForOtherDisplay', 'originalLuminanceRatio');
     
     
     
     % Save Samsung copy
     settingsImageEnsembleSamsungLinearPrimaryScaling              = settingsImageEnsembleLinearPrimaryScaling;
     realizableLuminanceRatioSamsungLinearPrimaryScaling           = realizableLuminanceRatioLinearScaling;
-    settingsImageEnsembleSamsungLuminanceClippingAtSpecifiedLevel = settingsImageEnsembleLuminanceClippingAtSpecifiedLevel;
-    realizableLuminanceRatioSamsungClippingAtSpecifiedLevel       = realizableLuminanceRatioClippingAtSpecifiedLevel;
+    
+    settingsImageEnsembleSamsungLumClipAtSpecLevelForThisDisplay  = settingsImageEnsembleLuminanceClipAtSpecLevelForThisDisplay;
+    settingsImageEnsembleSamsungLumClipAtSpecLevelForOtherDisplay = settingsImageEnsembleLuminanceClipAtSpecLevelForOtherDisplay;
+    
+    realizableLumRatioSamsungClippingAtSpecLevelForThisDisplay    = realizableLuminanceRatioClippingAtSpecLevelForThisDisplay;
+    realizableLumRatioSamsungClippingAtSpecLevelForOtherDisplay   = realizableLuminanceRatioClippingAtSpecLevelForOtherDisplay;
+    
     originalLuminanceRatioSamsung                                 = originalLuminanceRatio;
-    desiredMaxLumSamsung                                          = desiredMaxLum;
+    
     
     dataFile2 = sprintf('SettingsImagesForDisplay_%sAndLightingCond_%d',displayCalFileName2, lightingCondIndex);
     load(dataFile2);% this loads 'specularSPDconds', 'shapeConds', 'alphaConds', 'settingsImageEnsembleLinearScaling', 'settingsImageEnsembleLuminanceClippingAtSpecifiedLevel' 'realizableLuminanceRatioLinearScaling', 'realizableLuminanceRatioClippingAtSpecifiedLevel', 'originalLuminanceRatio');
@@ -28,17 +37,24 @@ function VisualizeSettingsImagesForDisplays(lightingCondIndex)
     % Save LCD copy
     settingsImageEnsembleLCDLinearPrimaryScaling              = settingsImageEnsembleLinearPrimaryScaling;
     realizableLuminanceRatioLCDLinearPrimaryScaling           = realizableLuminanceRatioLinearScaling;
-    settingsImageEnsembleLCDClippingAtSpecifiedLevel           = settingsImageEnsembleLuminanceClippingAtSpecifiedLevel;
-    realizableLuminanceRatioLCDClippingAtSpecifiedLevel       = realizableLuminanceRatioClippingAtSpecifiedLevel;
+    
+    settingsImageEnsembleLCDLumClipAtSpecLevelForThisDisplay  = settingsImageEnsembleLuminanceClipAtSpecLevelForThisDisplay;
+    settingsImageEnsembleLCDLumClipAtSpecLevelForOtherDisplay = settingsImageEnsembleLuminanceClipAtSpecLevelForOtherDisplay;
+    
+    realizableLumRatioLCDClippingAtSpecLevelForThisDisplay    = realizableLuminanceRatioClippingAtSpecLevelForThisDisplay;
+    realizableLumRatioLCDClippingAtSpecLevelForOtherDisplay   = realizableLuminanceRatioClippingAtSpecLevelForOtherDisplay;
+    
     originalLuminanceRatioLCD                                 = originalLuminanceRatio;
-    desiredMaxLumLCD                                          = desiredMaxLum;
+    
     
     clear 'settingsImageEnsembleLinearPrimaryScaling';
     clear 'realizableLuminanceRatioLinearScaling';
-    clear 'settingsImageEnsembleLuminanceClippingAtSpecifiedLevel';
-    clear 'realizableLuminanceRatioClippingAtSpecifiedLevel';
+    clear 'settingsImageEnsembleLuminanceClipAtSpecLevelForThisDisplay';
+    clear 'settingsImageEnsembleLuminanceClipAtSpecLevelForOtherDisplay';
+    clear 'realizableLuminanceRatioClippingAtSpecLevelForThisDisplay';
+    clear 'realizableLuminanceRatioClippingAtSpecLevelForOtherDisplay';
     clear 'originalLuminanceRatio';
-    clear 'desiredMaxLum';
+
     
     
     global PsychImagingEngine
@@ -53,7 +69,8 @@ function VisualizeSettingsImagesForDisplays(lightingCondIndex)
     thumbsizeHeight = fullsizeHeight*reductionFactor;
 
     % Generate and load stimulus textures in RAM, compute coords of thumbsize images          
-    stimCoords.x = 0;  stimCoords.y = 0; stimIndex = 0;
+    stimCoords.x = 0;  stimCoords.y = 0; 
+    stimIndex = 0;
     for specularSPDindex = 1:numel(specularSPDconds)
         for shapeIndex = 1:numel(shapeConds)
             for alphaIndex = 1:numel(alphaConds)
@@ -74,10 +91,10 @@ function VisualizeSettingsImagesForDisplays(lightingCondIndex)
                     stimCoords.y = thumbsizeHeight/2;
                 end
 
-                settingsImageSamsung = squeeze(settingsImageEnsembleSamsungLinearPrimaryScaling(shapeIndex, alphaIndex, specularSPDindex, :,:,:));
+                settingsImageSamsung = double(squeeze(settingsImageEnsembleSamsungLinearPrimaryScaling(shapeIndex, alphaIndex, specularSPDindex, :,:,:)));
                
                 % Settings for rendering on the LCD display
-                settingsImageLCD = squeeze(settingsImageEnsembleLCDLinearPrimaryScaling(shapeIndex, alphaIndex, specularSPDindex, :,:,:));
+                settingsImageLCD = double(squeeze(settingsImageEnsembleLCDLinearPrimaryScaling(shapeIndex, alphaIndex, specularSPDindex, :,:,:)));
                
                 % Transform these into XYZ
                 [settingsLCDcalFormat, nCols, mRows] = ImageToCalFormat(settingsImageLCD);
@@ -87,59 +104,72 @@ function VisualizeSettingsImagesForDisplays(lightingCondIndex)
                 settingsCalFormat = utils.mySensorToSettings(calStructSamsung,sensorCalFormat);
                 settingsImageLCD = CalFormatToImage(settingsCalFormat,nCols, mRows);
                 
-                psychImaging.generateStimTextures(settingsImageSamsung, settingsImageLCD, stimIndex, stimCoords.x, stimCoords.y, thumbsizeWidth, thumbsizeHeight);
+                psychImaging.generateStimTextures(settingsImageSamsung, settingsImageLCD, 1, stimIndex, stimCoords.x, stimCoords.y, thumbsizeWidth, thumbsizeHeight);
             end
         end
     end
     
     
-    stimCoords.x = 0;  stimCoords.y = 0;
-    for specularSPDindex = 1:numel(specularSPDconds)
-        for shapeIndex = 1:numel(shapeConds)
-            for alphaIndex = 1:numel(alphaConds)
-                
-                stimIndex = stimIndex + 1;
-                
-                if (stimCoords.x == 0)
-                    stimCoords.x = thumbsizeWidth/2;
-                else
-                    stimCoords.x = stimCoords.x + thumbsizeWidth;
-                    if (stimCoords.x+thumbsizeWidth/2 > PsychImagingEngine.screenRect(3))
-                        stimCoords.x = thumbsizeWidth/2;
-                        stimCoords.y = stimCoords.y + thumbsizeHeight;
-                    end
-                end
+    for lumIndex = 1:numel(maxSceneLumsForLinearScaling)
+    
+        
+        stimCoords.x = 0;  stimCoords.y = 0;
+        stimIndex = 0;
+        
+        for specularSPDindex = 1:numel(specularSPDconds)
+            for shapeIndex = 1:numel(shapeConds)
+                for alphaIndex = 1:numel(alphaConds)
 
-                if (stimCoords.y == 0)
-                    stimCoords.y = thumbsizeHeight/2;
+                    stimIndex = stimIndex + 1;
+
+                    if (stimCoords.x == 0)
+                        stimCoords.x = thumbsizeWidth/2;
+                    else
+                        stimCoords.x = stimCoords.x + thumbsizeWidth;
+                        if (stimCoords.x+thumbsizeWidth/2 > PsychImagingEngine.screenRect(3))
+                            stimCoords.x = thumbsizeWidth/2;
+                            stimCoords.y = stimCoords.y + thumbsizeHeight;
+                        end
+                    end
+
+                    if (stimCoords.y == 0)
+                        stimCoords.y = thumbsizeHeight/2;
+                    end
+
+                    settingsImageSamsung = double(squeeze(settingsImageEnsembleSamsungLumClipAtSpecLevelForThisDisplay(lumIndex, shapeIndex, alphaIndex, specularSPDindex, :,:,:)));
+
+                    % Settings for rendering on the LCD display
+                    settingsImageLCD = double(squeeze(settingsImageEnsembleLCDLumClipAtSpecLevelForThisDisplay(lumIndex, shapeIndex, alphaIndex, specularSPDindex, :,:,:)));
+
+                    % Transform these into XYZ
+                    [settingsLCDcalFormat, nCols, mRows] = ImageToCalFormat(settingsImageLCD);
+                    sensorCalFormat = SettingsToSensor(calStructLCD, settingsLCDcalFormat);
+
+                    % Then into settings on the Samsung display
+                    settingsCalFormat = utils.mySensorToSettings(calStructSamsung,sensorCalFormat);
+                    settingsImageLCD = CalFormatToImage(settingsCalFormat,nCols, mRows);
+
+                    psychImaging.generateStimTextures(settingsImageSamsung, settingsImageLCD, 1+lumIndex, stimIndex, stimCoords.x, stimCoords.y, thumbsizeWidth, thumbsizeHeight);
+
                 end
-                
-                settingsImageSamsung = squeeze(settingsImageEnsembleSamsungLuminanceClippingAtSpecifiedLevel(shapeIndex, alphaIndex, specularSPDindex, :,:,:));
-               
-                % Settings for rendering on the LCD display
-                settingsImageLCD = squeeze(settingsImageEnsembleLCDClippingAtSpecifiedLevel(shapeIndex, alphaIndex, specularSPDindex, :,:,:));
-               
-                % Transform these into XYZ
-                [settingsLCDcalFormat, nCols, mRows] = ImageToCalFormat(settingsImageLCD);
-                sensorCalFormat = SettingsToSensor(calStructLCD, settingsLCDcalFormat);
-                
-                % Then into settings on the Samsung display
-                settingsCalFormat = utils.mySensorToSettings(calStructSamsung,sensorCalFormat);
-                settingsImageLCD = CalFormatToImage(settingsCalFormat,nCols, mRows);
-                
-                psychImaging.generateStimTextures(settingsImageSamsung, settingsImageLCD, stimIndex, stimCoords.x, stimCoords.y, thumbsizeWidth, thumbsizeHeight);
-                
             end
         end
+    
     end
+    
+    
+    
+    
     
     
     % Start interactive stimulus visualization
     keepGoing = true;
     stimIndex = 1;
+    lumIndex = 1;
     modifier = 0;
+    
 
-    psychImaging.showStimuli(stimIndex, fullsizeWidth, fullsizeHeight,  ...
+    psychImaging.showStimuli(1, stimIndex, fullsizeWidth, fullsizeHeight,  ...
          sprintf('%2.1f (lin to full lum)',realizableLuminanceRatioSamsungLinearPrimaryScaling(stimIndex)), ...
          sprintf('%2.1f (lin to full lum)',realizableLuminanceRatioLCDLinearPrimaryScaling(stimIndex)), ...
          originalLuminanceRatioLCD(stimIndex));
@@ -149,41 +179,50 @@ function VisualizeSettingsImagesForDisplays(lightingCondIndex)
         
         % Get mouse state
         WaitSecs(.01);
+        
+        [keyIsDown, secs, keycode] = KbCheck;
+        if (keyIsDown)
+            response = KbName(keycode);
+            if (response(1) == '1')
+                modifier = 0;
+            elseif (response(1) == '2')
+                modifier = 1;
+            elseif (response(1) == '3')
+                modifier = 2;
+            elseif (response (1) == '4')
+                modifier = 3;
+            elseif (response (1) == '5')
+                modifier = 4;
+            elseif (response (1) == 'q')
+                keepGoing = false;
+            end
+        end
+        
         [x, y, buttons] = GetMouse(PsychImagingEngine.screenIndex); 
         
         mouseClick = any(buttons);
+        
         if (mouseClick)
-            
-            if (buttons(1) == 1)
-                modifier = 0;
-                textureModifier = modifier*(numel(specularSPDconds)*numel(shapeConds)*numel(alphaConds));
-                for k = 1:(numel(specularSPDconds)*numel(shapeConds)*numel(alphaConds))
-                    destRect = PsychImagingEngine.thumbsizeTextureDestRects{k};
-                    [x0,y0] = RectCenter(destRect);
-                    dist(k) = (x0 - x).^2 + (y0-y).^2;
-                end
-                [~,stimIndex] = min(dist); 
-            else
-                modifier = 1;
-                textureModifier = modifier*((numel(specularSPDconds)*numel(shapeConds)*numel(alphaConds)));
-                for k = 1:(numel(specularSPDconds)*numel(shapeConds)*numel(alphaConds))
-                    destRect = PsychImagingEngine.thumbsizeTextureDestRects{k};
-                    [x0,y0] = RectCenter(destRect);
-                    dist(k) = (x0 - x).^2 + (y0-y).^2;
-                end
-                [~,stimIndex] = min(dist);
+            for k = 1:(numel(specularSPDconds)*numel(shapeConds)*numel(alphaConds))
+                destRect = PsychImagingEngine.thumbsizeTextureDestRects{1, k};
+                [x0,y0] = RectCenter(destRect);
+                dist(k) = (x0 - x).^2 + (y0-y).^2;
             end
-            
-            
-            if (textureModifier == 0)
-                psychImaging.showStimuli(stimIndex, fullsizeWidth, fullsizeHeight,  ...
+            [~,stimIndex] = min(dist); 
+                
+        end
+        
+        if (mouseClick || keyIsDown)234512234152525252525252525252525252522262525251234111123456112345615151515234
+            if (modifier == 0)
+                psychImaging.showStimuli(1, stimIndex, fullsizeWidth, fullsizeHeight,  ...
                      sprintf('%2.1f (lin to full lum)',realizableLuminanceRatioSamsungLinearPrimaryScaling(stimIndex)), ...
                      sprintf('%2.1f (lin to full lum)',realizableLuminanceRatioLCDLinearPrimaryScaling(stimIndex)), ...
                      originalLuminanceRatioLCD(stimIndex));
             else
-                psychImaging.showStimuli(stimIndex+textureModifier, fullsizeWidth, fullsizeHeight, ...
-                    sprintf('%2.1f (lin to %2.1f cd/m2 -> clip)',realizableLuminanceRatioSamsungClippingAtSpecifiedLevel(stimIndex), desiredMaxLumSamsung), ...
-                    sprintf('%2.1f (lin to %2.1f cd/m2 -> clip)',realizableLuminanceRatioLCDClippingAtSpecifiedLevel(stimIndex), desiredMaxLumLCD), ...
+                lumIndex = modifier;
+                psychImaging.showStimuli(1+lumIndex, stimIndex, fullsizeWidth, fullsizeHeight, ...
+                    sprintf('%2.1f (lin to %2.1f cd/m2 -> clip)',realizableLumRatioSamsungClippingAtSpecLevelForThisDisplay(lumIndex,stimIndex), maxSceneLumsForLinearScaling(lumIndex)), ...
+                    sprintf('%2.1f (lin to %2.1f cd/m2 -> clip)',realizableLumRatioLCDClippingAtSpecLevelForThisDisplay(lumIndex,stimIndex), maxSceneLumsForLinearScaling(lumIndex)), ...
                     originalLuminanceRatioLCD(stimIndex));
             end
 
