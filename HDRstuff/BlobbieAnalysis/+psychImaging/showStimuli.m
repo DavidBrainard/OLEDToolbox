@@ -34,9 +34,10 @@ function showStimuli(stimIndex, stimWidth, stimHeight, realizableLumRatioSamsung
          
         
         Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('Samsung LR: %s', realizableLumRatioSamsung), 1920/2-200-680, PsychImagingEngine.screenRect(4)/2-180, [255 230 0], [0 0 0]);
-        Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('LCD     LR: %s', realizableLumRatioLCD), 1920/2-200+550-330, PsychImagingEngine.screenRect(4)/2-180, [255 230 0], [0 0 0]);
         Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('Scene   LR: %2.1f', originalLumRatio),   1920/2-200-680, PsychImagingEngine.screenRect(4)/2-120, [255 230 0], [0 0 0]);
-        Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('Scene   LR: %2.1f', originalLumRatio),   1920/2-200+550-330, PsychImagingEngine.screenRect(4)/2-130, [255 230 0], [0 0 0]);
+        
+        Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('LCD   LR: %s', realizableLumRatioLCD), 1920/2-200+550-330, PsychImagingEngine.screenRect(4)/2-180, [255 230 0], [0 0 0]);
+        Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('Scene LR: %2.1f', originalLumRatio),   1920/2-200+550-330, PsychImagingEngine.screenRect(4)/2-130, [255 230 0], [0 0 0]);
         
         
         % Finally shown thumbsize images on top
