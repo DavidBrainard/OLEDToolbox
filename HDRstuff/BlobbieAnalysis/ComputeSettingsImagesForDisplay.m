@@ -84,14 +84,13 @@ function ComputeSettingsImagesForDisplay(displayCalFileName)
     end
     
 
-    % Linear scaling of primaries (across the entire stimulus ensemble) to [0 1].
+    % Method 1: Linear scaling of primaries (across the entire stimulus ensemble) to [0 1].
     maxPrimaryForTheEnsemble = max(primaryRGBimageEnsemble(:));
     minPrimaryForTheEnsemble = min(primaryRGBimageEnsemble(:));
     primaryRGBimageEnsemble  = (primaryRGBimageEnsemble - minPrimaryForTheEnsemble )/(maxPrimaryForTheEnsemble  - minPrimaryForTheEnsemble);
     
     
-    
-    % Luminance scaling to a point, then clipping
+    % Method 2: Luminance scaling to a point, then clipping
     luminanceValuesInEnsemble = sensorxyYimageEnsemble(:,:,:,3,:);
 
     wattsToLumens = 683;
@@ -102,11 +101,7 @@ function ComputeSettingsImagesForDisplay(displayCalFileName)
     fprintf('Min display luminances: red = %f, Green = %f, Blue = %f\n', minRealizableLuminanceForDisplay,minRealizableLuminanceForDisplay,minRealizableLuminanceForDisplay);
     fprintf('Max display luminances: red = %2.1f, Green = %2.1f, Blue = %2.1f, R+G+B: %2.1f\n', lumRGB(1),lumRGB(2),lumRGB(3), sum(lumRGB));
     
-    h = figure(2);
-    set(h, 'Color', 'k');
-    clf;
-
-                
+    h = figure(2); set(h, 'Color', 'k'); clf;         
     luminanceHistogramBinsNum = 1024;
     deltaLum = (maxLuminanceInEnsemble-minLuminanceInEnsemble)/luminanceHistogramBinsNum;
     luminanceEdges = minLuminanceInEnsemble:deltaLum:maxLuminanceInEnsemble;
@@ -128,6 +123,10 @@ function ComputeSettingsImagesForDisplay(displayCalFileName)
  
     % and specify clipping range
     luminanceRangeClippedAtSpecifiedLevel = [min(luminanceValuesInEnsemble) max(luminanceValuesInEnsemble)];
+    
+    
+    
+    
     
 
     % Second pass: compute settingsImages via (a) linear scaling of the primaries (b) luminance clipping to 99 % of max

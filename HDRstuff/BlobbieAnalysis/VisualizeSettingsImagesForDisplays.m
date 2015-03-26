@@ -138,13 +138,11 @@ function VisualizeSettingsImagesForDisplays(lightingCondIndex)
     keepGoing = true;
     stimIndex = 1;
     modifier = 0;
-    textureModifier = modifier*(numel(specularSPDconds)+numel(shapeConds)+numel(alphaConds));
-    
 
-        psychImaging.showStimuli(stimIndex, fullsizeWidth, fullsizeHeight,  ...
-                     sprintf('%2.1f (linear)',realizableLuminanceRatioSamsungLinearPrimaryScaling(stimIndex)), ...
-                     sprintf('%2.1f (linear)',realizableLuminanceRatioLCDLinearPrimaryScaling(stimIndex)), ...
-                     originalLuminanceRatioLCD(stimIndex));
+    psychImaging.showStimuli(stimIndex, fullsizeWidth, fullsizeHeight,  ...
+                 sprintf('%2.1f (linear)',realizableLuminanceRatioSamsungLinearPrimaryScaling(stimIndex)), ...
+                 sprintf('%2.1f (linear)',realizableLuminanceRatioLCDLinearPrimaryScaling(stimIndex)), ...
+                 originalLuminanceRatioLCD(stimIndex));
 
     
     while (keepGoing)
@@ -158,8 +156,8 @@ function VisualizeSettingsImagesForDisplays(lightingCondIndex)
             
             if (buttons(1) == 1)
                 modifier = 0;
-                textureModifier = modifier*(numel(specularSPDconds)+numel(shapeConds)+numel(alphaConds));
-                for k = 1:numel(PsychImagingEngine.texturePointersSamsung)/2
+                textureModifier = modifier*(numel(specularSPDconds)*numel(shapeConds)*numel(alphaConds));
+                for k = 1:(numel(specularSPDconds)*numel(shapeConds)*numel(alphaConds))
                     destRect = PsychImagingEngine.thumbsizeTextureDestRects{k};
                     [x0,y0] = RectCenter(destRect);
                     dist(k) = (x0 - x).^2 + (y0-y).^2;
@@ -167,11 +165,11 @@ function VisualizeSettingsImagesForDisplays(lightingCondIndex)
                 [~,stimIndex] = min(dist); 
             else
                 modifier = 1;
-                textureModifier = modifier*(numel(specularSPDconds)+numel(shapeConds)+numel(alphaConds));
-                for k = numel(PsychImagingEngine.texturePointersSamsung)/2+1:numel(PsychImagingEngine.texturePointersSamsung)
+                textureModifier = modifier*((numel(specularSPDconds)*numel(shapeConds)*numel(alphaConds)));
+                for k = 1:(numel(specularSPDconds)*numel(shapeConds)*numel(alphaConds))
                     destRect = PsychImagingEngine.thumbsizeTextureDestRects{k};
                     [x0,y0] = RectCenter(destRect);
-                    dist(k-numel(PsychImagingEngine.texturePointersSamsung)/2) = (x0 - x).^2 + (y0-y).^2;
+                    dist(k) = (x0 - x).^2 + (y0-y).^2;
                 end
                 [~,stimIndex] = min(dist);
             end
@@ -179,13 +177,13 @@ function VisualizeSettingsImagesForDisplays(lightingCondIndex)
             
             if (textureModifier == 0)
                 psychImaging.showStimuli(stimIndex, fullsizeWidth, fullsizeHeight,  ...
-                     sprintf('%2.1f (linear)',realizableLuminanceRatioSamsungLinearPrimaryScaling(stimIndex)), ...
-                     sprintf('%2.1f (linear)',realizableLuminanceRatioLCDLinearPrimaryScaling(stimIndex)), ...
+                     sprintf('%2.1f (linear to full lum)',realizableLuminanceRatioSamsungLinearPrimaryScaling(stimIndex)), ...
+                     sprintf('%2.1f (linear to full lum)',realizableLuminanceRatioLCDLinearPrimaryScaling(stimIndex)), ...
                      originalLuminanceRatioLCD(stimIndex));
             else
                 psychImaging.showStimuli(stimIndex+textureModifier, fullsizeWidth, fullsizeHeight, ...
-                    sprintf('%2.1f (clip)',realizableLuminanceRatioSamsungClippingAtSpecifiedLevel(stimIndex)), ...
-                    sprintf('%2.1f (clip)',realizableLuminanceRatioLCDClippingAtSpecifiedLevel(stimIndex)), ...
+                    sprintf('%2.1f (linear to some lum -> clip)',realizableLuminanceRatioSamsungClippingAtSpecifiedLevel(stimIndex)), ...
+                    sprintf('%2.1f (linear to some lum -> clip)',realizableLuminanceRatioLCDClippingAtSpecifiedLevel(stimIndex)), ...
                     originalLuminanceRatioLCD(stimIndex));
             end
 
