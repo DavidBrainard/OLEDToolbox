@@ -4,7 +4,7 @@ function ComputeSettingsImagesForDisplay(displayCalFileName)
     % displayCalFileName = 'ViewSonicProbe'; % 'SamsungOLED_MirrorScreen';
     calStructOBJ_Samsung = utils.loadDisplayCalXYZ(displayCalFileName);
     
-    [redGunxyY, greenGunxyY, blueGunxyY] = computeDisplayLimits(calStructOBJ_Samsung);
+    [redGunxyY, greenGunxyY, blueGunxyY, minRealizableLuminanceForDisplay, lumRGB] = computeDisplayLimits(calStructOBJ_Samsung);
     
     
     global shapeConds
@@ -36,9 +36,9 @@ function ComputeSettingsImagesForDisplay(displayCalFileName)
     
     
     primaryRGBimageEnsemble = [];
-    luminanceXYZimageEnsemble = [];
+    sensorxyYimageEnsemble = [];
     
-    originalLuminanceRatio = zeros(numel(shapeConds), numel(alphaConds), numel(specularSPDconds));
+    originalLuminanceRatio = zeros(1,numel(shapeConds)* numel(alphaConds)* numel(specularSPDconds));
     stimIndex = 1;
     
     % First pass: find the max/min RGBprimaryForTheEnsemble (in linear RGB primary space) 
@@ -56,23 +56,29 @@ function ComputeSettingsImagesForDisplay(displayCalFileName)
     
                 % To cal format
                 [sensorXYZcalFormat, nCols, mRows] = ImageToCalFormat(sensorXYZimage);
-    
-                % compute and store the original luminance ratio
-                lum = squeeze(sensorXYZcalFormat(2,:));
-                minLum = min(lum(:));
-                maxLum = max(lum(:));
+                
+                % compute xyY values
+                sensorxyYcalFormat = XYZToxyY(sensorXYZcalFormat);
+                
+                % extract the luminance map
+                luminanceMap = squeeze(sensorxyYcalFormat(3,:));
+                
+                % compute and save the luminance ratio of the original scene image
+                minLum = min(luminanceMap(:));
+                maxLum = max(luminanceMap(:));
                 originalLuminanceRatio(stimIndex) = maxLum/minLum;
-                stimIndex = stimIndex + 1;
+                
                 
                 if (isempty(primaryRGBimageEnsemble))
-                    primaryRGBimageEnsemble    = zeros(numel(shapeConds), numel(alphaConds),numel(specularSPDconds), numel(lightingConds), size(sensorXYZcalFormat,1), size(sensorXYZcalFormat,2));
-                    luminanceXYZimageEnsemble  = zeros(numel(shapeConds), numel(alphaConds),numel(specularSPDconds), numel(lightingConds), 2);
+                    primaryRGBimageEnsemble = zeros(numel(shapeConds), numel(alphaConds),numel(specularSPDconds), size(sensorXYZcalFormat,1), size(sensorXYZcalFormat,2));
+                    sensorXYZimageEnsemble  = zeros(numel(shapeConds), numel(alphaConds),numel(specularSPDconds), size(sensorXYZcalFormat,1), size(sensorXYZcalFormat,2));
                 end
                 
                 primaryRGBcalFormat = SensorToPrimary(calStructOBJ_Samsung, sensorXYZcalFormat);
-                primaryRGBimageEnsemble(shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex,:,:) = primaryRGBcalFormat;
-                luminanceXYZimageEnsemble(shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex,1) = minLum;
-                luminanceXYZimageEnsemble(shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex,2) = maxLum;
+                primaryRGBimageEnsemble(shapeIndex, alphaIndex, specularSPDindex, :, :) = primaryRGBcalFormat;
+                sensorxyYimageEnsemble(shapeIndex,  alphaIndex, specularSPDindex, :, :) = sensorxyYcalFormat;
+   
+                stimIndex = stimIndex + 1;
             end
         end
     end
@@ -83,61 +89,123 @@ function ComputeSettingsImagesForDisplay(displayCalFileName)
     minPrimaryForTheEnsemble = min(primaryRGBimageEnsemble(:));
     primaryRGBimageEnsemble  = (primaryRGBimageEnsemble - minPrimaryForTheEnsemble )/(maxPrimaryForTheEnsemble  - minPrimaryForTheEnsemble);
     
-    disp('Before scaling');
-    [minPrimaryForTheEnsemble maxPrimaryForTheEnsemble]
-    disp('After scaling');
-    PrimariesAfterScaling = [min(primaryRGBimageEnsemble(:)) max(primaryRGBimageEnsemble(:))]
     
     
     % Luminance scaling to a point, then clipping
-    minLums = luminanceXYZimageEnsemble(:, :, :, :,1);
-    maxLums = luminanceXYZimageEnsemble(:, :, :, :,2);
-    minLumForEnsemble = min(minLums(:))
-    maxLumForEnsemble = max(maxLums(:))
+    luminanceValuesInEnsemble = sensorxyYimageEnsemble(:,:,:,3,:);
+
+    wattsToLumens = 683;
+    maxLuminanceInEnsemble = wattsToLumens * max(luminanceValuesInEnsemble(:));
+    minLuminanceInEnsemble = wattsToLumens * min(luminanceValuesInEnsemble(:));
+    fprintf('\nMin scene luminance (across entire ensemble): %f\n', minLuminanceInEnsemble);
+    fprintf('Max scene luminance (across entire ensemble): %2.1f\n', maxLuminanceInEnsemble);
+    fprintf('Min display luminances: red = %f, Green = %f, Blue = %f\n', minRealizableLuminanceForDisplay,minRealizableLuminanceForDisplay,minRealizableLuminanceForDisplay);
+    fprintf('Max display luminances: red = %2.1f, Green = %2.1f, Blue = %2.1f, R+G+B: %2.1f\n', lumRGB(1),lumRGB(2),lumRGB(3), sum(lumRGB));
+    
+    h = figure(2);
+    set(h, 'Color', 'k');
+    clf;
+
+                
+    luminanceHistogramBinsNum = 1024;
+    deltaLum = (maxLuminanceInEnsemble-minLuminanceInEnsemble)/luminanceHistogramBinsNum;
+    luminanceEdges = minLuminanceInEnsemble:deltaLum:maxLuminanceInEnsemble;
+    [N,~] = histcounts(luminanceValuesInEnsemble(:)*wattsToLumens, luminanceEdges);
+    subplot(2,2,[1 2]);
+    [x,y] = stairs(luminanceEdges(1:end-1),N);
+    plot(x,y,'-', 'Color', [0.99 0.42 0.2]);
+    set(gca, 'Color', 'k', 'XColor', [0.2 0.9 0.8], 'YColor', [0.2 0.9 0.8], 'YScale', 'linear', 'YLim', [0 2000], ...
+        'XLim', [minLuminanceInEnsemble maxLuminanceInEnsemble], 'XTick', [0:500:maxLuminanceInEnsemble], 'YTick', [0:500:max(N)], ...
+        'YTickLabel', {0:500:max(N)}, 'XTickLabel', [0:1000:maxLuminanceInEnsemble]);
+    drawnow;
+    
+    desiredMaxLum = input('Enter max luminance value to be mapped to the max realizable luminance: ');
+    
+    luminanceGain = sum(lumRGB) / desiredMaxLum
+
+    % Scale linearly up to desired max lum
+    luminanceValuesInEnsemble = luminanceGain  * luminanceValuesInEnsemble(:);
+ 
+    % and specify clipping range
+    luminanceRangeClippedAtSpecifiedLevel = [min(luminanceValuesInEnsemble) max(luminanceValuesInEnsemble)];
     
 
+    % Second pass: compute settingsImages via (a) linear scaling of the primaries (b) luminance clipping to 99 % of max
+    settingsImageEnsembleLinearPrimaryScaling              = zeros(numel(shapeConds), numel(alphaConds), numel(specularSPDconds), mRows, nCols, 3);
+    settingsImageEnsembleLuminanceClippingAtSpecifiedLevel = zeros(numel(shapeConds), numel(alphaConds), numel(specularSPDconds), mRows, nCols, 3);
     
-    % Second pass: compute settingsImages
-    settingsImageEnsembleLinearScaling = zeros(numel(shapeConds), numel(alphaConds), numel(specularSPDconds), numel(lightingConds), mRows, nCols, 3);
-    realizableLuminanceRatio = zeros(numel(shapeConds), numel(alphaConds), numel(specularSPDconds));
+    realizableLuminanceRatioLinearScaling                  = zeros(1,numel(shapeConds)* numel(alphaConds)* numel(specularSPDconds));
+    realizableLuminanceRatioClippingAtSpecifiedLevel       = zeros(1,numel(shapeConds)* numel(alphaConds)* numel(specularSPDconds));
+    
     stimIndex = 1;
     
     for specularSPDindex = 1:numel(specularSPDconds)
         for shapeIndex = 1:numel(shapeConds)
             for alphaIndex = 1:numel(alphaConds)
 
+                % Method 1: linear scaling of primary image
+                primaryRGBcalFormat = squeeze(primaryRGBimageEnsemble(shapeIndex, alphaIndex, specularSPDindex, :,:));
                 
-                % linear scaling
-                % compute sensor image
-                primaryRGBcalFormat = squeeze(primaryRGBimageEnsemble(shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex,:,:));
+                % compute resulting sensor image
                 sensorXYZcalFormat = PrimaryToSensor(calStructOBJ_Samsung, primaryRGBcalFormat);
                 
                 % compute and store realizable luminance ratio
                 lum = squeeze(sensorXYZcalFormat(2,:));
-                realizableLuminanceRatio(stimIndex) = max(lum(:))/min(lum(:));  
-                stimIndex = stimIndex + 1;
+                realizableLuminanceRatioLinearScaling(stimIndex) = max(lum(:))/min(lum(:));  
+                % compute settings image from the sensor image
+                settingsCalFormat = utils.mySensorToSettings(calStructOBJ_Samsung, sensorXYZcalFormat);
+                % transform to image format
+                settingsImage = CalFormatToImage(settingsCalFormat, nCols, mRows);
+                % save it
+                settingsImageEnsembleLinearPrimaryScaling(shapeIndex, alphaIndex, specularSPDindex, :,:,:) = settingsImage;
+                
+                
+                % Method 2: Luminance clipping at specified level
+                sensorxyYcalFormat = squeeze(sensorxyYimageEnsemble(shapeIndex,  alphaIndex, specularSPDindex,  :, :));
+                % extract the luminance map
+                luminanceMap = squeeze(sensorxyYcalFormat(3,:));
+                % scale it
+                luminanceMap = luminanceGain * luminanceMap;
+                % clip it
+                luminanceMap(luminanceMap > luminanceRangeClippedAtSpecifiedLevel(2)) = luminanceRangeClippedAtSpecifiedLevel(2);
+                % insert the clipped luminance map back into the sensorxyYcalFormat
+                sensorxyYcalFormat(3,:) = luminanceMap;
+                % compute XYZ values
+                sensorXYZcalFormat = xyYToXYZ(sensorxyYcalFormat);
+                
+                % compute and store realizable luminance ratio
+                lum = squeeze(sensorXYZcalFormat(2,:));
+                realizableLuminanceRatioClippingAtSpecifiedLevel(stimIndex) = max(lum(:))/min(lum(:));  
                 
                 % compute settings image from the sensor image
                 settingsCalFormat = utils.mySensorToSettings(calStructOBJ_Samsung, sensorXYZcalFormat);
                 % transform to image format
                 settingsImage = CalFormatToImage(settingsCalFormat, nCols, mRows);
                 % save it
-                settingsImageEnsembleLinearScaling(shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex,:,:,:) = settingsImage;
+                settingsImageEnsembleLuminanceClippingAtSpecifiedLevel(shapeIndex, alphaIndex, specularSPDindex, :,:,:) = settingsImage;
                 
-
                 
                 % plot it
-                figure(2);
-                clf;
-                imshow(squeeze(settingsImageEnsemble(shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex,:,:,:)), [0 1]);
+
+                subplot(2,2,3);
+                imshow(squeeze(settingsImageEnsembleLinearPrimaryScaling(shapeIndex, alphaIndex, specularSPDindex, :,:,:)), [0 1]);
+                title('Linear scaling of primaries',  'FontSize', 14, 'FontName', 'system', 'Color',  [0.2 0.99 0.8]);
+                
+                subplot(2,2,4);
+                imshow(squeeze(settingsImageEnsembleLuminanceClippingAtSpecifiedLevel(shapeIndex, alphaIndex, specularSPDindex, :,:,:)), [0 1]);
+                title(sprintf('Linear luminance scaling to gamut until %2.2f cd/m2, then clipping.', desiredMaxLum),  'FontSize', 14, 'FontName', 'system', 'Color',  [0.2 0.99 0.8]);
                 drawnow;
+                
+                
+                stimIndex = stimIndex + 1;
+                
             end
         end
     end
 
     
-    dataFile = sprintf('SettingsImagesForDisplay_%sAndLightingCond_%d',displayCalFileName, lightingCondIndex);
-    save(dataFile, 'specularSPDconds', 'shapeConds', 'alphaConds', 'settingsImageEnsembleLinearScaling', 'realizableLuminanceRatio', 'originalLuminanceRatio');
+    dataFile = sprintf('SettingsImages/SettingsImagesForDisplay_%sAndLightingCond_%d',displayCalFileName, lightingCondIndex);
+    save(dataFile, 'specularSPDconds', 'shapeConds', 'alphaConds', 'desiredMaxLum', 'settingsImageEnsembleLinearPrimaryScaling', 'settingsImageEnsembleLuminanceClippingAtSpecifiedLevel', 'realizableLuminanceRatioLinearScaling', 'realizableLuminanceRatioClippingAtSpecifiedLevel', 'originalLuminanceRatio');
     
 end
 
@@ -149,7 +217,7 @@ end
 
 
 
-function [redGunxyY, greenGunxyY, blueGunxyY] = computeDisplayLimits(calStructOBJ)
+function [redGunxyY, greenGunxyY, blueGunxyY,  minRealizableLuminanceForDisplay, lumRGB] = computeDisplayLimits(calStructOBJ)
 
     wattsToLumens = 683;
     

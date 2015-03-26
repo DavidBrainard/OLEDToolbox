@@ -33,17 +33,23 @@ function showStimuli(stimIndex, stimWidth, stimHeight, realizableLumRatioSamsung
         %Screen('DrawText',  PsychImagingEngine.masterWindowPtr,'LCD rendering', x0-140, PsychImagingEngine.screenRect(4)/2-100, [255 230 250], [0 0 0]);
          
         
-        Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('Samsung LR: %2.1f', realizableLumRatioSamsung), 1920/2-200-550, PsychImagingEngine.screenRect(4)/2-190, [255 230 0], [0 0 0]);
-        Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('LCD LR: %2.1f', realizableLumRatioLCD), 1920/2-200+650, PsychImagingEngine.screenRect(4)/2-190, [255 230 0], [0 0 0]);
+        Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('Samsung LR: %s', realizableLumRatioSamsung), 1920/2-200-650, PsychImagingEngine.screenRect(4)/2-190, [255 230 0], [0 0 0]);
+        Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('LCD LR: %s', realizableLumRatioLCD), 1920/2-200+550, PsychImagingEngine.screenRect(4)/2-190, [255 230 0], [0 0 0]);
         Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('scene LR: %2.1f', originalLumRatio),   1920/2-140, PsychImagingEngine.screenRect(4)/2-190, [255 230 0], [0 0 0]);
          
-        
-        
         % Finally shown thumbsize images on top
-        for k = 1:numel(PsychImagingEngine.texturePointersSamsung)
-            sourceRect = []; rotationAngle = 0; filterMode = []; globalAlpha = 1.0;
-            Screen('DrawTexture', PsychImagingEngine.masterWindowPtr, PsychImagingEngine.texturePointersSamsung(k), ...
-                sourceRect, PsychImagingEngine.thumbsizeTextureDestRects{k}, rotationAngle, filterMode, globalAlpha);     % foreground
+        if (stimIndex <= numel(PsychImagingEngine.texturePointersSamsung)/2)
+            for k = 1:numel(PsychImagingEngine.texturePointersSamsung)/2
+                sourceRect = []; rotationAngle = 0; filterMode = []; globalAlpha = 1.0;
+                Screen('DrawTexture', PsychImagingEngine.masterWindowPtr, PsychImagingEngine.texturePointersSamsung(k), ...
+                    sourceRect, PsychImagingEngine.thumbsizeTextureDestRects{k}, rotationAngle, filterMode, globalAlpha);     % foreground
+            end
+        else
+            for k = numel(PsychImagingEngine.texturePointersSamsung)/2+1:numel(PsychImagingEngine.texturePointersSamsung)
+                sourceRect = []; rotationAngle = 0; filterMode = []; globalAlpha = 1.0;
+                Screen('DrawTexture', PsychImagingEngine.masterWindowPtr, PsychImagingEngine.texturePointersSamsung(k), ...
+                    sourceRect, PsychImagingEngine.thumbsizeTextureDestRects{k}, rotationAngle, filterMode, globalAlpha);     % foreground
+            end
         end
         
         % Flip master display
