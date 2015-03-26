@@ -7,7 +7,7 @@ function loadBlobbieConditions()
     global luminanceMaps
     
     %shapeConds       = {'VeryLow', 'Low', 'Medium', 'High', 'VeryHigh'};
-    shapeConds       = {'VeryLow',  'Medium', 'VeryHigh'};
+    shapeConds       = {'VeryLow',  'Medium', 'High'};
     
     %alphaConds      = {'0.005', '0.010', '0.020', '0.040', '0.080', '0.160', '0.320'};
     alphaConds       = {'0.005',  '0.040', '0.080', '0.160', '0.320'};
