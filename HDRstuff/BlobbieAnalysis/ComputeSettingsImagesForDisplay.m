@@ -2,13 +2,12 @@ function ComputeSettingsImagesForDisplay(displayCalFileName)
 
     calStructOBJReference = utils.loadDisplayCalXYZ('SamsungOLED_MirrorScreen');
     [minRealizableLuminanceForAnotherDisplay, maxRealizableLuminanceForAnotherDisplayRGBguns] = computeDisplayLimits(calStructOBJReference);
-    
+
     
     % Load calStructOBJ for Samsung OLED and set the sensor to XYZ
     % displayCalFileName = 'ViewSonicProbe'; % 'SamsungOLED_MirrorScreen';
     calStructOBJ = utils.loadDisplayCalXYZ(displayCalFileName);
     [minRealizableLuminanceForDisplay,  maxRealizableLuminanceForDisplayRGBguns] = computeDisplayLimits(calStructOBJ);
-    
     
     
     
@@ -118,7 +117,7 @@ function ComputeSettingsImagesForDisplay(displayCalFileName)
     
     
     
-    maxSceneLumsForLinearScaling = [1000 2000 4000 8000];
+    maxSceneLumsForLinearScaling = [4500 1500 500 170];
     
     settingsImageEnsembleLinearPrimaryScaling                    = zeros(numel(shapeConds), numel(alphaConds), numel(specularSPDconds), mRows, nCols, 3);
     settingsImageEnsembleLuminanceClipAtSpecLevelForThisDisplay  = zeros(numel(maxSceneLumsForLinearScaling), numel(shapeConds), numel(alphaConds), numel(specularSPDconds), mRows, nCols, 3);
@@ -169,42 +168,14 @@ function ComputeSettingsImagesForDisplay(displayCalFileName)
     % compute settingsImages via Methods 2 and 3
     for maxLumIndex = 1:numel(maxSceneLumsForLinearScaling)
         
-        
-        % Method 2: Linear scaling of scene luminance to some realizable level for the display at hand, then clipping
         desiredMaxLum = maxSceneLumsForLinearScaling(maxLumIndex);  % input('Enter max luminance value to be mapped to the max realizable luminance: ');
-    
-        % Compute the gain necessary to bring the scene luminance down to the display's range
-        luminanceGainBasedOnCurrentDisplay = sum(maxRealizableLuminanceForDisplayRGBguns) / desiredMaxLum;
-        if (luminanceGainBasedOnCurrentDisplay > 1)
-            luminanceGainBasedOnCurrentDisplay = 1;
-        end
-    
-        % Scale linearly up to desired max lum
-        luminanceValuesInEnsembleCurrentDisplay = luminanceGainBasedOnCurrentDisplay  * luminanceValuesInEnsemble(:);
- 
-        % and specify clipping range
-        luminanceRangeClippedAtSpecifiedLevelForCurrentDisplay = [min(luminanceValuesInEnsembleCurrentDisplay) max(luminanceValuesInEnsembleCurrentDisplay)];
-    
-    
-    
-
-        % Method 3: Linear scaling of scene luminance to some realizable level for another display, then clipping
-    
-        % Compute the gain necessary to bring the scene luminance down to the display's range
-        luminanceGainBasedOnOtherDisplay = sum(maxRealizableLuminanceForAnotherDisplayRGBguns) / desiredMaxLum;
-        if (luminanceGainBasedOnOtherDisplay > 1)
-            luminanceGainBasedOnOtherDisplay = 1;
-        end
-    
-        % Scale linearly up to desired max lum
-        luminanceValuesInEnsembleOtherDisplay = luminanceGainBasedOnOtherDisplay  * luminanceValuesInEnsemble(:);
-    
-        % and specify clipping range
-        luminanceRangeClippedAtSpecifiedLevelForOtherDisplay = [min(luminanceValuesInEnsembleOtherDisplay ) max(luminanceValuesInEnsembleOtherDisplay )];
-    
-    
-    
-    
+        
+        % Method 2: compute multiplicative gain factor that will bring the scene luminances up to desiredMaxLum in gamut for current display
+        luminanceGainBasedOnCurrentDisplay = sum(maxRealizableLuminanceForDisplayRGBguns) / desiredMaxLum
+        
+        % Method 3: compute multiplicative gain factor that will bring the scene luminances up to desiredMaxLum in gamut for another display
+        luminanceGainBasedOnOtherDisplay   = sum(maxRealizableLuminanceForAnotherDisplayRGBguns) / desiredMaxLum
+        
 
         % Second pass: compute settingsImages via (a) linear scaling of the primaries (b) luminance clipping to specified level
         stimIndex = 1;
@@ -216,7 +187,7 @@ function ComputeSettingsImagesForDisplay(displayCalFileName)
                 
                 % Method 2:  Linear scaling of scene luminance to some realizable level for the display at hand, then clipping
                 sensorxyYcalFormat = squeeze(sensorxyYimageEnsemble(shapeIndex,  alphaIndex, specularSPDindex,  :, :));
-                [settingsImage, realizableLumRatio] = computeSettingsImageBasedOnLuminanceRangeClippedAtSpecLevel(calStructOBJ, nCols, mRows, sensorxyYcalFormat, luminanceGainBasedOnCurrentDisplay, luminanceRangeClippedAtSpecifiedLevelForCurrentDisplay);
+                [settingsImage, realizableLumRatio] = computeSettingsImageBasedOnLuminanceRangeClippedAtSpecLevel(calStructOBJ, nCols, mRows, sensorxyYcalFormat, luminanceGainBasedOnCurrentDisplay);
                 
                 % save  results
                 realizableLuminanceRatioClippingAtSpecLevelForThisDisplay(maxLumIndex,stimIndex) = realizableLumRatio;
@@ -225,7 +196,7 @@ function ComputeSettingsImagesForDisplay(displayCalFileName)
                 
                 % Method 3: Linear scaling of scene luminance to some realizable level for another display, then clipping
                 sensorxyYcalFormat = squeeze(sensorxyYimageEnsemble(shapeIndex,  alphaIndex, specularSPDindex,  :, :));
-                [settingsImage, realizableLumRatio] = computeSettingsImageBasedOnLuminanceRangeClippedAtSpecLevel(calStructOBJ, nCols, mRows, sensorxyYcalFormat, luminanceGainBasedOnOtherDisplay, luminanceRangeClippedAtSpecifiedLevelForOtherDisplay);
+                [settingsImage, realizableLumRatio] = computeSettingsImageBasedOnLuminanceRangeClippedAtSpecLevel(calStructOBJ, nCols, mRows, sensorxyYcalFormat, luminanceGainBasedOnOtherDisplay);
                 
                 % save  results
                 realizableLuminanceRatioClippingAtSpecLevelForOtherDisplay(maxLumIndex,stimIndex) = realizableLumRatio;
@@ -272,21 +243,19 @@ end
 
 
 
-function [settingsImage, realizableLumRatio] = computeSettingsImageBasedOnLuminanceRangeClippedAtSpecLevel(calStructOBJ, nCols, mRows, sensorxyYcalFormat, luminanceGain, luminanceRangeClippedAtSpecifiedLevel)
+function [settingsImage, realizableLumRatio] = computeSettingsImageBasedOnLuminanceRangeClippedAtSpecLevel(calStructOBJ, nCols, mRows, sensorxyYcalFormat, luminanceGain)
                  
     % extract the luminance map
     luminanceMap = squeeze(sensorxyYcalFormat(3,:));
     % scale it
     luminanceMap = luminanceGain * luminanceMap;
-    % clip it
-    luminanceMap(luminanceMap > luminanceRangeClippedAtSpecifiedLevel(2)) = luminanceRangeClippedAtSpecifiedLevel(2);
     % insert the clipped luminance map back into the sensorxyYcalFormat
     sensorxyYcalFormat(3,:) = luminanceMap;
     % compute XYZ values
     sensorXYZcalFormat = xyYToXYZ(sensorxyYcalFormat);
 
 
-    % compute settings image from the sensor image
+    % compute settings image from the sensor image - this will clip to display's gamut
     settingsCalFormat = utils.mySensorToSettings(calStructOBJ, sensorXYZcalFormat);
 
     % compute and store realizable luminance ratio

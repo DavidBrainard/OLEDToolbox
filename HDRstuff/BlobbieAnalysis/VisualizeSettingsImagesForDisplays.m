@@ -110,6 +110,9 @@ function VisualizeSettingsImagesForDisplays(lightingCondIndex)
     end
     
     
+    
+    ShowLCD_imageBased_On_SamsungLumRange = true;
+    
     for lumIndex = 1:numel(maxSceneLumsForLinearScaling)
     
         
@@ -138,8 +141,13 @@ function VisualizeSettingsImagesForDisplays(lightingCondIndex)
 
                     settingsImageSamsung = double(squeeze(settingsImageEnsembleSamsungLumClipAtSpecLevelForThisDisplay(lumIndex, shapeIndex, alphaIndex, specularSPDindex, :,:,:)));
 
-                    % Settings for rendering on the LCD display
-                    settingsImageLCD = double(squeeze(settingsImageEnsembleLCDLumClipAtSpecLevelForThisDisplay(lumIndex, shapeIndex, alphaIndex, specularSPDindex, :,:,:)));
+                    if (ShowLCD_imageBased_On_SamsungLumRange)
+                        % Settings for rendering on the LCD display based on other display scaling
+                        settingsImageLCD = double(squeeze(settingsImageEnsembleLCDLumClipAtSpecLevelForOtherDisplay(lumIndex, shapeIndex, alphaIndex, specularSPDindex, :,:,:)));
+                    else
+                        % Settings for rendering on the LCD display based on this display scaling
+                        settingsImageLCD = double(squeeze(settingsImageEnsembleLCDLumClipAtSpecLevelForThisDisplay(lumIndex, shapeIndex, alphaIndex, specularSPDindex, :,:,:)));
+                    end
 
                     % Transform these into XYZ
                     [settingsLCDcalFormat, nCols, mRows] = ImageToCalFormat(settingsImageLCD);
@@ -212,7 +220,7 @@ function VisualizeSettingsImagesForDisplays(lightingCondIndex)
                 
         end
         
-        if (mouseClick || keyIsDown)234512234152525252525252525252525252522262525251234111123456112345615151515234
+        if (mouseClick || keyIsDown)
             if (modifier == 0)
                 psychImaging.showStimuli(1, stimIndex, fullsizeWidth, fullsizeHeight,  ...
                      sprintf('%2.1f (lin to full lum)',realizableLuminanceRatioSamsungLinearPrimaryScaling(stimIndex)), ...
@@ -220,10 +228,17 @@ function VisualizeSettingsImagesForDisplays(lightingCondIndex)
                      originalLuminanceRatioLCD(stimIndex));
             else
                 lumIndex = modifier;
-                psychImaging.showStimuli(1+lumIndex, stimIndex, fullsizeWidth, fullsizeHeight, ...
-                    sprintf('%2.1f (lin to %2.1f cd/m2 -> clip)',realizableLumRatioSamsungClippingAtSpecLevelForThisDisplay(lumIndex,stimIndex), maxSceneLumsForLinearScaling(lumIndex)), ...
-                    sprintf('%2.1f (lin to %2.1f cd/m2 -> clip)',realizableLumRatioLCDClippingAtSpecLevelForThisDisplay(lumIndex,stimIndex), maxSceneLumsForLinearScaling(lumIndex)), ...
-                    originalLuminanceRatioLCD(stimIndex));
+                if (ShowLCD_imageBased_On_SamsungLumRange)
+                    psychImaging.showStimuli(1+lumIndex, stimIndex, fullsizeWidth, fullsizeHeight, ...
+                        sprintf('%2.1f (lin to %2.1f cd/m2 -> clip)',realizableLumRatioSamsungClippingAtSpecLevelForThisDisplay(lumIndex,stimIndex), maxSceneLumsForLinearScaling(lumIndex)), ...
+                        sprintf('%2.1f (lin to %2.1f cd/m2 -> clip)',realizableLumRatioLCDClippingAtSpecLevelForOtherDisplay(lumIndex,stimIndex), maxSceneLumsForLinearScaling(lumIndex)), ...
+                        originalLuminanceRatioLCD(stimIndex));
+                else
+                    psychImaging.showStimuli(1+lumIndex, stimIndex, fullsizeWidth, fullsizeHeight, ...
+                        sprintf('%2.1f (lin to %2.1f cd/m2 -> clip)',realizableLumRatioSamsungClippingAtSpecLevelForThisDisplay(lumIndex,stimIndex), maxSceneLumsForLinearScaling(lumIndex)), ...
+                        sprintf('%2.1f (lin to %2.1f cd/m2 -> clip)',realizableLumRatioLCDClippingAtSpecLevelForThisDisplay(lumIndex,stimIndex), maxSceneLumsForLinearScaling(lumIndex)), ...
+                        originalLuminanceRatioLCD(stimIndex));
+                end
             end
 
         end
