@@ -106,6 +106,17 @@ function showStimuli(stimIndex, stimWidth, stimHeight, realizableLumRatioSamsung
                         sourceRect, PsychImagingEngine.thumbsizeTextureDestRects{k}, rotationAngle, filterMode, globalAlpha);     % foreground
             end
             
+            
+
+
+%             ovalRects = zeros(4, numel(sceneLuminances));
+%             rect(1,5)=left border of 5th oval, 
+%             rect(2,5)=top border of 5th oval
+%             rect(3,5)=right border of 5th oval, 
+%             rect(4,5)=bottom border of 5th oval
+%             
+%             Screen('FillRect', PsychImagingEngine.slaveWindowPtr, [255 0 0], [drawlim_high 1000 (drawlim_high+3) 1080])
+%             
 %             Screen('DrawText',  PsychImagingEngine.slaveWindowPtr, sprintf('Scene   LR: %2.1f', sceneLumRatio),                      1920/2-200,  PsychImagingEngine.screenRect(4)-50, [255 230 0], [0 0 0]);
 %             Screen('DrawText',  PsychImagingEngine.slaveWindowPtr, sprintf('Samsung (10 bit) LR: %2.1f', realizableLumRatioSamsung),        90,  PsychImagingEngine.screenRect(4)-170, [255 230 0], [0 0 0]);
 %             Screen('DrawText',  PsychImagingEngine.slaveWindowPtr, sprintf('Samsung (8 bit)  LR: %2.1f', realizableLumRatioSamsung),        720,  PsychImagingEngine.screenRect(4)-170, [255 230 0], [0 0 0]);

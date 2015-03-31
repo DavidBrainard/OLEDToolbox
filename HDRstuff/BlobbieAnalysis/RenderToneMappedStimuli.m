@@ -1,11 +1,11 @@
-function RenderToneMappedStimuli
+function RenderToneMappedStimuli(clipLuminanceLevel)
     
     clear global
 
-    load('ToneMappedStimuli500.mat');
-    load('ToneMappedStimuli1000.mat');
-    load('ToneMappedStimuli2000.mat');
-    load('ToneMappedStimuli4000.mat');
+    %load('ToneMappedStimuli500.mat');
+    load(sprintf('ToneMappedStimuli%d.mat', clipLuminanceLevel));
+    %load('ToneMappedStimuli2000.mat');
+    %load('ToneMappedStimuli4000.mat');
     
     % The above loads 'clipSceneLumincanceLevel', 'normalizationMode', 'ensembleToneMappeRGBsettingsOLEDimage', 'ensembleToneMappeRGBsettingsLCDimage', 'ensembleSceneLuminanceMap', 'ensembleToneMappedOLEDluminanceMap', 'ensembleToneMappedLCDluminanceMap');
 
