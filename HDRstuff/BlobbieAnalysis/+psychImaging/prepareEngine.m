@@ -6,51 +6,62 @@ function prepareEngine()
     global PsychImagingEngine
     PsychImagingEngine = [];
     
-
-    screenIndex = max(Screen('screens'));  % secondary
-    stereoMode = []; % 10; 
+    rightHalfScreenID = max(Screen('Screens'));
+    leftHalfScreenID  = rightHalfScreenID-1;
     
-    % Following for opening a full-screen window
+    debugMode =  true;
+    if (~debugMode)
+        stereoMode = 2; % 10; 
+    else
+        stereoMode = [];
+    end
+   
+    % Opening a full-screen window
     screenRect = []; 
     
     % Specify pixelSize (30 for 10-bit color, 24 for 8-bit color)
     pixelSize = 24;
-
-   
+        
+    bgColor = [0.2 0.2 0.2];
     
-    try 
-        Screen('Preference', 'SkipSyncTests', 1);
+    try
 
         % Start PsychImaging
         PsychImaging('PrepareConfiguration');
 
         % Open master display (screen to be calibrated)
         [masterWindowPtr, screenRect] = ...
-            PsychImaging('OpenWindow', screenIndex, [0 0 0], screenRect, pixelSize, [], stereoMode);
+            PsychImaging('OpenWindow', rightHalfScreenID, 255*bgColor, screenRect, pixelSize, [], stereoMode);
+        psychImaging.ConvertOverUnderToSideBySideParameters(masterWindowPtr);
 
         % Identity LUT - so we do not apply any gamma correction
         % This is how we calibrate as well
         LoadIdentityClut(masterWindowPtr);
 
+        if ~debugMode
+            PsychImaging('PrepareConfiguration');
+            [slaveWindowPtr, ~] = ...
+                PsychImaging('OpenWindow', leftHalfScreenID, 255*bgColor, [], pixelSize, [], stereoMode);
+            psychImaging.ConvertOverUnderToSideBySideParameters(slaveWindowPtr);
+            LoadIdentityClut(masterWindowPtr);
+        end
+        
         PsychImagingEngine.masterWindowPtr = masterWindowPtr;
+        PsychImagingEngine.slaveWindowPtr  = [];
+        
+        if ~debugMode
+            PsychImagingEngine.slaveWindowPtr = slaverWindowPtr;
+        end
+        
+        
+        PsychImagingEngine.ditherOffsets = [];
         PsychImagingEngine.screenRect = screenRect;
         PsychImagingEngine.texturePointersSamsung = [];
         PsychImagingEngine.texturePointersLCD = [];
         PsychImagingEngine.thumbsizeTextureDestRects = {};
-        PsychImagingEngine.screenIndex = screenIndex;
+        PsychImagingEngine.screenIndex = rightHalfScreenID;
 
-        % Generate background texture
-        backgroundRGBstimMatrix = zeros(PsychImagingEngine.screenRect(4), PsychImagingEngine.screenRect(3), 3);
-        for k = 1:3
-            backgroundRGBstimMatrix(:,:,k) = 0.0;
-        end
-        optimizeForDrawAngle = []; specialFlags = []; floatprecision = 2;
-        backgroundTexturePtr = Screen('MakeTexture', PsychImagingEngine.masterWindowPtr, backgroundRGBstimMatrix, optimizeForDrawAngle, specialFlags, floatprecision);
-
-        % Draw Background texture
-        sourceRect = []; destRect = []; rotationAngle = 0; filterMode = []; globalAlpha = 1.0;
-        Screen('DrawTexture', PsychImagingEngine.masterWindowPtr, backgroundTexturePtr, sourceRect, destRect, rotationAngle, filterMode, globalAlpha);       % background
-
+        
         
     catch err
         psychImaging.restoreState();

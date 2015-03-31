@@ -92,7 +92,7 @@ function VisualizeSettingsImagesForDisplays(lightingCondIndex)
                 end
 
                 settingsImageSamsung = double(squeeze(settingsImageEnsembleSamsungLinearPrimaryScaling(shapeIndex, alphaIndex, specularSPDindex, :,:,:)));
-               
+               q
                 % Settings for rendering on the LCD display
                 settingsImageLCD = double(squeeze(settingsImageEnsembleLCDLinearPrimaryScaling(shapeIndex, alphaIndex, specularSPDindex, :,:,:)));
                
