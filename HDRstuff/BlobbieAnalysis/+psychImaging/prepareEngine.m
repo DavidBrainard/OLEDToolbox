@@ -22,7 +22,7 @@ function prepareEngine(debugMode)
     % Specify pixelSize (30 for 10-bit color, 24 for 8-bit color)
     pixelSize = 24;
         
-    bgColor = [0.2 0.2 0.2];
+    bgColor = [0.0 0.0 0.0];
     
     try
 

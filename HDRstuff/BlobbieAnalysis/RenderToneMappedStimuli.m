@@ -3,8 +3,9 @@ function RenderToneMappedStimuli
     clear global
 
     load('ToneMappedStimuli500.mat');
+    load('ToneMappedStimuli1000.mat');
     load('ToneMappedStimuli2000.mat');
-    load('ToneMappedStimuli8000.mat');
+    load('ToneMappedStimuli4000.mat');
     
     % The above loads 'clipSceneLumincanceLevel', 'normalizationMode', 'ensembleToneMappeRGBsettingsOLEDimage', 'ensembleToneMappeRGBsettingsLCDimage', 'ensembleSceneLuminanceMap', 'ensembleToneMappedOLEDluminanceMap', 'ensembleToneMappedLCDluminanceMap');
 
