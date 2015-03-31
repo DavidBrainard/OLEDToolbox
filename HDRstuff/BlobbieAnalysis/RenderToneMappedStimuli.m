@@ -2,11 +2,15 @@ function RenderToneMappedStimuli
     
     clear global
 
-    load('ToneMappedStimuli.mat');
+    load('ToneMappedStimuli500.mat');
+    load('ToneMappedStimuli2000.mat');
+    load('ToneMappedStimuli8000.mat');
+    
     % The above loads 'clipSceneLumincanceLevel', 'normalizationMode', 'ensembleToneMappeRGBsettingsOLEDimage', 'ensembleToneMappeRGBsettingsLCDimage', 'ensembleSceneLuminanceMap', 'ensembleToneMappedOLEDluminanceMap', 'ensembleToneMappedLCDluminanceMap');
 
+    debugMode = false;
     global PsychImagingEngine
-    psychImaging.prepareEngine();
+    psychImaging.prepareEngine(debugMode);
     
     shapeConds      = size(ensembleToneMappeRGBsettingsOLEDimage,1);
     alphaConds      = size(ensembleToneMappeRGBsettingsOLEDimage,2);
@@ -121,6 +125,13 @@ function [mouseClick, modifier,  stimIndex, keepGoing] = getUserResponse(shapeCo
     mouseClick = any(buttons);
 
     if (mouseClick)
+        while (x > 1920)
+            x = x - 1920;
+            x = x*2;
+        end
+        y = y * 2;
+        
+        %Speak(sprintf('%2.0f,%2.0f', x, y));
         for k = 1:(specularSPDconds*shapeConds*alphaConds)
             destRect = PsychImagingEngine.thumbsizeTextureDestRects{k};
             [x0,y0] = RectCenter(destRect);

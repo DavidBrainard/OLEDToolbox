@@ -15,6 +15,12 @@ function generateStimTextures(frameBufferImageSamsung, frameBufferImageLCD, stim
     end
     
     try
+        for k = 1:40
+            columns = 1 + (k-1)*22 + (0:21);
+            frameBufferImageSamsung(1:80, columns, :) = 0.2+k/1024;
+            frameBufferImageLCD(1:80, columns, :) = 0.2+k/1024;
+        end
+        
         for frameIndex = 1:4
             stimRGBstimMatrix = frameBufferImageSamsung + squeeze(PsychImagingEngine.ditherOffsets(frameIndex,:,:,:));
             stim1RGBstimMatrix(find(stimRGBstimMatrix<0)) = 0;

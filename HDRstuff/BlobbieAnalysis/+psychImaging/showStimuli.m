@@ -3,7 +3,7 @@ function showStimuli(stimIndex, stimWidth, stimHeight, realizableLumRatioSamsung
     global PsychImagingEngine
     
     try
-        Screen('TextSize',  PsychImagingEngine.masterWindowPtr, 30);
+        Screen('TextSize',  PsychImagingEngine.masterWindowPtr, 60);
         Screen('TextFont',  PsychImagingEngine.masterWindowPtr,'Monaco');
         Screen('TextStyle', PsychImagingEngine.masterWindowPtr, 1);
         
@@ -42,12 +42,37 @@ function showStimuli(stimIndex, stimWidth, stimHeight, realizableLumRatioSamsung
         Screen('DrawTexture', PsychImagingEngine.masterWindowPtr, PsychImagingEngine.texturePointersSamsung(1, stimIndex), sourceRect, targetDestRect1, rotationAngle, filterMode, globalAlpha);  
         Screen('DrawTexture', PsychImagingEngine.masterWindowPtr, PsychImagingEngine.texturePointersSamsung(1, stimIndex), sourceRect, targetDestRect2, rotationAngle, filterMode, globalAlpha);
         Screen('DrawTexture', PsychImagingEngine.masterWindowPtr, PsychImagingEngine.texturePointersLCD(stimIndex),        sourceRect, targetDestRect3, rotationAngle, filterMode, globalAlpha);
+        % Thumbsize images on top
+        for k = 1:size(PsychImagingEngine.texturePointersSamsung,2)
+            sourceRect = []; rotationAngle = 0; filterMode = []; globalAlpha = 1.0;
+            Screen('DrawTexture', PsychImagingEngine.masterWindowPtr, PsychImagingEngine.texturePointersSamsung(1, k), ...
+                    sourceRect, PsychImagingEngine.thumbsizeTextureDestRects{k}, rotationAngle, filterMode, globalAlpha);     % foreground
+        end
+        
+%         Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('Scene   LR: %2.1f', sceneLumRatio),                      1920/2-200,  PsychImagingEngine.screenRect(4)-50, [255 230 0], [0 0 0]);
+%         Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('Samsung (10 bit) LR: %2.1f', realizableLumRatioSamsung),        90,  PsychImagingEngine.screenRect(4)-170, [255 230 0], [0 0 0]);
+%         Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('Samsung (8 bit)  LR: %2.1f', realizableLumRatioSamsung),        720,  PsychImagingEngine.screenRect(4)-170, [255 230 0], [0 0 0]);
+%         Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('LCD LR: %2.1f', realizableLumRatioLCD),                    1920-500,  PsychImagingEngine.screenRect(4)-170, [255 230 0], [0 0 0]);
+%        
         
         
         Screen('SelectStereoDrawBuffer', PsychImagingEngine.masterWindowPtr, 1);
         Screen('DrawTexture', PsychImagingEngine.masterWindowPtr, PsychImagingEngine.texturePointersSamsung(2, stimIndex), sourceRect, targetDestRect1, rotationAngle, filterMode, globalAlpha);  
         Screen('DrawTexture', PsychImagingEngine.masterWindowPtr, PsychImagingEngine.texturePointersSamsung(1, stimIndex), sourceRect, targetDestRect2, rotationAngle, filterMode, globalAlpha);
         Screen('DrawTexture', PsychImagingEngine.masterWindowPtr, PsychImagingEngine.texturePointersLCD(stimIndex),        sourceRect, targetDestRect3, rotationAngle, filterMode, globalAlpha);
+        % Thumbsize images on top
+        for k = 1:size(PsychImagingEngine.texturePointersSamsung,2)
+            sourceRect = []; rotationAngle = 0; filterMode = []; globalAlpha = 1.0;
+            Screen('DrawTexture', PsychImagingEngine.masterWindowPtr, PsychImagingEngine.texturePointersSamsung(2, k), ...
+                    sourceRect, PsychImagingEngine.thumbsizeTextureDestRects{k}, rotationAngle, filterMode, globalAlpha);     % foreground
+        end
+        
+%         Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('Scene   LR: %2.1f', sceneLumRatio),                      1920/2-200,  PsychImagingEngine.screenRect(4)-50, [255 230 0], [0 0 0]);
+%         Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('Samsung (10 bit) LR: %2.1f', realizableLumRatioSamsung),        90,  PsychImagingEngine.screenRect(4)-170, [255 230 0], [0 0 0]);
+%         Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('Samsung (8 bit)  LR: %2.1f', realizableLumRatioSamsung),        720,  PsychImagingEngine.screenRect(4)-170, [255 230 0], [0 0 0]);
+%         Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('LCD LR: %2.1f', realizableLumRatioLCD),                    1920-500,  PsychImagingEngine.screenRect(4)-170, [255 230 0], [0 0 0]);
+%        
+        
         
         
         if (~isempty(PsychImagingEngine.slaveWindowPtr))
@@ -55,31 +80,49 @@ function showStimuli(stimIndex, stimWidth, stimHeight, realizableLumRatioSamsung
             Screen('DrawTexture', PsychImagingEngine.slaveWindowPtr, PsychImagingEngine.texturePointersSamsung(3, stimIndex), sourceRect, targetDestRect1, rotationAngle, filterMode, globalAlpha);  
             Screen('DrawTexture', PsychImagingEngine.slaveWindowPtr, PsychImagingEngine.texturePointersSamsung(1, stimIndex), sourceRect, targetDestRect2, rotationAngle, filterMode, globalAlpha);
             Screen('DrawTexture', PsychImagingEngine.slaveWindowPtr, PsychImagingEngine.texturePointersLCD(stimIndex),        sourceRect, targetDestRect3, rotationAngle, filterMode, globalAlpha);
+            % Thumbsize images on top
+            for k = 1:size(PsychImagingEngine.texturePointersSamsung,2)
+                sourceRect = []; rotationAngle = 0; filterMode = []; globalAlpha = 1.0;
+                Screen('DrawTexture', PsychImagingEngine.slaveWindowPtr, PsychImagingEngine.texturePointersSamsung(3, k), ...
+                        sourceRect, PsychImagingEngine.thumbsizeTextureDestRects{k}, rotationAngle, filterMode, globalAlpha);     % foreground
+            end
+            
+%             Screen('DrawText',  PsychImagingEngine.slaveWindowPtr, sprintf('Scene   LR: %2.1f', sceneLumRatio),                      1920/2-200,  PsychImagingEngine.screenRect(4)-50, [255 230 0], [0 0 0]);
+%             Screen('DrawText',  PsychImagingEngine.slaveWindowPtr, sprintf('Samsung (10 bit) LR: %2.1f', realizableLumRatioSamsung),        90,  PsychImagingEngine.screenRect(4)-170, [255 230 0], [0 0 0]);
+%             Screen('DrawText',  PsychImagingEngine.slaveWindowPtr, sprintf('Samsung (8 bit)  LR: %2.1f', realizableLumRatioSamsung),        720,  PsychImagingEngine.screenRect(4)-170, [255 230 0], [0 0 0]);
+%             Screen('DrawText',  PsychImagingEngine.slaveWindowPtr, sprintf('LCD LR: %2.1f', realizableLumRatioLCD),                    1920-500,  PsychImagingEngine.screenRect(4)-170, [255 230 0], [0 0 0]);
+%         
+        
+        
         
             Screen('SelectStereoDrawBuffer', PsychImagingEngine.slaveWindowPtr, 1);
             Screen('DrawTexture', PsychImagingEngine.slaveWindowPtr, PsychImagingEngine.texturePointersSamsung(4, stimIndex), sourceRect, targetDestRect1, rotationAngle, filterMode, globalAlpha);  
             Screen('DrawTexture', PsychImagingEngine.slaveWindowPtr, PsychImagingEngine.texturePointersSamsung(1, stimIndex), sourceRect, targetDestRect2, rotationAngle, filterMode, globalAlpha);
             Screen('DrawTexture', PsychImagingEngine.slaveWindowPtr, PsychImagingEngine.texturePointersLCD(stimIndex),        sourceRect, targetDestRect3, rotationAngle, filterMode, globalAlpha);
+            % Thumbsize images on top
+            for k = 1:size(PsychImagingEngine.texturePointersSamsung,2)
+                sourceRect = []; rotationAngle = 0; filterMode = []; globalAlpha = 1.0;
+                Screen('DrawTexture', PsychImagingEngine.slaveWindowPtr, PsychImagingEngine.texturePointersSamsung(4, k), ...
+                        sourceRect, PsychImagingEngine.thumbsizeTextureDestRects{k}, rotationAngle, filterMode, globalAlpha);     % foreground
+            end
+            
+%             Screen('DrawText',  PsychImagingEngine.slaveWindowPtr, sprintf('Scene   LR: %2.1f', sceneLumRatio),                      1920/2-200,  PsychImagingEngine.screenRect(4)-50, [255 230 0], [0 0 0]);
+%             Screen('DrawText',  PsychImagingEngine.slaveWindowPtr, sprintf('Samsung (10 bit) LR: %2.1f', realizableLumRatioSamsung),        90,  PsychImagingEngine.screenRect(4)-170, [255 230 0], [0 0 0]);
+%             Screen('DrawText',  PsychImagingEngine.slaveWindowPtr, sprintf('Samsung (8 bit)  LR: %2.1f', realizableLumRatioSamsung),        720,  PsychImagingEngine.screenRect(4)-170, [255 230 0], [0 0 0]);
+%             Screen('DrawText',  PsychImagingEngine.slaveWindowPtr, sprintf('LCD LR: %2.1f', realizableLumRatioLCD),                    1920-500,  PsychImagingEngine.screenRect(4)-170, [255 230 0], [0 0 0]);
+%         
         
         end
         
         
-        Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('Scene   LR: %2.1f', sceneLumRatio),                      1920/2-200,  PsychImagingEngine.screenRect(4)-50, [255 230 0], [0 0 0]);
-        Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('Samsung (10 bit) LR: %2.1f', realizableLumRatioSamsung),        90,  PsychImagingEngine.screenRect(4)-170, [255 230 0], [0 0 0]);
-        Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('Samsung (8 bit)  LR: %2.1f', realizableLumRatioSamsung),        720,  PsychImagingEngine.screenRect(4)-170, [255 230 0], [0 0 0]);
-        Screen('DrawText',  PsychImagingEngine.masterWindowPtr, sprintf('LCD LR: %2.1f', realizableLumRatioLCD),                    1920-500,  PsychImagingEngine.screenRect(4)-170, [255 230 0], [0 0 0]);
         
         
-        % Finally show thumbsize images on top
-        for k = 1:size(PsychImagingEngine.texturePointersSamsung,2)
-            sourceRect = []; rotationAngle = 0; filterMode = []; globalAlpha = 1.0;
-            Screen('DrawTexture', PsychImagingEngine.masterWindowPtr, PsychImagingEngine.texturePointersSamsung(1, k), ...
-                    sourceRect, PsychImagingEngine.thumbsizeTextureDestRects{k}, rotationAngle, filterMode, globalAlpha);     % foreground
+        % Flip all 4 buffers
+        if (~isempty(PsychImagingEngine.slaveWindowPtr))
+            Screen('Flip', PsychImagingEngine.slaveWindowPtr, [], [], 1);
         end
         
-        
-        % Flip master display
-        Screen('Flip', PsychImagingEngine.masterWindowPtr); 
+        Screen('Flip', PsychImagingEngine.masterWindowPtr, [], [], 1);   
         
         
     catch err

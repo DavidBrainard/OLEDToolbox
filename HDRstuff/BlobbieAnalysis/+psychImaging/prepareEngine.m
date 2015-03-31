@@ -1,4 +1,4 @@
-function prepareEngine()
+function prepareEngine(debugMode)
 
     Screen('Preference', 'SkipSyncTests', 2);
     sca;
@@ -9,7 +9,7 @@ function prepareEngine()
     rightHalfScreenID = max(Screen('Screens'));
     leftHalfScreenID  = rightHalfScreenID-1;
     
-    debugMode =  true;
+    
     if (~debugMode)
         stereoMode = 2; % 10; 
     else
@@ -50,7 +50,7 @@ function prepareEngine()
         PsychImagingEngine.slaveWindowPtr  = [];
         
         if ~debugMode
-            PsychImagingEngine.slaveWindowPtr = slaverWindowPtr;
+            PsychImagingEngine.slaveWindowPtr = slaveWindowPtr;
         end
         
         
