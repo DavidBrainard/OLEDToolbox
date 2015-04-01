@@ -6,7 +6,7 @@ function RenderToneMappedStimuli(clipLuminanceLevels)
     if (numel(clipLuminanceLevels) == 1)
         load(sprintf('ToneMappedStimuli%d.mat', clipLuminanceLevels(1)));
     else
-        load(sprintf('ToneMappedStimuli%_d_%d.mat', clipLuminanceLevels(1),clipLuminanceLevels(2) ));
+        load(sprintf('ToneMappedStimuli_%d_%d.mat', clipLuminanceLevels(1),clipLuminanceLevels(2) ));
     end
     %load('ToneMappedStimuli2000.mat');
     %load('ToneMappedStimuli4000.mat');
