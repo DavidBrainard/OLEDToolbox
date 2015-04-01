@@ -8,7 +8,7 @@ function ToneMapStimuli
     
     lightingCondIndex = 2;
     
-   % clear global
+    clear global
     
     global ensembleSensorXYZcalFormat
     global nCols
@@ -23,7 +23,7 @@ function ToneMapStimuli
     
 
     % Tonemapping parameters: clipping to some scene luminance level, then linear mapping to OLED lum range
-    clipSceneLumincanceLevels =  [20 1000]; % round(inputEnsembleLuminanceRange(2)); %4000;  % this is in Cd/m2
+    clipSceneLumincanceLevels =  [20 1000]; % round(inputEnsembleLuminanceRange(2))]; % round(inputEnsembleLuminanceRange(2)); %4000;  % this is in Cd/m2
     normalizationMode = 0;
     outputLuminanceRange = [minRealizableLuminanceOLED, sum(maxRealizableLuminanceRGBgunsOLED)*0.85]
     
@@ -140,10 +140,10 @@ function ToneMapStimuli
 
                     
                     subplot(3,5,12);
-                    PlotMappedLuminance(sceneLuminanceMap(:), toneMappedOLEDluminanceMap(:), inputEnsembleLuminanceRange, outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD));
+                    PlotMappedLuminance(sceneLuminanceMap(:), toneMappedOLEDluminanceMap(:), inputEnsembleLuminanceRange, outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'linear');
 
                     subplot(3,5,13);
-                    PlotMappedLuminance(sceneLuminanceMap(:), toneMappedLCDluminanceMap(:),  inputEnsembleLuminanceRange, outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD));
+                    PlotMappedLuminance(sceneLuminanceMap(:), toneMappedLCDluminanceMap(:),  inputEnsembleLuminanceRange, outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'linear');
                 
                     drawnow;
                 end
@@ -168,13 +168,22 @@ function ToneMapStimuli
     h = figure(2);
     set(h, 'Position', [20 20 930 520]);
     clf;
-    subplot(1,2,1);
-    PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedOLEDluminanceMap(:), inputEnsembleLuminanceRange, outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD));
+    subplot(2,2,1);
+    PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedOLEDluminanceMap(:), inputEnsembleLuminanceRange, outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'log');
     title(sprintf('OLED vs scene luminance (clip lum: %2.0f-%2.0f cd/m2)', clipSceneLumincanceLevels(1), clipSceneLumincanceLevels(2)), 'FontName', 'System', 'FontSize', 13);
     
-    subplot(1,2,2);
-    PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedLCDluminanceMap(:), inputEnsembleLuminanceRange, outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD));
+    subplot(2,2,2);
+    PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedLCDluminanceMap(:), inputEnsembleLuminanceRange, outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'log');
     title(sprintf('LCD vs scene luminance (clip lum: %2.0f-%2.0f cd/m2)', clipSceneLumincanceLevels(1), clipSceneLumincanceLevels(2)), 'FontName', 'System', 'FontSize', 13);
+    
+    subplot(2,2,3);
+    PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedOLEDluminanceMap(:), inputEnsembleLuminanceRange, outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'linear');
+    title(sprintf('OLED vs scene luminance (clip lum: %2.0f-%2.0f cd/m2)', clipSceneLumincanceLevels(1), clipSceneLumincanceLevels(2)), 'FontName', 'System', 'FontSize', 13);
+    
+    subplot(2,2,4);
+    PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedLCDluminanceMap(:), inputEnsembleLuminanceRange, outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'linear');
+    title(sprintf('LCD vs scene luminance (clip lum: %2.0f-%2.0f cd/m2)', clipSceneLumincanceLevels(1), clipSceneLumincanceLevels(2)), 'FontName', 'System', 'FontSize', 13);
+    
     
     
     save(sprintf('ToneMappedStimuli_%d_%d.mat', clipSceneLumincanceLevels(1), clipSceneLumincanceLevels(2)), 'clipSceneLumincanceLevels', 'normalizationMode', 'ensembleToneMappeRGBsettingsOLEDimage', 'ensembleToneMappeRGBsettingsLCDimage', 'ensembleSceneLuminanceMap', 'ensembleToneMappedOLEDluminanceMap', 'ensembleToneMappedLCDluminanceMap');
@@ -284,7 +293,7 @@ function [multiSpectralImage, multiSpectralImageS]  = RetrieveMultiSpectralImage
     
 end
     
-function PlotMappedLuminance(sceneLuminance, toneMappedLuminance, inputEnsembleLuminanceRange, outputLuminanceRange, maxRealizableLuminanceRGBgunsOLED, maxRealizableLuminanceRGBgunsLCD)
+function PlotMappedLuminance(sceneLuminance, toneMappedLuminance, inputEnsembleLuminanceRange, outputLuminanceRange, maxRealizableLuminanceRGBgunsOLED, maxRealizableLuminanceRGBgunsLCD, axesScaling)
     
     toneMapMinLum = outputLuminanceRange(1);
     toneMapMaxLum = outputLuminanceRange(2);
@@ -305,8 +314,14 @@ function PlotMappedLuminance(sceneLuminance, toneMappedLuminance, inputEnsembleL
     %set(gca, 'Xscale', 'log', 'XLim', [min([minSceneLuminance toneMapMinLum]) max([maxSceneLuminance toneMapMaxLum])], 'XTick', 10.^(-3:1:n), 'XTickLabel', {10.^(-3:1:n)});
     %set(gca, 'Yscale', 'log', 'YLim', [[min([minSceneLuminance toneMapMinLum]) max([maxSceneLuminance toneMapMaxLum])], 'YTick', 10.^(-3:1:n), 'YTickLabel', {10.^(-3:1:n)});
     
-    set(gca, 'Xscale', 'log', 'XTick', 10.^(-3:1:n), 'XTickLabel', {10.^(-3:1:n)});
-    set(gca, 'Yscale', 'log', 'YTick', 10.^(-3:1:n), 'YTickLabel', {10.^(-3:1:n)});
+    if (strcmp(axesScaling, 'log'))
+        set(gca, 'Xscale', 'log', 'XTick', 10.^(-3:1:n), 'XTickLabel', {10.^(-3:1:n)});
+        set(gca, 'Yscale', 'log', 'YTick', 10.^(-3:1:n), 'YTickLabel', {10.^(-3:1:n)});
+    else
+        set(gca, 'Xscale', 'linear', 'XTick', [0:500:8000], 'XTickLabel', [0:500:8000]);
+        set(gca, 'Yscale', 'linear', 'YTick', [0:500:8000], 'YTickLabel', [0:500:8000]);
+    end
+    
     set(gca, 'XLim', [min([minSceneLuminance toneMapMinLum]) max([maxSceneLuminance toneMapMaxLum])]);
     set(gca, 'YLim', [min([minSceneLuminance toneMapMinLum]) max([maxSceneLuminance toneMapMaxLum])]);
     
