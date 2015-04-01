@@ -9,7 +9,7 @@ function RenderToneMappedStimuli(clipLuminanceLevel)
     
     % The above loads 'clipSceneLumincanceLevel', 'normalizationMode', 'ensembleToneMappeRGBsettingsOLEDimage', 'ensembleToneMappeRGBsettingsLCDimage', 'ensembleSceneLuminanceMap', 'ensembleToneMappedOLEDluminanceMap', 'ensembleToneMappedLCDluminanceMap');
 
-    debugMode = false;
+    debugMode = true;
     global PsychImagingEngine
     psychImaging.prepareEngine(debugMode);
     

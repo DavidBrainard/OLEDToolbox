@@ -8,7 +8,7 @@ function generateStimTextures(frameBufferImageSamsung, frameBufferImageLCD, stim
 
     if isempty(PsychImagingEngine.ditherOffsets)
         ditherOffsetValues = [ -0.3750   -0.1250  0.1250  0.3750];
-        noiseMagnitude = 0.06;
+        noiseMagnitude = 0; %0.06;
         for subframeIndex = 1:4
             PsychImagingEngine.ditherOffsets(subframeIndex,:,:,:) = (ditherOffsetValues(subframeIndex) + (rand(size(frameBufferImageSamsung))-0.5)/0.5*noiseMagnitude)/255;
         end
@@ -24,8 +24,8 @@ function generateStimTextures(frameBufferImageSamsung, frameBufferImageLCD, stim
         
         for frameIndex = 1:4
             stimRGBstimMatrix = frameBufferImageSamsung + squeeze(PsychImagingEngine.ditherOffsets(frameIndex,:,:,:));
-            stim1RGBstimMatrix(find(stimRGBstimMatrix<0)) = 0;
-            stim1RGBstimMatrix(find(stimRGBstimMatrix>1)) = 1;
+            stimRGBstimMatrix(find(stimRGBstimMatrix<0)) = 0;
+            stimRGBstimMatrix(find(stimRGBstimMatrix>1)) = 1;
             texturePtr = Screen('MakeTexture', PsychImagingEngine.masterWindowPtr, stimRGBstimMatrix, optimizeForDrawAngle, specialFlags, floatprecision);
             %update the list of Samsung texture pointers
             PsychImagingEngine.texturePointersSamsung(frameIndex,stimIndex) = texturePtr;
