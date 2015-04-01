@@ -165,7 +165,7 @@ function ToneMapStimuli
     ensembleToneMappedOLEDluminanceMap      = single(ensembleToneMappedOLEDluminanceMap);
     ensembleToneMappedLCDluminanceMap       = single(ensembleToneMappedLCDluminanceMap);
         
-    dataFilename = sprintf('ToneMappedStimuli_%d_%d.mat', clipSceneLumincanceLevels(1), clipSceneLumincanceLevels(2));
+    dataFilename = sprintf('ToneMappedData/ToneMappedStimuli_%d_%d.mat', clipSceneLumincanceLevels(1), clipSceneLumincanceLevels(2));
     save(dataFilename, 'clipSceneLumincanceLevels', 'normalizationMode', 'ensembleToneMappeRGBsettingsOLEDimage', 'ensembleToneMappeRGBsettingsLCDimage', 'ensembleSceneLuminanceMap', 'ensembleToneMappedOLEDluminanceMap', 'ensembleToneMappedLCDluminanceMap');
     fprintf('\nData saved in %s.\n', dataFilename);
     

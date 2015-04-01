@@ -1,10 +1,4 @@
-function loadBlobbieConditions()
-    
-    global shapeConds
-    global alphaConds
-    global specularSPDconds
-    global lightingConds
-    global luminanceMaps
+function [shapeConds, alphaConds, specularSPDconds, lightingConds] = loadBlobbieConditions()
     
     %shapeConds       = {'VeryLow', 'Low', 'Medium', 'High', 'VeryHigh'};
     shapeConds       = {'VeryLow',  'Medium', 'High'};
