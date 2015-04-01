@@ -23,7 +23,7 @@ function ToneMapStimuli
     
 
     % Tonemapping parameters: clipping to some scene luminance level, then linear mapping to OLED lum range
-    clipSceneLumincanceLevels =  [20 round(inputEnsembleLuminanceRange(2))]; % ]; % round(inputEnsembleLuminanceRange(2)); %round(sum(maxRealizableLuminanceRGBgunsOLED))%4000;  % this is in Cd/m2
+    clipSceneLumincanceLevels =  [20 round(sum(maxRealizableLuminanceRGBgunsOLED))]; % ]; % round(inputEnsembleLuminanceRange(2)); %round(sum(maxRealizableLuminanceRGBgunsOLED))%4000;  % this is in Cd/m2
     normalizationMode = 0;
     outputLuminanceRange = [minRealizableLuminanceOLED, sum(maxRealizableLuminanceRGBgunsOLED)]
     
