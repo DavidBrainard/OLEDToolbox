@@ -1,14 +1,14 @@
 function ToneMapStimuli
 
-    calStructOLED = utils.loadDisplayCalXYZ('SamsungOLED_MirrorScreen');
-    calStructLCD  = utils.loadDisplayCalXYZ('StereoLCDLeft');
+    calStructOLED = utils.loadDisplayCalXYZ('SamsungOLED_MirrorScreen', 3);
+    calStructLCD  = utils.loadDisplayCalXYZ('StereoLCDLeft', []);
 
-    [minRealizableLuminanceOLED, maxRealizableLuminanceRGBgunsOLED] = computeDisplayLimits(calStructOLED);
+    [minRealizableLuminanceOLED, maxRealizableLuminanceRGBgunsOLED] = computeDisplayLimits(calStructOLED)
     [minRealizableLuminanceLCD,  maxRealizableLuminanceRGBgunsLCD]  = computeDisplayLimits(calStructLCD);
     
     lightingCondIndex = 2;
     
-    clear global
+   % clear global
     
     global ensembleSensorXYZcalFormat
     global nCols
@@ -23,7 +23,7 @@ function ToneMapStimuli
     
 
     % Tonemapping parameters: clipping to some scene luminance level, then linear mapping to OLED lum range
-    clipSceneLumincanceLevel = 4000;  % this is in Cd/m2
+    clipSceneLumincanceLevel = 1000; % round(inputEnsembleLuminanceRange(2)); %4000;  % this is in Cd/m2
     normalizationMode = 0;
     outputLuminanceRange = [minRealizableLuminanceOLED, sum(maxRealizableLuminanceRGBgunsOLED)*0.85]
     
@@ -59,10 +59,10 @@ function ToneMapStimuli
                 toneMappedOLEDluminanceMap = wattsToLumens * squeeze(XYZtmp(:,:,2));
                     
                 % Transform the OLED RGB primaries for rendering on OLED
-                primariesOrigin = calStructOLED; primariesDestination = calStructOLED;
-                toneMappedRGBprimaryOLEDCalFormat  = RGBprimariesImageForDisplay(toneMappedRGBprimaryOLEDCalFormat, primariesOrigin, primariesDestination);
+                originCalStructOBJ = calStructOLED; destinationCalStructOBJ = calStructOLED;
+                toneMappedRGBprimaryOLEDCalFormat = RGBprimariesFromOriginToDestination(toneMappedRGBprimaryOLEDCalFormat, originCalStructOBJ, destinationCalStructOBJ);
                 % Settings for rendering on OLED display
-                toneMappedRGBsettingsOLEDCalFormat = PrimaryToSettings(primariesDestination, toneMappedRGBprimaryOLEDCalFormat); 
+                toneMappedRGBsettingsOLEDCalFormat = PrimaryToSettings(destinationCalStructOBJ, toneMappedRGBprimaryOLEDCalFormat); 
                 ensembleToneMappeRGBsettingsOLEDimage(shapeIndex, alphaIndex, specularSPDindex,:,:,:) = CalFormatToImage(toneMappedRGBsettingsOLEDCalFormat,nCols, mRows);
                 
                 % To RGBprimaries for the LCD display
@@ -71,10 +71,10 @@ function ToneMapStimuli
                 toneMappedLCDluminanceMap = wattsToLumens * squeeze(XYZtmp(:,:,2));
                 
                 % Transform the LCD RGB primaries for rendering on OLED
-                primariesOrigin = calStructLCD; primariesDestination = calStructOLED;
-                toneMappedRGBprimaryLCDCalFormat  = RGBprimariesImageForDisplay(toneMappedRGBprimaryLCDCalFormat, primariesOrigin, primariesDestination);
+                originCalStructOBJ = calStructLCD; destinationCalStructOBJ = calStructOLED;
+                toneMappedRGBprimaryLCDCalFormat  = RGBprimariesFromOriginToDestination(toneMappedRGBprimaryLCDCalFormat, originCalStructOBJ, destinationCalStructOBJ);
                 % Settings for rendering on OLED display
-                toneMappedRGBsettingsLCDCalFormat   = PrimaryToSettings(primariesDestination, toneMappedRGBprimaryLCDCalFormat); 
+                toneMappedRGBsettingsLCDCalFormat   = PrimaryToSettings(destinationCalStructOBJ, toneMappedRGBprimaryLCDCalFormat); 
                 ensembleToneMappeRGBsettingsLCDimage(shapeIndex, alphaIndex, specularSPDindex,:,:,:) = CalFormatToImage(toneMappedRGBsettingsLCDCalFormat,nCols, mRows);
                 
                 
@@ -82,6 +82,8 @@ function ToneMapStimuli
                 ensembleToneMappedOLEDluminanceMap(shapeIndex, alphaIndex, specularSPDindex,:) = toneMappedOLEDluminanceMap(:);
                 ensembleToneMappedLCDluminanceMap(shapeIndex, alphaIndex, specularSPDindex,:)  = toneMappedLCDluminanceMap(:);
                 
+                ensembleToneMappedRGBprimaryOLEDCalFormat(shapeIndex, alphaIndex, specularSPDindex,:) = toneMappedRGBprimaryOLEDCalFormat(:);
+                ensembleToneMappedRGBprimaryLCDCalFormat(shapeIndex, alphaIndex, specularSPDindex,:) = toneMappedRGBprimaryLCDCalFormat(:);
                 
                 if (visualizationIsOn)
                     h = figure(1); clf; set(h, 'Position', [10 10 1812 1086]);
@@ -150,6 +152,12 @@ function ToneMapStimuli
         end
     end
     
+    disp('max tonemapped OLED primary')
+    max(ensembleToneMappedRGBprimaryOLEDCalFormat(:))
+    
+    disp('max tonemapped LCD primary')
+    max(ensembleToneMappedRGBprimaryLCDCalFormat(:))
+    
     % save data
     ensembleToneMappeRGBsettingsOLEDimage   = single(ensembleToneMappeRGBsettingsOLEDimage);
     ensembleToneMappeRGBsettingsLCDimage    = single(ensembleToneMappeRGBsettingsLCDimage);
@@ -157,17 +165,29 @@ function ToneMapStimuli
     ensembleToneMappedOLEDluminanceMap      = single(ensembleToneMappedOLEDluminanceMap);
     ensembleToneMappedLCDluminanceMap       = single(ensembleToneMappedLCDluminanceMap);
     
+    figure(2);
+    clf;
+    subplot(1,2,1);
+    PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedOLEDluminanceMap(:), inputEnsembleLuminanceRange, outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD));
+    title(sprintf('OLED vs scene luminance (clip lum: %2.0f cd/m2)', clipSceneLumincanceLevel), 'FontName', 'System', 'FontSize', 13);
+    
+    subplot(1,2,2);
+    PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedLCDluminanceMap(:), inputEnsembleLuminanceRange, outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD));
+    title(sprintf('LCD vs scene luminance (clip lum: %2.0f cd/m2)', clipSceneLumincanceLevel), 'FontName', 'System', 'FontSize', 13);
+    
+    
     save(sprintf('ToneMappedStimuli%d.mat', clipSceneLumincanceLevel), 'clipSceneLumincanceLevel', 'normalizationMode', 'ensembleToneMappeRGBsettingsOLEDimage', 'ensembleToneMappeRGBsettingsLCDimage', 'ensembleSceneLuminanceMap', 'ensembleToneMappedOLEDluminanceMap', 'ensembleToneMappedLCDluminanceMap');
 end
 
 
-function destinationRGBprimaries = RGBprimariesImageForDisplay(RGBprimaries, calStructOrigin, calStructDestination)
+function destinationRGBprimaries = RGBprimariesFromOriginToDestination(RGBprimaries, calStructOrigin, calStructDestination)
     sensorXYZ = PrimaryToSensor(calStructOrigin, RGBprimaries);
-    destinationRGBprimaries = SensorToPrimary(calStructDestination, sensorXYZ);
+    destinationRGBprimaries = MapToGamut(SensorToPrimary(calStructDestination, sensorXYZ));
 end
 
 
 function gamut = MapToGamut(primaries)
+    
     gamut = primaries;
     gamut(primaries < 0) = 0;
     gamut(primaries > 1) = 1;
@@ -275,7 +295,8 @@ function PlotMappedLuminance(sceneLuminance, toneMappedLuminance, inputEnsembleL
     plot([min([minSceneLuminance toneMapMinLum]) max([maxSceneLuminance toneMapMaxLum])], maxRealizableLuminanceRGBgunsLCD*[1 1], 'b-');
     
     
-    xlabel('scene luminance'); ylabel('tone mapped luminance');
+    xlabel('scene luminance', 'FontName', 'System', 'FontSize', 13); 
+    ylabel('tone mapped luminance', 'FontName', 'System', 'FontSize', 13);
     n = ceil(log(maxSceneLuminance)/log(10));
     set(gca, 'XColor', [0.2 0.1 0.8], 'YColor', [0.2 0.1 0.8]);
     %set(gca, 'Xscale', 'log', 'XLim', [min([minSceneLuminance toneMapMinLum]) max([maxSceneLuminance toneMapMaxLum])], 'XTick', 10.^(-3:1:n), 'XTickLabel', {10.^(-3:1:n)});

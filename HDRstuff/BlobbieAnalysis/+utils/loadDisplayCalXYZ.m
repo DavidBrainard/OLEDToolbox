@@ -1,6 +1,10 @@
-function calStructOBJ = loadDisplayCalXYZ(displayCalFileName)
-    % Load calibration data for Samsung OLED panel
-    calStruct = LoadCalFile(displayCalFileName);
+function calStructOBJ = loadDisplayCalXYZ(displayCalFileName, calNo)
+    % Load calibration data
+    if isempty(calNo)
+        calStruct = LoadCalFile(displayCalFileName);
+    else
+        calStruct = LoadCalFile(displayCalFileName, calNo);    
+    end
     
     % Instantiate a @CalStruct object that will handle controlled access to the calibration data.
     [calStructOBJ, ~] = ObjectToHandleCalOrCalStruct(calStruct); 
