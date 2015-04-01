@@ -167,7 +167,7 @@ function ToneMapStimuli
         
     dataFilename = sprintf('ToneMappedData/ToneMappedStimuli_%d_%d.mat', clipSceneLumincanceLevels(1), clipSceneLumincanceLevels(2));
     save(dataFilename, 'clipSceneLumincanceLevels', 'normalizationMode', 'ensembleToneMappeRGBsettingsOLEDimage', 'ensembleToneMappeRGBsettingsLCDimage', 'ensembleSceneLuminanceMap', 'ensembleToneMappedOLEDluminanceMap', 'ensembleToneMappedLCDluminanceMap');
-    fprintf('\nData saved in %s.\n', dataFilename);
+    fprintf('\nData saved in ''%s''\n', dataFilename);
     
     h = figure(2);
     set(h, 'Position', [20 20 930 1000]);

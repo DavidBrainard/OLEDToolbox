@@ -3,9 +3,9 @@ function RenderToneMappedStimuli(clipLuminanceLevels)
     clear global
 
     if (numel(clipLuminanceLevels) == 1)
-        load(sprintf('ToneMappedStimuli%d.mat', clipLuminanceLevels(1)));
+        load(sprintf('ToneMappedData/ToneMappedStimuli%d.mat', clipLuminanceLevels(1)));
     else
-        load(sprintf('ToneMappedStimuli_%d_%d.mat', clipLuminanceLevels(1),clipLuminanceLevels(2) ));
+        load(sprintf('ToneMappedData/ToneMappedStimuli_%d_%d.mat', clipLuminanceLevels(1),clipLuminanceLevels(2) ));
     end
     
     % The above loads 'clipSceneLumincanceLevels', 'normalizationMode', 'ensembleToneMappeRGBsettingsOLEDimage', 'ensembleToneMappeRGBsettingsLCDimage', 'ensembleSceneLuminanceMap', 'ensembleToneMappedOLEDluminanceMap', 'ensembleToneMappedLCDluminanceMap');
