@@ -2,14 +2,11 @@ function RenderToneMappedStimuli(clipLuminanceLevels)
     
     clear global
 
-    %load('ToneMappedStimuli500.mat');
     if (numel(clipLuminanceLevels) == 1)
         load(sprintf('ToneMappedStimuli%d.mat', clipLuminanceLevels(1)));
     else
         load(sprintf('ToneMappedStimuli_%d_%d.mat', clipLuminanceLevels(1),clipLuminanceLevels(2) ));
     end
-    %load('ToneMappedStimuli2000.mat');
-    %load('ToneMappedStimuli4000.mat');
     
     % The above loads 'clipSceneLumincanceLevels', 'normalizationMode', 'ensembleToneMappeRGBsettingsOLEDimage', 'ensembleToneMappeRGBsettingsLCDimage', 'ensembleSceneLuminanceMap', 'ensembleToneMappedOLEDluminanceMap', 'ensembleToneMappedLCDluminanceMap');
 
@@ -71,28 +68,42 @@ function RenderToneMappedStimuli(clipLuminanceLevels)
     
     stimIndex = 1;
     
-    
-    psychImaging.showStimuli(stimIndex, fullsizeWidth, fullsizeHeight,  ...
-         max(squeeze(OLEDLuminances(stimIndex,:)))/min(squeeze(OLEDLuminances(stimIndex,:))), ...
-         max(squeeze(LCDLuminances(stimIndex,:)))/min(squeeze(LCDLuminances(stimIndex,:))), ...
-         max(squeeze(sceneLuminances(stimIndex,:)))/min(squeeze(sceneLuminances(stimIndex,:)))...
-         );
-     
-    % Start interactive stimulus visualization
-    keepGoing = true;
-    while (keepGoing)
-        [mouseClick, modifier,  stimIndex, keepGoing] = getUserResponse(shapeConds, alphaConds, specularSPDconds);
-        if (mouseClick)
-            psychImaging.showStimuli(stimIndex, fullsizeWidth, fullsizeHeight,  ...
-                max(squeeze(OLEDLuminances(stimIndex,:)))/min(squeeze(OLEDLuminances(stimIndex,:))), ...
-                max(squeeze(LCDLuminances(stimIndex,:)))/min(squeeze(LCDLuminances(stimIndex,:))), ...
-                max(squeeze(sceneLuminances(stimIndex,:)))/min(squeeze(sceneLuminances(stimIndex,:)))...
-         );
-        end
-    end  % keepGoing
-    
-    Speak('Clearing textures');
-    sca;
+    try 
+        psychImaging.showStimuli(stimIndex, fullsizeWidth, fullsizeHeight,  ...
+             max(squeeze(OLEDLuminances(stimIndex,:)))/min(squeeze(OLEDLuminances(stimIndex,:))), ...
+             max(squeeze(LCDLuminances(stimIndex,:)))/min(squeeze(LCDLuminances(stimIndex,:))), ...
+             max(squeeze(sceneLuminances(stimIndex,:)))/min(squeeze(sceneLuminances(stimIndex,:)))...
+             );
+
+
+        % Start listening for key presses, while suppressing any
+        % output of keypresses on the command window
+        ListenChar(2);
+        FlushEvents;
+
+        % Start interactive stimulus visualization   
+        keepGoing = true;
+        while (keepGoing)
+            [mouseClick, modifier,  stimIndex, keepGoing] = getUserResponse(shapeConds, alphaConds, specularSPDconds);
+            if (mouseClick)
+                psychImaging.showStimuli(stimIndex, fullsizeWidth, fullsizeHeight,  ...
+                    max(squeeze(OLEDLuminances(stimIndex,:)))/min(squeeze(OLEDLuminances(stimIndex,:))), ...
+                    max(squeeze(LCDLuminances(stimIndex,:)))/min(squeeze(LCDLuminances(stimIndex,:))), ...
+                    max(squeeze(sceneLuminances(stimIndex,:)))/min(squeeze(sceneLuminances(stimIndex,:)))...
+             );
+            end
+        end  % keepGoing
+
+        ListenChar(0);
+        Speak('Clearing textures');
+        sca;
+        
+    catch err
+       ListenChar(0);
+       Speak('Clearing textures');
+       sca; 
+       rethrow(err); 
+    end
     
 end
 
@@ -109,18 +120,32 @@ function [mouseClick, modifier,  stimIndex, keepGoing] = getUserResponse(shapeCo
 
     [keyIsDown, secs, keycode] = KbCheck;
     if (keyIsDown)
+        indices = find(keycode > 0);
         response = KbName(keycode);
         if (response(1) == '1')
             modifier = 0;
+            Speak('1');
         elseif (response(1) == '2')
             modifier = 1;
+            Speak('2');
         elseif (response(1) == '3')
             modifier = 2;
-        elseif (response (1) == '4')
+            Speak('3');
+        elseif (response(1) == '4')
             modifier = 3;
-        elseif (response (1) == '5')
+            Speak('4');
+        elseif (response(1) == '5')
             modifier = 4;
-        elseif (response (1) == 'q')
+            Speak('5');
+        elseif (indices(1) == KbName('RightArrow'))
+            Speak('Right arrow');
+        elseif (indices(1) == KbName('LeftArrow'))
+            Speak('Left arrow');
+        elseif (indices(1) == KbName('UpArrow'))
+            Speak('Up arrow');
+        elseif (indices(1) == KbName('DownArrow'))
+            Speak('Down arrow');
+        elseif (indices(1) == KbName('Escape'))
             keepGoing = false;
         end
     end

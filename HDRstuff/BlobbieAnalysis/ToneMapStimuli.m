@@ -1,21 +1,26 @@
 function ToneMapStimuli
 
+    % Load conditions to tonemap
+     [shapeConds, alphaConds, specularSPDconds, lightingConds] = utils.loadBlobbieConditions();
+    
+    % Load calibration files for Samsung and LCD displays
     calStructOLED = utils.loadDisplayCalXYZ('SamsungOLED_MirrorScreen', 3);
     calStructLCD  = utils.loadDisplayCalXYZ('StereoLCDLeft', []);
-
-    [minRealizableLuminanceOLED, maxRealizableLuminanceRGBgunsOLED] = computeDisplayLimits(calStructOLED)
-    [minRealizableLuminanceLCD,  maxRealizableLuminanceRGBgunsLCD]  = computeDisplayLimits(calStructLCD);
+    [minRealizableLuminanceOLED, maxRealizableLuminanceRGBgunsOLED] = utils.computeDisplayLimits(calStructOLED);
+    [minRealizableLuminanceLCD,  maxRealizableLuminanceRGBgunsLCD]  = utils.computeDisplayLimits(calStructLCD);
     
+    % Which lighting condition:1 = ceiling light; 2=area lights
     lightingCondIndex = 2;
     
-    %clear global
+    % Compute the ensemble's XYZ representation
+    clear global
     
     global ensembleSensorXYZcalFormat
     global nCols
     global mRows
     if isempty(ensembleSensorXYZcalFormat)
         % Compute ensemble sensorXYZcalFormat
-        [ensembleSensorXYZcalFormat, nCols, mRows] = ComputeEnsembleSensorXYZcalFormat(calStructOLED, lightingCondIndex);
+        [ensembleSensorXYZcalFormat, nCols, mRows] = utils.computeEnsembleSensorXYZcalFormat(calStructOLED, shapeConds, alphaConds, specularSPDconds, lightingConds, lightingCondIndex);
     end
     
     wattsToLumens = 683;
@@ -28,62 +33,62 @@ function ToneMapStimuli
     outputLuminanceRange = [minRealizableLuminanceOLED, sum(maxRealizableLuminanceRGBgunsOLED)]
     
     % Preallocate memory for settings images
-    ensembleToneMappeRGBsettingsOLEDimage = zeros(size(ensembleSensorXYZcalFormat,1), size(ensembleSensorXYZcalFormat,2), size(ensembleSensorXYZcalFormat,3), mRows, nCols, 3);
-    ensembleToneMappeRGBsettingsLCDimage  = zeros(size(ensembleSensorXYZcalFormat,1), size(ensembleSensorXYZcalFormat,2), size(ensembleSensorXYZcalFormat,3), mRows, nCols, 3);
-    ensembleSceneLuminanceMap          = zeros(size(ensembleSensorXYZcalFormat,1), size(ensembleSensorXYZcalFormat,2), size(ensembleSensorXYZcalFormat,3), mRows*nCols);
-    ensembleToneMappedOLEDluminanceMap = zeros(size(ensembleSensorXYZcalFormat,1), size(ensembleSensorXYZcalFormat,2), size(ensembleSensorXYZcalFormat,3), mRows*nCols);
-    ensembleToneMappedLCDluminanceMap  = zeros(size(ensembleSensorXYZcalFormat,1), size(ensembleSensorXYZcalFormat,2), size(ensembleSensorXYZcalFormat,3), mRows*nCols);
-                
+    ensembleToneMappeRGBsettingsOLEDimage       = zeros(size(ensembleSensorXYZcalFormat,1), size(ensembleSensorXYZcalFormat,2), size(ensembleSensorXYZcalFormat,3), mRows, nCols, 3);
+    ensembleToneMappeRGBsettingsLCDimage        = zeros(size(ensembleSensorXYZcalFormat,1), size(ensembleSensorXYZcalFormat,2), size(ensembleSensorXYZcalFormat,3), mRows, nCols, 3);
+    ensembleSceneLuminanceMap                   = zeros(size(ensembleSensorXYZcalFormat,1), size(ensembleSensorXYZcalFormat,2), size(ensembleSensorXYZcalFormat,3), mRows, nCols);
+    ensembleToneMappedOLEDluminanceMap          = zeros(size(ensembleSensorXYZcalFormat,1), size(ensembleSensorXYZcalFormat,2), size(ensembleSensorXYZcalFormat,3), mRows, nCols);
+    ensembleToneMappedLCDluminanceMap           = zeros(size(ensembleSensorXYZcalFormat,1), size(ensembleSensorXYZcalFormat,2), size(ensembleSensorXYZcalFormat,3), mRows, nCols);
+
+    
     visualizationIsOn = true;
-    
-    global shapeConds
-    global alphaConds
-    global specularSPDconds
-    
     
     for specularSPDindex = 1:numel(specularSPDconds)
         for shapeIndex = 1:numel(shapeConds)
             for alphaIndex = 1:numel(alphaConds)
                 
-                % Tone map in XYZ sensor space
+                % --------------------------------------- SCENE -----------------------------------
+                % Compute scene luminance map
                 sensorXYZcalFormat = squeeze(ensembleSensorXYZcalFormat(shapeIndex, alphaIndex, specularSPDindex,:,:));
                 sceneLuminanceMap = CalFormatToImage(wattsToLumens*squeeze(sensorXYZcalFormat(2,:)), nCols, mRows); 
                 
-                % Tone map
-                toneMappedXYZcalFormat = toneMapViaLumClippingFollowedByLinearMappingToLumRange(sensorXYZcalFormat, clipSceneLumincanceLevels, normalizationMode, inputEnsembleLuminanceRange, outputLuminanceRange);
+                % Tonemap the scene in XYZ sensor space
+                toneMappedXYZcalFormat = utils.toneMapViaLumClippingFollowedByLinearMappingToLumRange(sensorXYZcalFormat, clipSceneLumincanceLevels, normalizationMode, inputEnsembleLuminanceRange, outputLuminanceRange);
                 
                 
+                % --------------------------------------- OLED -----------------------------------
                 % To RGBprimaries for the OLED display
-                toneMappedRGBprimaryOLEDCalFormat = MapToGamut(SensorToPrimary(calStructOLED, toneMappedXYZcalFormat));
+                toneMappedRGBprimaryOLEDCalFormat = utils.mapToGamut(SensorToPrimary(calStructOLED, toneMappedXYZcalFormat));
                 XYZtmp = CalFormatToImage(PrimaryToSensor(calStructOLED, toneMappedRGBprimaryOLEDCalFormat), nCols, mRows);
                 toneMappedOLEDluminanceMap = wattsToLumens * squeeze(XYZtmp(:,:,2));
                     
                 % Transform the OLED RGB primaries for rendering on OLED
                 originCalStructOBJ = calStructOLED; destinationCalStructOBJ = calStructOLED;
-                toneMappedRGBprimaryOLEDCalFormat = RGBprimariesFromOriginToDestination(toneMappedRGBprimaryOLEDCalFormat, originCalStructOBJ, destinationCalStructOBJ);
+                toneMappedRGBprimaryOLEDCalFormat = utils.xformOriginPrimariesToDestinationPrimaries(toneMappedRGBprimaryOLEDCalFormat, originCalStructOBJ, destinationCalStructOBJ);
                 % Settings for rendering on OLED display
                 toneMappedRGBsettingsOLEDCalFormat = PrimaryToSettings(destinationCalStructOBJ, toneMappedRGBprimaryOLEDCalFormat); 
                 ensembleToneMappeRGBsettingsOLEDimage(shapeIndex, alphaIndex, specularSPDindex,:,:,:) = CalFormatToImage(toneMappedRGBsettingsOLEDCalFormat,nCols, mRows);
                 
+                
+                % --------------------------------------- LCD -----------------------------------
                 % To RGBprimaries for the LCD display
-                toneMappedRGBprimaryLCDCalFormat = MapToGamut(SensorToPrimary(calStructLCD, toneMappedXYZcalFormat));
+                toneMappedRGBprimaryLCDCalFormat = utils.mapToGamut(SensorToPrimary(calStructLCD, toneMappedXYZcalFormat));
                 XYZtmp = CalFormatToImage(PrimaryToSensor(calStructLCD, toneMappedRGBprimaryLCDCalFormat), nCols, mRows);
                 toneMappedLCDluminanceMap = wattsToLumens * squeeze(XYZtmp(:,:,2));
                 
                 % Transform the LCD RGB primaries for rendering on OLED
                 originCalStructOBJ = calStructLCD; destinationCalStructOBJ = calStructOLED;
-                toneMappedRGBprimaryLCDCalFormat  = RGBprimariesFromOriginToDestination(toneMappedRGBprimaryLCDCalFormat, originCalStructOBJ, destinationCalStructOBJ);
+                toneMappedRGBprimaryLCDCalFormat  = utils.xformOriginPrimariesToDestinationPrimaries(toneMappedRGBprimaryLCDCalFormat, originCalStructOBJ, destinationCalStructOBJ);
                 % Settings for rendering on OLED display
                 toneMappedRGBsettingsLCDCalFormat   = PrimaryToSettings(destinationCalStructOBJ, toneMappedRGBprimaryLCDCalFormat); 
                 ensembleToneMappeRGBsettingsLCDimage(shapeIndex, alphaIndex, specularSPDindex,:,:,:) = CalFormatToImage(toneMappedRGBsettingsLCDCalFormat,nCols, mRows);
                 
                 
-                ensembleSceneLuminanceMap(shapeIndex, alphaIndex, specularSPDindex,:) = sceneLuminanceMap(:);
-                ensembleToneMappedOLEDluminanceMap(shapeIndex, alphaIndex, specularSPDindex,:) = toneMappedOLEDluminanceMap(:);
-                ensembleToneMappedLCDluminanceMap(shapeIndex, alphaIndex, specularSPDindex,:)  = toneMappedLCDluminanceMap(:);
                 
-                ensembleToneMappedRGBprimaryOLEDCalFormat(shapeIndex, alphaIndex, specularSPDindex,:) = toneMappedRGBprimaryOLEDCalFormat(:);
-                ensembleToneMappedRGBprimaryLCDCalFormat(shapeIndex, alphaIndex, specularSPDindex,:) = toneMappedRGBprimaryLCDCalFormat(:);
+                % Store luminance maps
+                ensembleSceneLuminanceMap(shapeIndex, alphaIndex, specularSPDindex,:,:)          = sceneLuminanceMap;
+                ensembleToneMappedOLEDluminanceMap(shapeIndex, alphaIndex, specularSPDindex,:,:) = toneMappedOLEDluminanceMap;
+                ensembleToneMappedLCDluminanceMap(shapeIndex, alphaIndex, specularSPDindex,:,:)  = toneMappedLCDluminanceMap;
+
                 
                 if (visualizationIsOn)
                     h = figure(1); clf; set(h, 'Position', [10 10 1812 1086]);
@@ -152,11 +157,6 @@ function ToneMapStimuli
         end
     end
     
-    disp('max tonemapped OLED primary')
-    max(ensembleToneMappedRGBprimaryOLEDCalFormat(:))
-    
-    disp('max tonemapped LCD primary')
-    max(ensembleToneMappedRGBprimaryLCDCalFormat(:))
     
     % save data
     ensembleToneMappeRGBsettingsOLEDimage   = single(ensembleToneMappeRGBsettingsOLEDimage);
@@ -164,6 +164,10 @@ function ToneMapStimuli
     ensembleSceneLuminanceMap               = single(ensembleSceneLuminanceMap);
     ensembleToneMappedOLEDluminanceMap      = single(ensembleToneMappedOLEDluminanceMap);
     ensembleToneMappedLCDluminanceMap       = single(ensembleToneMappedLCDluminanceMap);
+        
+    dataFilename = sprintf('ToneMappedStimuli_%d_%d.mat', clipSceneLumincanceLevels(1), clipSceneLumincanceLevels(2));
+    save(dataFilename, 'clipSceneLumincanceLevels', 'normalizationMode', 'ensembleToneMappeRGBsettingsOLEDimage', 'ensembleToneMappeRGBsettingsLCDimage', 'ensembleSceneLuminanceMap', 'ensembleToneMappedOLEDluminanceMap', 'ensembleToneMappedLCDluminanceMap');
+    fprintf('\nData saved in %s.\n', dataFilename);
     
     h = figure(2);
     set(h, 'Position', [20 20 930 1000]);
@@ -185,113 +189,11 @@ function ToneMapStimuli
     title(sprintf('LCD vs scene luminance (clip lum: %2.0f-%2.0f cd/m2)', clipSceneLumincanceLevels(1), clipSceneLumincanceLevels(2)), 'FontName', 'System', 'FontSize', 13);
     
     
-    
-    save(sprintf('ToneMappedStimuli_%d_%d.mat', clipSceneLumincanceLevels(1), clipSceneLumincanceLevels(2)), 'clipSceneLumincanceLevels', 'normalizationMode', 'ensembleToneMappeRGBsettingsOLEDimage', 'ensembleToneMappeRGBsettingsLCDimage', 'ensembleSceneLuminanceMap', 'ensembleToneMappedOLEDluminanceMap', 'ensembleToneMappedLCDluminanceMap');
 end
 
 
-function destinationRGBprimaries = RGBprimariesFromOriginToDestination(RGBprimaries, calStructOrigin, calStructDestination)
-    sensorXYZ = PrimaryToSensor(calStructOrigin, RGBprimaries);
-    destinationRGBprimaries = MapToGamut(SensorToPrimary(calStructDestination, sensorXYZ));
-end
 
 
-function gamut = MapToGamut(primaries)
-    
-    gamut = primaries;
-    gamut(primaries < 0) = 0;
-    gamut(primaries > 1) = 1;
-end
-
-function toneMappedXYZcalFormat = toneMapViaLumClippingFollowedByLinearMappingToLumRange(sceneXYZcalFormat, clipSceneLumincanceLevels, normalizationMode, inputEnsembleLuminanceRange, outputLuminanceRange)
-
-    wattsToLumens = 683;
-    
-    % To xyY format
-    sensorxyYcalFormat = XYZToxyY(sceneXYZcalFormat);
-    sceneLuminance = wattsToLumens*squeeze(sensorxyYcalFormat(3,:));
-    
-    % clip
-    sceneLuminance(sceneLuminance > clipSceneLumincanceLevels(2)) = clipSceneLumincanceLevels(2);
-    sceneLuminance(sceneLuminance < clipSceneLumincanceLevels(1)) = clipSceneLumincanceLevels(1);
-    
-    
-    % Normalize to [0 1]
-    minLuminance   = max([clipSceneLumincanceLevels(1) inputEnsembleLuminanceRange(1)]);
-    maxLuminance   = min([clipSceneLumincanceLevels(2) inputEnsembleLuminanceRange(2)]);
-    if (normalizationMode == 0)
-        normalizedLuminance = (sceneLuminance-minLuminance)/(maxLuminance-minLuminance);
-    else
-        normalizedLuminance = sceneLuminance/maxLuminance;
-    end
-    
-    % Map to [minLuma maxLuma]
-    toneMappedLuminance = outputLuminanceRange(1) + normalizedLuminance*(outputLuminanceRange(2)-outputLuminanceRange(1));
-    sensorxyYcalFormat(3,:) = toneMappedLuminance/wattsToLumens;
-    
-    toneMappedXYZcalFormat = xyYToXYZ(sensorxyYcalFormat);
-end
-
-
-function [ensembleSensorXYZcalFormat, nCols, mRows] = ComputeEnsembleSensorXYZcalFormat(calStructOBJ, lightingCondIndex)
-    global shapeConds
-    global alphaConds
-    global specularSPDconds
-
-    utils.loadBlobbieConditions();
-    
-    ensembleSensorXYZcalFormat = [];
-    
-    Tsensor = calStructOBJ.get('T_sensor');
-    Ssensor = calStructOBJ.get('S');
-    
-    for specularSPDindex = 1:numel(specularSPDconds)
-        for shapeIndex = 1:numel(shapeConds)
-            for alphaIndex = 1:numel(alphaConds)
-                
-                % Retrieve image
-                [multiSpectralImage, multiSpectralImageS] = RetrieveMultiSpectralImage(shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex);
-    
-                % compute sensorXYZ image
-                sensorXYZimage = MultispectralToSensorImage(multiSpectralImage, multiSpectralImageS, Tsensor, Ssensor);
-                
-                % To cal format
-                [sensorXYZcalFormat, nCols, mRows] = ImageToCalFormat(sensorXYZimage);
-    
-                if isempty(ensembleSensorXYZcalFormat)
-                    ensembleSensorXYZcalFormat = zeros(numel(shapeConds), numel(alphaConds), numel(specularSPDconds), size(sensorXYZcalFormat,1), size(sensorXYZcalFormat,2));
-                end
-                
-                ensembleSensorXYZcalFormat(shapeIndex, alphaIndex, specularSPDindex,:,:) = sensorXYZcalFormat;
-            end
-        end
-    end
-end
-
-
-function [multiSpectralImage, multiSpectralImageS]  = RetrieveMultiSpectralImage(shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex)
-    
-    global shapeConds
-    global alphaConds
-    global specularSPDconds
-    global lightingConds
-
-    utils.loadBlobbieConditions();
-    
-    dataIsRemote = false;
-    if (dataIsRemote)
-        % remote
-        dataPath = '/Volumes/ColorShare1/Users/Shared/Matlab/Analysis/SamsungProject/RawData/MultispectralData_0deg';
-    else
-        % local
-        topFolder = fileparts(which(mfilename));
-        dataPath = fullfile(topFolder,'MultispectralData_0deg');
-    end
-
-    [multiSpectralImage, multiSpectralImageS] = utils.loadMultispectralImage(dataPath, shapeIndex, alphaIndex, specularSPDindex, lightingCondIndex);
-    
-    
-end
     
 function PlotMappedLuminance(sceneLuminance, toneMappedLuminance, inputEnsembleLuminanceRange, outputLuminanceRange, maxRealizableLuminanceRGBgunsOLED, maxRealizableLuminanceRGBgunsLCD, axesScaling)
     
@@ -357,42 +259,4 @@ function PlotLuminanceHistogram(plotTitle, luma,  inputEnsembleLuminanceRange, m
 end
 
 
-function [minRealizableLuminanceForDisplay, lumRGB] = computeDisplayLimits(calStructOBJ)
-
-    wattsToLumens = 683;
-    
-    % Compute min realizable luminance for this display
-    minRealizableXYZ = SettingsToSensor(calStructOBJ, [0 0 0]');
-    minRealizableLuminanceForDisplay = wattsToLumens*minRealizableXYZ(2);
-    ambientxyY = XYZToxyY(minRealizableXYZ);
-    
-    
-    for k = 0.02:0.02:1
-        % max realizable luminance for R gun
-        maxRealizableXYZ = SettingsToSensor(calStructOBJ, [k 0 0]');
-        
-        if (k == 1)
-            lumRGB(1) = wattsToLumens * maxRealizableXYZ(2);
-        end
-        
-        redGunxyY = XYZToxyY(maxRealizableXYZ);
-
-        % max realizable luminance for G gun
-        maxRealizableXYZ = SettingsToSensor(calStructOBJ, [0 k 0]');
-        if (k == 1)
-            lumRGB(2) = wattsToLumens * maxRealizableXYZ(2);
-        end
-        greenGunxyY = XYZToxyY(maxRealizableXYZ);
-
-
-        % max realizable luminance for G gun
-        maxRealizableXYZ = SettingsToSensor(calStructOBJ, [0 0 k]');
-        if (k == 1)
-        	lumRGB(3) = wattsToLumens * maxRealizableXYZ(2);
-        end
-        blueGunxyY = XYZToxyY(maxRealizableXYZ);
-
-    end
-    
-end
 
