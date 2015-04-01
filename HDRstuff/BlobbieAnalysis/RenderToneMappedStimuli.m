@@ -1,13 +1,17 @@
-function RenderToneMappedStimuli(clipLuminanceLevel)
+function RenderToneMappedStimuli(clipLuminanceLevels)
     
     clear global
 
     %load('ToneMappedStimuli500.mat');
-    load(sprintf('ToneMappedStimuli%d.mat', clipLuminanceLevel));
+    if (numel(clipLuminanceLevels) == 1)
+        load(sprintf('ToneMappedStimuli%d.mat', clipLuminanceLevels(1)));
+    else
+        load(sprintf('ToneMappedStimuli%_d_%d.mat', clipLuminanceLevels(1),clipLuminanceLevels(2) ));
+    end
     %load('ToneMappedStimuli2000.mat');
     %load('ToneMappedStimuli4000.mat');
     
-    % The above loads 'clipSceneLumincanceLevel', 'normalizationMode', 'ensembleToneMappeRGBsettingsOLEDimage', 'ensembleToneMappeRGBsettingsLCDimage', 'ensembleSceneLuminanceMap', 'ensembleToneMappedOLEDluminanceMap', 'ensembleToneMappedLCDluminanceMap');
+    % The above loads 'clipSceneLumincanceLevels', 'normalizationMode', 'ensembleToneMappeRGBsettingsOLEDimage', 'ensembleToneMappeRGBsettingsLCDimage', 'ensembleSceneLuminanceMap', 'ensembleToneMappedOLEDluminanceMap', 'ensembleToneMappedLCDluminanceMap');
 
     debugMode = true;
     global PsychImagingEngine
