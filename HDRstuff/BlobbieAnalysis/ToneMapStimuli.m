@@ -1,6 +1,6 @@
 function ToneMapStimuli
 
-    % Load conditions to tonemap
+    % Load desired conditions to tonemap
      [shapeConds, alphaConds, specularSPDconds, lightingConds] = utils.loadBlobbieConditions();
     
     % Load calibration files for Samsung and LCD displays
@@ -54,7 +54,7 @@ function ToneMapStimuli
                 % Tonemap the scene in XYZ sensor space
                 toneMappedXYZcalFormat = utils.toneMapViaLumClippingFollowedByLinearMappingToLumRange(sensorXYZcalFormat, clipSceneLumincanceLevels, normalizationMode, inputEnsembleLuminanceRange, outputLuminanceRange);
                 
-                
+               
                 % --------------------------------------- OLED -----------------------------------
                 % To RGBprimaries for the OLED display
                 toneMappedRGBprimaryOLEDCalFormat = utils.mapToGamut(SensorToPrimary(calStructOLED, toneMappedXYZcalFormat));
@@ -70,8 +70,11 @@ function ToneMapStimuli
                 
                 
                 % --------------------------------------- LCD -----------------------------------
+                % Add LCD ambient because we are generating the LCD image in the OLED not the LCD display
+                toneMappedXYZcalFormatLCD = utils.addDisplayAmbientLuminance(calStructLCD,toneMappedXYZcalFormat);
+                
                 % To RGBprimaries for the LCD display
-                toneMappedRGBprimaryLCDCalFormat = utils.mapToGamut(SensorToPrimary(calStructLCD, toneMappedXYZcalFormat));
+                toneMappedRGBprimaryLCDCalFormat = utils.mapToGamut(SensorToPrimary(calStructLCD, toneMappedXYZcalFormatLCD));
                 XYZtmp = CalFormatToImage(PrimaryToSensor(calStructLCD, toneMappedRGBprimaryLCDCalFormat), nCols, mRows);
                 toneMappedLCDluminanceMap = wattsToLumens * squeeze(XYZtmp(:,:,2));
                 
@@ -81,8 +84,6 @@ function ToneMapStimuli
                 % Settings for rendering on OLED display
                 toneMappedRGBsettingsLCDCalFormat   = PrimaryToSettings(destinationCalStructOBJ, toneMappedRGBprimaryLCDCalFormat); 
                 ensembleToneMappeRGBsettingsLCDimage(shapeIndex, alphaIndex, specularSPDindex,:,:,:) = CalFormatToImage(toneMappedRGBsettingsLCDCalFormat,nCols, mRows);
-                
-                
                 
                 % Store luminance maps
                 ensembleSceneLuminanceMap(shapeIndex, alphaIndex, specularSPDindex,:,:)          = sceneLuminanceMap;
