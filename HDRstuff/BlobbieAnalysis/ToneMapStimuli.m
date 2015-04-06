@@ -28,9 +28,12 @@ function ToneMapStimuli
     
 
     % Tonemapping parameters: clipping to some scene luminance level, then linear mapping to OLED lum range
-    clipSceneLumincanceLevels =  [20 round(sum(maxRealizableLuminanceRGBgunsOLED))]; % ]; % round(inputEnsembleLuminanceRange(2)); %round(sum(maxRealizableLuminanceRGBgunsOLED))%4000;  % this is in Cd/m2
-    normalizationMode = 0;
-    outputLuminanceRange = [minRealizableLuminanceOLED, sum(maxRealizableLuminanceRGBgunsOLED)]
+    % Tonemapping parameters for upperAndLowerClippingFollowedByLinearMapping: clipping to some scene luminance level, then linear mapping to OLED lum range
+    sceneLumClipLinearMappingParams = struct(...
+        'clipSceneLumincanceLevels',  [20 round(sum(maxRealizableLuminanceRGBgunsOLED))], ... % ]; % round(inputEnsembleLuminanceRange(2)); %round(sum(maxRealizableLuminanceRGBgunsOLED))%4000;  % this is in Cd/m2
+        'outputLuminanceRange',  [minRealizableLuminanceOLED, sum(maxRealizableLuminanceRGBgunsOLED)], ...
+        'normalizationMode', 0 ...
+    );
     
     % Preallocate memory for settings images
     ensembleToneMappeRGBsettingsOLEDimage       = zeros(size(ensembleSensorXYZcalFormat,1), size(ensembleSensorXYZcalFormat,2), size(ensembleSensorXYZcalFormat,3), mRows, nCols, 3);
@@ -52,7 +55,7 @@ function ToneMapStimuli
                 sceneLuminanceMap = CalFormatToImage(wattsToLumens*squeeze(sensorXYZcalFormat(2,:)), nCols, mRows); 
                 
                 % Tonemap the scene in XYZ sensor space
-                toneMappedXYZcalFormat = utils.toneMapViaLumClippingFollowedByLinearMappingToLumRange(sensorXYZcalFormat, clipSceneLumincanceLevels, normalizationMode, inputEnsembleLuminanceRange, outputLuminanceRange);
+                toneMappedXYZcalFormat = utils.toneMapViaLumClippingFollowedByLinearMappingToLumRange(sensorXYZcalFormat, inputEnsembleLuminanceRange, sceneLumClipLinearMappingParams);
                 
                
                 % --------------------------------------- OLED -----------------------------------
@@ -71,7 +74,7 @@ function ToneMapStimuli
                 
                 % --------------------------------------- LCD -----------------------------------
                 % Add LCD ambient because we are generating the LCD image in the OLED not the LCD display
-                toneMappedXYZcalFormatLCD = utils.addDisplayAmbientLuminance(calStructLCD,toneMappedXYZcalFormat);
+                toneMappedXYZcalFormatLCD = utils.setMinLuminanceToDisplayAmbientLuminance(calStructLCD,toneMappedXYZcalFormat);
                 
                 % To RGBprimaries for the LCD display
                 toneMappedRGBprimaryLCDCalFormat = utils.mapToGamut(SensorToPrimary(calStructLCD, toneMappedXYZcalFormatLCD));
@@ -104,12 +107,12 @@ function ToneMapStimuli
                     % Plot the luminance map of the OLED-tonemapped image
                     subplot(3,5,2);
                     imshow(toneMappedOLEDluminanceMap, 'DisplayRange', [minRealizableLuminanceOLED sum(maxRealizableLuminanceRGBgunsOLED)]);
-                    title(sprintf('OLED: %2.3f - %2.1f cd/m2 (clip: %2.1f-%2.1f)', min(toneMappedOLEDluminanceMap(:)), max(toneMappedOLEDluminanceMap(:)), clipSceneLumincanceLevels(1), clipSceneLumincanceLevels(2)), 'FontName', 'System', 'FontSize', 13);
+                    title(sprintf('OLED: %2.3f - %2.1f cd/m2 (clip: %2.1f-%2.1f)', min(toneMappedOLEDluminanceMap(:)), max(toneMappedOLEDluminanceMap(:)), sceneLumClipLinearMappingParams.clipSceneLumincanceLevels(1), sceneLumClipLinearMappingParams.clipSceneLumincanceLevels(2)), 'FontName', 'System', 'FontSize', 13);
 
                     % Plot the luminance map of the LCD-tonemapped image
                     subplot(3,5,3);
                     imshow(toneMappedLCDluminanceMap, 'DisplayRange', [minRealizableLuminanceOLED sum(maxRealizableLuminanceRGBgunsOLED)]);
-                    title(sprintf('LCD: %2.3f - %2.1f cd/m2 (clip: %2.1f-%2.1f)', min(toneMappedLCDluminanceMap(:)), max(toneMappedLCDluminanceMap(:)), clipSceneLumincanceLevels(1), clipSceneLumincanceLevels(2)), 'FontName', 'System', 'FontSize', 13);
+                    title(sprintf('LCD: %2.3f - %2.1f cd/m2 (clip: %2.1f-%2.1f)', min(toneMappedLCDluminanceMap(:)), max(toneMappedLCDluminanceMap(:)), sceneLumClipLinearMappingParams.clipSceneLumincanceLevels(1), sceneLumClipLinearMappingParams.clipSceneLumincanceLevels(2)), 'FontName', 'System', 'FontSize', 13);
 
                     % Plot the tonemapped primaryOLEDimage
                     subplot(3,5,4);
@@ -146,10 +149,10 @@ function ToneMapStimuli
 
                     
                     subplot(3,5,12);
-                    PlotMappedLuminance(sceneLuminanceMap(:), toneMappedOLEDluminanceMap(:), inputEnsembleLuminanceRange, outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'linear');
+                    PlotMappedLuminance(sceneLuminanceMap(:), toneMappedOLEDluminanceMap(:), inputEnsembleLuminanceRange, sceneLumClipLinearMappingParams.outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'linear');
 
                     subplot(3,5,13);
-                    PlotMappedLuminance(sceneLuminanceMap(:), toneMappedLCDluminanceMap(:),  inputEnsembleLuminanceRange, outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'linear');
+                    PlotMappedLuminance(sceneLuminanceMap(:), toneMappedLCDluminanceMap(:),  inputEnsembleLuminanceRange, sceneLumClipLinearMappingParams.outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'linear');
                 
                     drawnow;
                 end
@@ -174,19 +177,19 @@ function ToneMapStimuli
     set(h, 'Position', [20 20 930 1000]);
     clf;
     subplot(2,2,1);
-    PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedOLEDluminanceMap(:), inputEnsembleLuminanceRange, outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'log');
+    PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedOLEDluminanceMap(:), inputEnsembleLuminanceRange, sceneLumClipLinearMappingParams.outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'log');
     title(sprintf('OLED vs scene luminance (clip lum: %2.0f-%2.0f cd/m2)', clipSceneLumincanceLevels(1), clipSceneLumincanceLevels(2)), 'FontName', 'System', 'FontSize', 13);
     
     subplot(2,2,2);
-    PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedLCDluminanceMap(:), inputEnsembleLuminanceRange, outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'log');
+    PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedLCDluminanceMap(:), inputEnsembleLuminanceRange, sceneLumClipLinearMappingParams.outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'log');
     title(sprintf('LCD vs scene luminance (clip lum: %2.0f-%2.0f cd/m2)', clipSceneLumincanceLevels(1), clipSceneLumincanceLevels(2)), 'FontName', 'System', 'FontSize', 13);
     
     subplot(2,2,3);
-    PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedOLEDluminanceMap(:), inputEnsembleLuminanceRange, outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'linear');
+    PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedOLEDluminanceMap(:), inputEnsembleLuminanceRange, sceneLumClipLinearMappingParams.outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'linear');
     title(sprintf('OLED vs scene luminance (clip lum: %2.0f-%2.0f cd/m2)', clipSceneLumincanceLevels(1), clipSceneLumincanceLevels(2)), 'FontName', 'System', 'FontSize', 13);
     
     subplot(2,2,4);
-    PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedLCDluminanceMap(:), inputEnsembleLuminanceRange, outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'linear');
+    PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedLCDluminanceMap(:), inputEnsembleLuminanceRange, sceneLumClipLinearMappingParams.outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'linear');
     title(sprintf('LCD vs scene luminance (clip lum: %2.0f-%2.0f cd/m2)', clipSceneLumincanceLevels(1), clipSceneLumincanceLevels(2)), 'FontName', 'System', 'FontSize', 13);
     
     

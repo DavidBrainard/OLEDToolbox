@@ -1,5 +1,6 @@
-function toneMappedXYZcalFormat = toneMapViaLumClippingFollowedByLinearMappingToLumRange(sceneXYZcalFormat, clipSceneLumincanceLevels, normalizationMode, inputEnsembleLuminanceRange, outputLuminanceRange)
-
+% Method to tone map via scene luminance clipping (low,end) followed by
+% linear mapping to display range
+function toneMappedXYZcalFormat = toneMapViaLumClippingFollowedByLinearMappingToLumRange(sceneXYZcalFormat, inputEnsembleLuminanceRange, toneMappingParams)
     wattsToLumens = 683;
     
     % To xyY format
@@ -7,21 +8,21 @@ function toneMappedXYZcalFormat = toneMapViaLumClippingFollowedByLinearMappingTo
     sceneLuminance = wattsToLumens*squeeze(sensorxyYcalFormat(3,:));
     
     % clip
-    sceneLuminance(sceneLuminance > clipSceneLumincanceLevels(2)) = clipSceneLumincanceLevels(2);
-    sceneLuminance(sceneLuminance < clipSceneLumincanceLevels(1)) = clipSceneLumincanceLevels(1);
+    sceneLuminance(sceneLuminance > toneMappingParams.clipSceneLumincanceLevels(2)) = toneMappingParams.clipSceneLumincanceLevels(2);
+    sceneLuminance(sceneLuminance < toneMappingParams.clipSceneLumincanceLevels(1)) = toneMappingParams.clipSceneLumincanceLevels(1);
     
     
     % Normalize to [0 1]
-    minLuminance   = max([clipSceneLumincanceLevels(1) inputEnsembleLuminanceRange(1)]);
-    maxLuminance   = min([clipSceneLumincanceLevels(2) inputEnsembleLuminanceRange(2)]);
-    if (normalizationMode == 0)
+    minLuminance   = max([toneMappingParams.clipSceneLumincanceLevels(1) inputEnsembleLuminanceRange(1)]);
+    maxLuminance   = min([toneMappingParams.clipSceneLumincanceLevels(2) inputEnsembleLuminanceRange(2)]);
+    if (toneMappingParams.normalizationMode == 0)
         normalizedLuminance = (sceneLuminance-minLuminance)/(maxLuminance-minLuminance);
     else
         normalizedLuminance = sceneLuminance/maxLuminance;
     end
     
-    % Map to [minLuma maxLuma]
-    toneMappedLuminance = outputLuminanceRange(1) + normalizedLuminance*(outputLuminanceRange(2)-outputLuminanceRange(1));
+    % Map [minLuma maxLuma] -> [toneMappingParams.outputLuminanceRange(1) toneMappingParams.outputLuminanceRange(2)]
+    toneMappedLuminance = toneMappingParams.outputLuminanceRange(1) + normalizedLuminance*(toneMappingParams.outputLuminanceRange(2)-toneMappingParams.outputLuminanceRange(1));
     sensorxyYcalFormat(3,:) = toneMappedLuminance/wattsToLumens;
     
     toneMappedXYZcalFormat = xyYToXYZ(sensorxyYcalFormat);
