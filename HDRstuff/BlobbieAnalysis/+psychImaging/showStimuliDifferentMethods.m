@@ -80,9 +80,9 @@ function DrawTextures(subFrameIndex, stimIndex, targetDestRect, windowPtr)
             if (k == 1)
                 texturePointer = PsychImagingEngine.texturePointersOLED(subFrameIndex, stimIndex, toneMappingMethodIndex);
             elseif (k == 2)
-                texturePointer = PsychImagingEngine.texturePointersLCDNoXYZscaling(stimIndex, toneMappingMethodIndex);
-            elseif (k == 3)
                 texturePointer = PsychImagingEngine.texturePointersLCDXYZscaling(stimIndex, toneMappingMethodIndex);
+            elseif (k == 3)
+                texturePointer = PsychImagingEngine.texturePointersLCDNoXYZscaling(stimIndex, toneMappingMethodIndex);
             end
 
             Screen('DrawTexture', windowPtr, texturePointer, ...

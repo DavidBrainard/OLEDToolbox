@@ -59,7 +59,7 @@ function ToneMapStimuliDifferentMethods
     );
 
     % Tonemapping parameters for Reinhardt
-    alpha = 0.5;
+    alpha = 0.02;
     k = max(luminances) * alpha / inputEnsembleKey;
     k = k/(k+1);
     finalScaling = 1.0/k;
@@ -85,7 +85,7 @@ function ToneMapStimuliDifferentMethods
     );
 
     % Tonemapping parameters for Reinhardt
-    alpha = 0.02;
+    alpha = 0.5;
     k = max(luminances) * alpha / inputEnsembleKey;
     k = k/(k+1);
     finalScaling = 1.0/k;
@@ -117,7 +117,7 @@ function ToneMapStimuliDifferentMethods
 
     
     
-    visualizationIsOn = true;
+    visualizationIsOn = false;   % true;
     
     for specularSPDindex = 1:numel(specularSPDconds)
         for shapeIndex = 1:numel(shapeConds)
@@ -314,7 +314,7 @@ function ToneMapStimuliDifferentMethods
             'bottomMargin', 0.03, ...
             'topMargin',    0.03);
         
-        
+    if (visualizationIsOn)
     h = figure(2);
     set(h, 'Position', [20 20 1400 560]);
     clf;
@@ -349,6 +349,7 @@ function ToneMapStimuliDifferentMethods
 %     subplot('Position', subplotPosVectors(2,3).v);
 %     PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedLCDluminanceMapXYZscaling(:), inputEnsembleLuminanceRange, toneMappingParams.outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'linear');
 %     title(sprintf('LCD (XYZ scaling) vs scene luminance'));
+    end
     
 end
 
