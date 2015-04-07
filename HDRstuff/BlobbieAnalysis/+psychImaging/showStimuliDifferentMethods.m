@@ -2,18 +2,18 @@ function showStimuliDifferentMethods(stimIndex, toneMappingMethods, fullsizeWidt
 
     global PsychImagingEngine
     
-    scaledStimWidth  = fullsizeWidth*0.42;
-    scaledStimHeight = fullsizeHeight*0.42;
+    scaledStimWidth  = round(fullsizeWidth*0.42);
+    scaledStimHeight = round(fullsizeHeight*0.42);
         
     % Coords of stimulus target rects
     x0 = scaledStimWidth/2 + 20;
-    y0 = scaledStimHeight/2 + 110;
+    y0 = scaledStimHeight/2 + 190;
 
     for toneMappingMethodIndex = 1:toneMappingMethods
         for k = 1:3
             a = CenterRectOnPointd(...
                 [0 0 scaledStimWidth, scaledStimHeight], ...
-                x0 + (toneMappingMethodIndex-1)*(1+scaledStimWidth), y0 + (k-1) * (1 + scaledStimHeight)...
+                x0 + (toneMappingMethodIndex-1)*(2+scaledStimWidth), y0 + (k-1) * (2 + scaledStimHeight)...
                 );
             targetDestRect(k,toneMappingMethodIndex,:) = a;
         end
