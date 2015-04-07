@@ -15,20 +15,24 @@ function generateStimTextureTriplets(frameBufferImageOLED, frameBufferImageLCDNo
     end
     
     try
-        border = 50;
-        stepsNum = 35;
-        step = round(size(frameBufferImageOLED,1)/stepsNum);
-        for k = 1:stepsNum;
-            rows = 1 + (k-1)*step + (0:step-1);
-            val  = 0.1 + k/1024;
-            val2 = 0.2 + k/1024;
-            frameBufferImageOLED(rows, 1:border, :) = val;
-            frameBufferImageLCDNoXYZscaling(rows, 1:border, :) = val;
-            frameBufferImageLCDXYZscaling(rows, 1:border, :) = val;
-            frameBufferImageOLED(rows, end-border:end, :) = val2;
-            frameBufferImageLCDNoXYZscaling(rows, end-border:end, :) = val2;
-            frameBufferImageLCDXYZscaling(rows, end-border:end, :) = val2;
+        make10bitTest = false;
+        if (make10bitTest)
+            border = 50;
+            stepsNum = 35;
+            step = round(size(frameBufferImageOLED,1)/stepsNum);
+            for k = 1:stepsNum;
+                rows = 1 + (k-1)*step + (0:step-1);
+                val  = 0.1 + k/1024;
+                val2 = 0.2 + k/1024;
+                frameBufferImageOLED(rows, 1:border, :) = val;
+                frameBufferImageLCDNoXYZscaling(rows, 1:border, :) = val;
+                frameBufferImageLCDXYZscaling(rows, 1:border, :) = val;
+                frameBufferImageOLED(rows, end-border:end, :) = val2;
+                frameBufferImageLCDNoXYZscaling(rows, end-border:end, :) = val2;
+                frameBufferImageLCDXYZscaling(rows, end-border:end, :) = val2;
+            end
         end
+        
         
         for frameIndex = 1:4
             stimRGBstimMatrix = frameBufferImageOLED + squeeze(PsychImagingEngine.ditherOffsets(frameIndex,:,:,:));
