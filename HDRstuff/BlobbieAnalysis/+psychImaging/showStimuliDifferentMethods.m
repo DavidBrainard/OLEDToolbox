@@ -1,102 +1,49 @@
-function showStimuliDifferentMethods(stimIndex, toneMappingMethods, stimAcrossWidth, fullsizeWidth, fullsizeHeight)
+function showStimuliDifferentMethods(stimIndex, toneMappingMethods, fullsizeWidth, fullsizeHeight)
 
     global PsychImagingEngine
     
-    scaledStimWidth  = fullsizeWidth*0.46;
-    scaledStimHeight = fullsizeHeight*0.46;
+    scaledStimWidth  = fullsizeWidth*0.42;
+    scaledStimHeight = fullsizeHeight*0.42;
         
-    sourceRect = []; rotationAngle = 0; filterMode = []; globalAlpha = 1.0;
-    
+    % Coords of stimulus target rects
+    x0 = scaledStimWidth/2 + 20;
+    y0 = scaledStimHeight/2 + 110;
+
+    for toneMappingMethodIndex = 1:toneMappingMethods
+        for k = 1:3
+            a = CenterRectOnPointd(...
+                [0 0 scaledStimWidth, scaledStimHeight], ...
+                x0 + (toneMappingMethodIndex-1)*(1+scaledStimWidth), y0 + (k-1) * (1 + scaledStimHeight)...
+                );
+            targetDestRect(k,toneMappingMethodIndex,:) = a;
+        end
+    end
+        
     try
    
         % --- SCREEN 1  ---
         subFrameIndex = 1;
         Screen('SelectStereoDrawBuffer', PsychImagingEngine.masterWindowPtr, 0);
-        
-        % Thumbsize images on top
-        for k = 1:stimAcrossWidth
-            Screen('DrawTexture', PsychImagingEngine.masterWindowPtr, PsychImagingEngine.texturePointersOLED(subFrameIndex, k, 2), ...
-                    sourceRect, PsychImagingEngine.thumbsizeTextureDestRects{k}, rotationAngle, filterMode, globalAlpha); 
-        end
-            
-        x0 = scaledStimWidth/2 + 0;;
-        y0 = scaledStimHeight/2 + 110;
-        
-        for toneMappingMethodIndex = 1:toneMappingMethods
-            for k = 1:3
-                a = CenterRectOnPointd(...
-                    [0 0 scaledStimWidth, scaledStimHeight], ...
-                    x0 + (toneMappingMethodIndex-1)*(1+scaledStimWidth), y0 + (k-1) * (1 + scaledStimHeight)...
-                    );
-                size(a)
-                targetDestRect(k,toneMappingMethodIndex,:) = a;
-            end
-        end
-        
-        
-        for toneMappingMethodIndex = 1:toneMappingMethods        
-            for k = 1:3
-                Screen('DrawTexture', PsychImagingEngine.masterWindowPtr, PsychImagingEngine.texturePointersOLED(subFrameIndex, stimIndex, toneMappingMethodIndex), ...
-                        sourceRect, squeeze(targetDestRect(k,toneMappingMethodIndex,:)), rotationAngle, filterMode, globalAlpha); 
-            end        
-        end
+        DrawTextures(subFrameIndex, stimIndex, targetDestRect, PsychImagingEngine.masterWindowPtr);
         
         
         % --- SCREEN 2  ---
         subFrameIndex = 2;
         Screen('SelectStereoDrawBuffer', PsychImagingEngine.masterWindowPtr, 1);
-        
-        % Thumbsize images on top
-        for k = 1:stimAcrossWidth
-            Screen('DrawTexture', PsychImagingEngine.masterWindowPtr, PsychImagingEngine.texturePointersOLED(subFrameIndex, k, 2), ...
-                    sourceRect, PsychImagingEngine.thumbsizeTextureDestRects{k}, rotationAngle, filterMode, globalAlpha);  
-        end
-        
-        for toneMappingMethodIndex = 1:toneMappingMethods        
-            for k = 1:3
-                Screen('DrawTexture', PsychImagingEngine.masterWindowPtr, PsychImagingEngine.texturePointersOLED(subFrameIndex, stimIndex, toneMappingMethodIndex), ...
-                        sourceRect, squeeze(targetDestRect(k,toneMappingMethodIndex,:)), rotationAngle, filterMode, globalAlpha); 
-            end        
-        end
-        
-                
-                
+        DrawTextures(subFrameIndex, stimIndex, targetDestRect, PsychImagingEngine.masterWindowPtr);
+                 
         if (~isempty(PsychImagingEngine.slaveWindowPtr))
             
             % --- SCREEN 3  ---
             subFrameIndex = 3;
             Screen('SelectStereoDrawBuffer', PsychImagingEngine.slaveWindowPtr, 0);
+            DrawTextures(subFrameIndex, stimIndex, targetDestRect, PsychImagingEngine.slaveWindowPtr);
             
-            % Thumbsize images on top
-            for k = 1:stimAcrossWidth
-                Screen('DrawTexture', PsychImagingEngine.slaveWindowPtr, PsychImagingEngine.texturePointersOLED(subFrameIndex, k, 2), ...
-                    sourceRect, PsychImagingEngine.thumbsizeTextureDestRects{k}, rotationAngle, filterMode, globalAlpha);  
-            end
-            
-            for toneMappingMethodIndex = 1:toneMappingMethods        
-                for k = 1:3
-                    Screen('DrawTexture', PsychImagingEngine.masterWindowPtr, PsychImagingEngine.texturePointersOLED(subFrameIndex, stimIndex, toneMappingMethodIndex), ...
-                            sourceRect, squeeze(targetDestRect(k,toneMappingMethodIndex,:)), rotationAngle, filterMode, globalAlpha); 
-                end        
-            end
         
-            
             % --- SCREEN 4  ---
             subFrameIndex = 4;
             Screen('SelectStereoDrawBuffer', PsychImagingEngine.slaveWindowPtr, 1);
-            
-            % Thumbsize images on top
-            for k = 1:stimAcrossWidth
-                Screen('DrawTexture', PsychImagingEngine.slaveWindowPtr, PsychImagingEngine.texturePointersOLED(subFrameIndex, k, 2), ...
-                    sourceRect, PsychImagingEngine.thumbsizeTextureDestRects{k}, rotationAngle, filterMode, globalAlpha); 
-            end
-            
-            for toneMappingMethodIndex = 1:toneMappingMethods        
-                for k = 1:3
-                    Screen('DrawTexture', PsychImagingEngine.masterWindowPtr, PsychImagingEngine.texturePointersOLED(subFrameIndex, stimIndex, toneMappingMethodIndex), ...
-                            sourceRect, squeeze(targetDestRect(k,toneMappingMethodIndex,:)), rotationAngle, filterMode, globalAlpha); 
-                end        
-            end
+            DrawTextures(subFrameIndex, stimIndex, targetDestRect, PsychImagingEngine.slaveWindowPtr);
             
         end  % if (~isempty(PsychImagingEngine.slaveWindowPtr))
         
@@ -116,3 +63,30 @@ function showStimuliDifferentMethods(stimIndex, toneMappingMethods, stimAcrossWi
     
 end
 
+
+function DrawTextures(subFrameIndex, stimIndex, targetDestRect, windowPtr)
+    global PsychImagingEngine
+        
+    sourceRect = []; rotationAngle = 0; filterMode = []; globalAlpha = 1.0;
+    
+    % Thumbsize images on top
+    for k = 1:size(PsychImagingEngine.texturePointersOLED,2)
+        Screen('DrawTexture', windowPtr, PsychImagingEngine.texturePointersOLED(subFrameIndex, k, 2), ...
+                sourceRect, PsychImagingEngine.thumbsizeTextureDestRects{k}, rotationAngle, filterMode, globalAlpha); 
+    end
+        
+    for toneMappingMethodIndex = 1:size(PsychImagingEngine.texturePointersOLED,3)       
+        for k = 1:3
+            if (k == 1)
+                texturePointer = PsychImagingEngine.texturePointersOLED(subFrameIndex, stimIndex, toneMappingMethodIndex);
+            elseif (k == 2)
+                texturePointer = PsychImagingEngine.texturePointersLCDNoXYZscaling(stimIndex, toneMappingMethodIndex);
+            elseif (k == 3)
+                texturePointer = PsychImagingEngine.texturePointersLCDXYZscaling(stimIndex, toneMappingMethodIndex);
+            end
+
+            Screen('DrawTexture', windowPtr, texturePointer, ...
+                    sourceRect, squeeze(targetDestRect(k,toneMappingMethodIndex,:)), rotationAngle, filterMode, globalAlpha); 
+        end        
+   end
+end
