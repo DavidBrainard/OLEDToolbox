@@ -27,15 +27,15 @@ function visualizeToneMappedStimuluDifferentMethods
         
         subplot('Position', subplotPosVectors(1,toneMappingMethodIndex).v);
     	imshow(squeeze(ensembleToneMappeRGBsettingsOLEDimage(shapeIndex, alphaIndex, specularSPDindex, toneMappingMethodIndex,:,:,:)), 'DisplayRange', [0 1]);
-        title(sprintf('OLED %s', toneMappingData{3}))
+        title(sprintf('OLED %s', toneMappingData{2}.description))
         
         subplot('Position', subplotPosVectors(2,toneMappingMethodIndex).v);
     	imshow(squeeze(ensembleToneMappeRGBsettingsLCDimage(shapeIndex, alphaIndex, specularSPDindex, toneMappingMethodIndex, 1, :,:,:)), 'DisplayRange', [0 1]);
-        title(sprintf('LCD - no XYZ scaling %s', toneMappingData{3}));
+        title(sprintf('LCD - no XYZ scaling %s', toneMappingData{2}.description));
         
         subplot('Position', subplotPosVectors(3,toneMappingMethodIndex).v);
     	imshow(squeeze(ensembleToneMappeRGBsettingsLCDimage(shapeIndex, alphaIndex, specularSPDindex, toneMappingMethodIndex, 2, :,:,:)), 'DisplayRange', [0 1]);
-        title(sprintf('LCD - XYZ scaling %s', toneMappingData{3}));
+        title(sprintf('LCD - XYZ scaling %s', toneMappingData{2}.description));
         
     end
     
