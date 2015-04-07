@@ -27,73 +27,56 @@ function ToneMapStimuliDifferentMethods
     wattsToLumens = 683;
     luminances = squeeze(ensembleSensorXYZcalFormat(:,:,:,2,:));
     inputEnsembleLuminanceRange  = wattsToLumens * [ min(luminances(:))   max(luminances(:))]
-    inputEnsembleLuminanceL50 = wattsToLumens * prctile(luminances(:), 95)   % 90% of luminance values
     clear 'luminances'
 
     % XYZscaling for LCD = true tonemappings
     % Tonemapping parameters for linear mapping to display
     sceneLumLinearMappingParamsXYZscalingForLCD =  struct(...
-        'scaleXYZForLCD', true, ...
         'outputLuminanceRange',  [minRealizableLuminanceOLED, sum(maxRealizableLuminanceRGBgunsOLED)] ...
     );
     
     % Tonemapping parameters for upperAndLowerClippingFollowedByLinearMapping: clipping to some scene luminance level, then linear mapping to OLED lum range
     sceneLumClipLinearMappingParamsXYZscalingForLCD = struct(...
-        'scaleXYZForLCD', true, ...
         'clipSceneLumincanceLevels',  [0 round(sum(maxRealizableLuminanceRGBgunsOLED))], ... % ]; % round(inputEnsembleLuminanceRange(2)); %round(sum(maxRealizableLuminanceRGBgunsOLED))%4000;  % this is in Cd/m2
         'outputLuminanceRange',  [minRealizableLuminanceOLED, sum(maxRealizableLuminanceRGBgunsOLED)], ...
         'normalizationMode', 0 ...
     );
     
-    % Tonemapping parameters for upperAndLowerClippingFollowedByBi-LinearMapping: clipping to some scene luminance level, then map [min .. median] -> [0 OLED/2] and [median max] -> [OLED/2 OLEDmax]
-    sceneLumCompressedMappingParamsXYZscalingForLCD = struct(...
-        'scaleXYZForLCD', true, ...
+    % Tonemapping parameters for compressed mapping L50 = 95%
+    sceneLumCompressedMapping95ParamsXYZscalingForLCD = struct(...
         'outputLuminanceRange',  [minRealizableLuminanceOLED, sum(maxRealizableLuminanceRGBgunsOLED)], ...
-        'ensembleSceneLuminance50', inputEnsembleLuminanceL50 ...
+        'ensembleSceneLuminance50', wattsToLumens * prctile(luminances(:), 95) ...   % 95% of luminance values ...
     );
 
-    % XYZscaling for LCD = false tonemappings
-    % Tonemapping parameters for linear mapping to display
-    sceneLumLinearMappingParamsNoXYZscalingForLCD =  struct(...
-        'scaleXYZForLCD', false, ...
-        'outputLuminanceRange',  [minRealizableLuminanceOLED, sum(maxRealizableLuminanceRGBgunsOLED)] ...
-    );
-    
-    % Tonemapping parameters for upperAndLowerClippingFollowedByLinearMapping: clipping to some scene luminance level, then linear mapping to OLED lum range
-    sceneLumClipLinearMappingParamsNoXYZscalingForLCD = struct(...
-        'scaleXYZForLCD', false, ...
-        'clipSceneLumincanceLevels',  [0 round(sum(maxRealizableLuminanceRGBgunsOLED))], ... % ]; % round(inputEnsembleLuminanceRange(2)); %round(sum(maxRealizableLuminanceRGBgunsOLED))%4000;  % this is in Cd/m2
+    % Tonemapping parameters for compressed mapping L50 = 90%
+    sceneLumCompressedMapping90ParamsXYZscalingForLCD = struct(...
         'outputLuminanceRange',  [minRealizableLuminanceOLED, sum(maxRealizableLuminanceRGBgunsOLED)], ...
-        'normalizationMode', 0 ...
-    );
-    
-    % Tonemapping parameters for upperAndLowerClippingFollowedByBi-LinearMapping: clipping to some scene luminance level, then map [min .. median] -> [0 OLED/2] and [median max] -> [OLED/2 OLEDmax]
-    sceneLumCompressedMappingParamsNoXYZscalingForLCD = struct(...
-        'scaleXYZForLCD', false, ...
-        'outputLuminanceRange',  [minRealizableLuminanceOLED, sum(maxRealizableLuminanceRGBgunsOLED)], ...
-        'ensembleSceneLuminance50', inputEnsembleLuminanceL50 ...
+        'ensembleSceneLuminance50', wattsToLumens * prctile(luminances(:), 90) ...   % 90% of luminance values ...
     );
 
-
+    % Tonemapping parameters for compressed mapping L50 = 80%
+    sceneLumCompressedMapping80ParamsXYZscalingForLCD = struct(...
+        'outputLuminanceRange',  [minRealizableLuminanceOLED, sum(maxRealizableLuminanceRGBgunsOLED)], ...
+        'ensembleSceneLuminance50', wattsToLumens * prctile(luminances(:), 80) ...   % 90% of luminance values ...
+    );
 
 
     % Assemble toneMappingMethods struct
     toneMappingMethods = { ...
-        {@utils.toneMapViaLinearMappingToLumRange,                          sceneLumLinearMappingParamsXYZscalingForLCD,        'Scene lum linear map - XYZ scaling for LCD'} ...
-        {@utils.toneMapViaLumClippingFollowedByLinearMappingToLumRange,     sceneLumClipLinearMappingParamsXYZscalingForLCD,    'Scene lum clipping followed by linear map - XYZ scaling for LCD'} ...
-        {@utils.toneMapViaLumCompressedMappingToLumRange,                   sceneLumCompressedMappingParamsXYZscalingForLCD,    'Scene lum compressed mapping - XYZ scaling for LCD'} ...
-        {@utils.toneMapViaLinearMappingToLumRange,                          sceneLumLinearMappingParamsNoXYZscalingForLCD,      'Scene lum linear map - no XYZ scaling for LCD'} ...
-        {@utils.toneMapViaLumClippingFollowedByLinearMappingToLumRange,     sceneLumClipLinearMappingParamsNoXYZscalingForLCD,  'Scene lum clipping followed by linear map - no XYZ scaling for LCD'} ...
-        {@utils.toneMapViaLumCompressedMappingToLumRange,                   sceneLumCompressedMappingParamsNoXYZscalingForLCD,  'Scene lum compressed mapping - no XYZ scaling for LCD'} ...
-        };
+        {@utils.toneMapViaLinearMappingToLumRange,                          sceneLumLinearMappingParamsXYZscalingForLCD,          'Scene lum linear map'} ...
+        {@utils.toneMapViaLumClippingFollowedByLinearMappingToLumRange,     sceneLumClipLinearMappingParamsXYZscalingForLCD,      'Scene lum clipping followed by linear map'} ...
+        {@utils.toneMapViaLumCompressedMappingToLumRange,                   sceneLumCompressedMapping95ParamsXYZscalingForLCD,    'Scene lum compressed mapping - 95'} ...    
+        {@utils.toneMapViaLumCompressedMappingToLumRange,                   sceneLumCompressedMapping90ParamsXYZscalingForLCD,    'Scene lum compressed mapping - 90'} ...    
+        {@utils.toneMapViaLumCompressedMappingToLumRange,                   sceneLumCompressedMapping80ParamsXYZscalingForLCD,    'Scene lum compressed mapping - 80'} ...    
+    };
     
     
     % Preallocate memory for settings images
     ensembleToneMappeRGBsettingsOLEDimage       = zeros(size(ensembleSensorXYZcalFormat,1), size(ensembleSensorXYZcalFormat,2), size(ensembleSensorXYZcalFormat,3), numel(toneMappingMethods), mRows, nCols, 3);
-    ensembleToneMappeRGBsettingsLCDimage        = zeros(size(ensembleSensorXYZcalFormat,1), size(ensembleSensorXYZcalFormat,2), size(ensembleSensorXYZcalFormat,3), numel(toneMappingMethods), mRows, nCols, 3);
+    ensembleToneMappeRGBsettingsLCDimage        = zeros(size(ensembleSensorXYZcalFormat,1), size(ensembleSensorXYZcalFormat,2), size(ensembleSensorXYZcalFormat,3), numel(toneMappingMethods), 2, mRows, nCols, 3);
     ensembleSceneLuminanceMap                   = zeros(size(ensembleSensorXYZcalFormat,1), size(ensembleSensorXYZcalFormat,2), size(ensembleSensorXYZcalFormat,3), numel(toneMappingMethods), mRows, nCols);
     ensembleToneMappedOLEDluminanceMap          = zeros(size(ensembleSensorXYZcalFormat,1), size(ensembleSensorXYZcalFormat,2), size(ensembleSensorXYZcalFormat,3), numel(toneMappingMethods), mRows, nCols);
-    ensembleToneMappedLCDluminanceMap           = zeros(size(ensembleSensorXYZcalFormat,1), size(ensembleSensorXYZcalFormat,2), size(ensembleSensorXYZcalFormat,3), numel(toneMappingMethods), mRows, nCols);
+    ensembleToneMappedLCDluminanceMap           = zeros(size(ensembleSensorXYZcalFormat,1), size(ensembleSensorXYZcalFormat,2), size(ensembleSensorXYZcalFormat,3), numel(toneMappingMethods), 2, mRows, nCols);
 
     
     
@@ -132,43 +115,54 @@ function ToneMapStimuliDifferentMethods
                     toneMappedRGBsettingsOLEDCalFormat = PrimaryToSettings(destinationCalStructOBJ, toneMappedRGBprimaryOLEDCalFormat); 
                     ensembleToneMappeRGBsettingsOLEDimage(shapeIndex, alphaIndex, specularSPDindex, toneMappingMethodIndex, :,:,:) = CalFormatToImage(toneMappedRGBsettingsOLEDCalFormat,nCols, mRows);
 
-                
-                    % --------------------------------------- LCD -----------------------------------
-                    % Scale XYZ if so specified
-                    if (toneMappingParams.scaleXYZForLCD)
-                        % Scale XYZ to fit in LCD gamut (new addition to avoid saturation of the LCD)
-                        XYZscalingRatioOLEDtoLCD = min(sum(maxRealizableLuminanceRGBgunsLCD) / sum(maxRealizableLuminanceRGBgunsOLED));
-                        toneMappedXYZcalFormatLCD = toneMappedXYZcalFormat * XYZscalingRatioOLEDtoLCD;
-                    else
-                        toneMappedXYZcalFormatLCD = toneMappedXYZcalFormat;
-                    end
-                    
-                    
-                    % Add LCD ambient because we are generating the LCD image in the OLED not the LCD display
-                    toneMappedXYZcalFormatLCD = utils.setMinLuminanceToDisplayAmbientLuminance(calStructLCD,toneMappedXYZcalFormatLCD);
-                    
-                    % To RGBprimaries for the LCD display
-                    toneMappedRGBprimaryLCDCalFormat = utils.mapToGamut(SensorToPrimary(calStructLCD, toneMappedXYZcalFormatLCD));
-                    XYZtmp = CalFormatToImage(PrimaryToSensor(calStructLCD, toneMappedRGBprimaryLCDCalFormat), nCols, mRows);
-                    toneMappedLCDluminanceMap = wattsToLumens * squeeze(XYZtmp(:,:,2));
-
-                    % Transform the LCD RGB primaries for rendering on OLED
-                    originCalStructOBJ = calStructLCD; destinationCalStructOBJ = calStructOLED;
-                    toneMappedRGBprimaryLCDCalFormat  = utils.xformOriginPrimariesToDestinationPrimaries(toneMappedRGBprimaryLCDCalFormat, originCalStructOBJ, destinationCalStructOBJ);
-                    % Settings for rendering on OLED display
-                    toneMappedRGBsettingsLCDCalFormat   = PrimaryToSettings(destinationCalStructOBJ, toneMappedRGBprimaryLCDCalFormat); 
-                    ensembleToneMappeRGBsettingsLCDimage(shapeIndex, alphaIndex, specularSPDindex, toneMappingMethodIndex, :,:,:) = CalFormatToImage(toneMappedRGBsettingsLCDCalFormat,nCols, mRows);
-
                     % Store luminance maps
                     ensembleSceneLuminanceMap(shapeIndex, alphaIndex, specularSPDindex, toneMappingMethodIndex, :,:)          = sceneLuminanceMap;
                     ensembleToneMappedOLEDluminanceMap(shapeIndex, alphaIndex, specularSPDindex, toneMappingMethodIndex, :,:) = toneMappedOLEDluminanceMap;
-                    ensembleToneMappedLCDluminanceMap(shapeIndex, alphaIndex, specularSPDindex, toneMappingMethodIndex, :,:)  = toneMappedLCDluminanceMap;
+                    
+                    % --------------------------------------- LCD -----------------------------------
+                    
+                    for scaleXYZForLCD = [0 1]
+                       
+                        if (scaleXYZForLCD == 1)
+                            % Scale XYZ to fit in LCD gamut (new addition to avoid saturation of the LCD)
+                            XYZscalingRatioOLEDtoLCD = min(sum(maxRealizableLuminanceRGBgunsLCD) / sum(maxRealizableLuminanceRGBgunsOLED));
+                            toneMappedXYZcalFormatLCD = toneMappedXYZcalFormat * XYZscalingRatioOLEDtoLCD;
+                        else
+                            toneMappedXYZcalFormatLCD = toneMappedXYZcalFormat;
+                        end
+                    
+                    
+                        % Add LCD ambient because we are generating the LCD image in the OLED not the LCD display
+                        toneMappedXYZcalFormatLCD = utils.setMinLuminanceToDisplayAmbientLuminance(calStructLCD,toneMappedXYZcalFormatLCD);
+                    
+                        % To RGBprimaries for the LCD display
+                        toneMappedRGBprimaryLCDCalFormat = utils.mapToGamut(SensorToPrimary(calStructLCD, toneMappedXYZcalFormatLCD));
+                        XYZtmp = CalFormatToImage(PrimaryToSensor(calStructLCD, toneMappedRGBprimaryLCDCalFormat), nCols, mRows);
+                        toneMappedLCDluminanceMap = wattsToLumens * squeeze(XYZtmp(:,:,2));
 
+                        % Store luminance maps
+                        ensembleToneMappedLCDluminanceMap(shapeIndex, alphaIndex, specularSPDindex, toneMappingMethodIndex, scaleXYZForLCD+1, :,:)  = toneMappedLCDluminanceMap;
+                        
+                        % Transform the LCD RGB primaries for rendering on OLED
+                        originCalStructOBJ = calStructLCD; destinationCalStructOBJ = calStructOLED;
+                        toneMappedRGBprimaryLCDCalFormat  = utils.xformOriginPrimariesToDestinationPrimaries(toneMappedRGBprimaryLCDCalFormat, originCalStructOBJ, destinationCalStructOBJ);
+                        if (scaleXYZForLCD == 1) 
+                            toneMappedRGBprimaryLCDCalFormatXYZscaling = toneMappedRGBprimaryLCDCalFormat;
+                        else
+                            toneMappedRGBprimaryLCDCalFormatNoXYZscaling = toneMappedRGBprimaryLCDCalFormat;
+                        end
+                        
+                        % Settings for rendering on OLED display
+                        toneMappedRGBsettingsLCDCalFormat   = PrimaryToSettings(destinationCalStructOBJ, toneMappedRGBprimaryLCDCalFormat); 
+                        ensembleToneMappeRGBsettingsLCDimage(shapeIndex, alphaIndex, specularSPDindex, toneMappingMethodIndex, scaleXYZForLCD+1, :,:,:) = CalFormatToImage(toneMappedRGBsettingsLCDCalFormat,nCols, mRows);
+
+                    end
+                    
                 
                     % ---------------------------------- VISUALIZATION ------------------------------------
                     if (visualizationIsOn)
                         
-                    h = figure(1); clf; set(h, 'Position', [10 10 1812 1086]);
+                    h = figure(1); clf; set(h, 'Position', [10 10 2247 1086]);
                     set(h, 'Name', toneMappingDescription);
                     % Plot luminance image
                     subplot(3,5,1);
@@ -200,20 +194,40 @@ function ToneMapStimuliDifferentMethods
                     imshow(CalFormatToImage(toneMappedRGBprimaryOLEDCalFormat,nCols, mRows), 'DisplayRange', [0 1]);
                     title(sprintf('OLED primary'), 'FontName', 'System', 'FontSize', 13);
         
-                    % Plot the tonemapped primaryLCDimage
-                    subplot(3,5,5);
-                    imshow(CalFormatToImage(toneMappedRGBprimaryLCDCalFormat,nCols, mRows), 'DisplayRange', [0 1]);
-                    title(sprintf('LCD primary'), 'FontName', 'System', 'FontSize', 13);
-                    
+
                     % Plot the tonemapped settingsOLEDimage
-                    subplot(3,5,9);
+                    subplot(3,5,5);
                     imshow(squeeze(ensembleToneMappeRGBsettingsOLEDimage(shapeIndex, alphaIndex, specularSPDindex, toneMappingMethodIndex, :,:,:)), 'DisplayRange', [0 1]);
                     title(sprintf('OLED settings'), 'FontName', 'System', 'FontSize', 13);
                     
+                    
+                    % Plot the tonemapped primaryLCDimage
+                    subplot(3,5,9);
+                    imshow(CalFormatToImage(toneMappedRGBprimaryLCDCalFormatNoXYZscaling,nCols, mRows), 'DisplayRange', [0 1]);
+                    lumMap = squeeze(ensembleToneMappedLCDluminanceMap(shapeIndex, alphaIndex, specularSPDindex, toneMappingMethodIndex, 1, :,:));
+                    maxLum = max(lumMap(:));
+                    minLum = min(lumMap(:));
+                    contrast = 100*(maxLum-minLum)/(maxLum+minLum);
+                    title(sprintf('LCD primary (no XYZ scale), maxLum = %2.1f, contrast = %2.1f', maxLum, contrast), 'FontName', 'System', 'FontSize', 13);
+                    
                     % Plot the tonemapped settingsLCDimage
                     subplot(3,5,10);
-                    imshow(squeeze(ensembleToneMappeRGBsettingsLCDimage(shapeIndex, alphaIndex, specularSPDindex, toneMappingMethodIndex, :,:,:)), 'DisplayRange', [0 1]);
-                    title(sprintf('LCD settings'), 'FontName', 'System', 'FontSize', 13);
+                    imshow(squeeze(ensembleToneMappeRGBsettingsLCDimage(shapeIndex, alphaIndex, specularSPDindex, toneMappingMethodIndex, 1, :,:,:)), 'DisplayRange', [0 1]);
+                    title(sprintf('LCD settings (no XYZ scale)'), 'FontName', 'System', 'FontSize', 13);
+                    
+                    % Plot the tonemapped settingsLCDimage
+                    subplot(3,5,14);
+                    lumMap = squeeze(ensembleToneMappedLCDluminanceMap(shapeIndex, alphaIndex, specularSPDindex, toneMappingMethodIndex, 2, :,:));
+                    maxLum = max(lumMap(:));
+                    minLum = min(lumMap(:));
+                    contrast = 100*(maxLum-minLum)/(maxLum+minLum);
+                    imshow(CalFormatToImage(toneMappedRGBprimaryLCDCalFormatXYZscaling,nCols, mRows), 'DisplayRange', [0 1]);
+                    title(sprintf('LCD primary (XYZ scale), maxLum = %2.2f, contrast = %2.1f', maxLum, contrast), 'FontName', 'System', 'FontSize', 13);
+                    
+                    % Plot the tonemapped settingsLCDimage
+                    subplot(3,5,15);
+                    imshow(squeeze(ensembleToneMappeRGBsettingsLCDimage(shapeIndex, alphaIndex, specularSPDindex, toneMappingMethodIndex, 2, :,:,:)), 'DisplayRange', [0 1]);
+                    title(sprintf('LCD settings (XYZ scale)'), 'FontName', 'System', 'FontSize', 13);
                     
                     
                     % Plot histogram of scene luminance
@@ -254,29 +268,48 @@ function ToneMapStimuliDifferentMethods
     save(dataFilename, 'toneMappingMethods', 'ensembleToneMappeRGBsettingsOLEDimage', 'ensembleToneMappeRGBsettingsLCDimage', 'ensembleSceneLuminanceMap', 'ensembleToneMappedOLEDluminanceMap', 'ensembleToneMappedLCDluminanceMap');
     fprintf('\nData saved in ''%s''\n', dataFilename);
     
+    subplotPosVectors = NicePlot.getSubPlotPosVectors(...
+            'rowsNum',      2, ...
+            'colsNum',      3, ...
+            'widthMargin',  0.01, ...
+            'leftMargin',   0.01, ...
+            'bottomMargin', 0.01, ...
+            'topMargin',    0.01);
+        
+        
     h = figure(2);
-    set(h, 'Position', [20 20 930 1000]);
+    set(h, 'Position', [20 20 1190 620]);
     clf;
     
-    subplot(2,2,1);
+    subplot('Position', subplotPosVectors(1,1).v);
     PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedOLEDluminanceMap(:), inputEnsembleLuminanceRange, toneMappingParams.outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'log');
     title(sprintf('OLED vs scene luminance'));
 
     
-    subplot(2,2,2);
-    PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedLCDluminanceMap(:), inputEnsembleLuminanceRange, toneMappingParams.outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'log');
-    title(sprintf('LCD vs scene luminance'));
+    subplot('Position', subplotPosVectors(1,2).v);
+    ensembleToneMappedLCDluminanceMapNoXYZscaling = ensembleToneMappedLCDluminanceMap(:, :, :, :, 1, :,:);
+    PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedLCDluminanceMapNoXYZscaling(:), inputEnsembleLuminanceRange, toneMappingParams.outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'log');
+    title(sprintf('LCD (no XYZ scaling) vs scene luminance'));
 
     
-    subplot(2,2,3);
+    subplot('Position', subplotPosVectors(1,3).v);
+    ensembleToneMappedLCDluminanceMapXYZscaling = ensembleToneMappedLCDluminanceMap(:, :, :, :, 2, :,:);
+    PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedLCDluminanceMapNoXYZscaling(:), inputEnsembleLuminanceRange, toneMappingParams.outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'log');
+    title(sprintf('LCD (XYZ scaling) vs scene luminance'));
+    
+    
+    subplot('Position', subplotPosVectors(2,1).v);
     PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedOLEDluminanceMap(:), inputEnsembleLuminanceRange, toneMappingParams.outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'linear');
     title(sprintf('OLED vs scene luminance'));
 
     
-    subplot(2,2,4);
-    PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedLCDluminanceMap(:), inputEnsembleLuminanceRange, toneMappingParams.outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'linear');
-    title(sprintf('OLED vs scene luminance'));
+    subplot('Position', subplotPosVectors(2,2).v);
+    PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedLCDluminanceMapNoXYZscaling(:), inputEnsembleLuminanceRange, toneMappingParams.outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'linear');
+    title(sprintf('LCD (no XYZ scaling) vs scene luminance'));
 
+    subplot('Position', subplotPosVectors(2,3).v);
+    PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedLCDluminanceMapXYZscaling(:), inputEnsembleLuminanceRange, toneMappingParams.outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'linear');
+    title(sprintf('LCD (XYZ scaling) vs scene luminance'));
     
 end
 
