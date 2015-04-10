@@ -7,7 +7,7 @@ function showStimuliDifferentMethods(stimIndex, toneMappingMethods, fullsizeWidt
         
     % Coords of stimulus target rects
     x0 = scaledStimWidth/2 + 20;
-    y0 = scaledStimHeight/2 + 190;
+    y0 = scaledStimHeight/2 + 150;
 
     for toneMappingMethodIndex = 1:toneMappingMethods
         for k = 1:3

@@ -15,10 +15,11 @@ function toneMappedXYZcalFormat = toneMapViaReinhardtToLumRange(sceneXYZcalForma
     % Map [minLuma maxLuma] -> [toneMappingParams.outputLuminanceRange(1) toneMappingParams.outputLuminanceRange(2)]
     toneMappedLuminance = toneMappingParams.outputLuminanceRange(1) + normalizedLuminance*(toneMappingParams.outputLuminanceRange(2)-toneMappingParams.outputLuminanceRange(1));
    
-
-    % Make sure we do not exceed original
-    indices = find(toneMappedLuminance > sceneLuminance);
-    toneMappedLuminance(indices) = sceneLuminance(indices);
+    if (toneMappingParams.doNotExceedSceneLuminance)
+        % Make sure we do not exceed original
+        indices = find(toneMappedLuminance > sceneLuminance);
+        toneMappedLuminance(indices) = sceneLuminance(indices);
+    end
     
     % back to Y '31 CIE scale
     sensorxyYcalFormat(3,:) = toneMappedLuminance/wattsToLumens;
