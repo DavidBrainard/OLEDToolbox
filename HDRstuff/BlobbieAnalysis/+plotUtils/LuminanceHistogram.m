@@ -1,4 +1,4 @@
-function LuminanceHistogram(plotTitle, referenceLuminanceMap, luminanceMap, luminanceRange, luminanceEdges, maxLumOLED, maxLumLCD)
+function LuminanceHistogram(plotTitle, sceneLuminanceMap, tonemapLuminanceMap, luminanceRange, luminanceEdges, maxLumOLED, maxLumLCD, showYaxisLabel, yAxisClipLevel)
 
     luminanceTicks = luminanceEdges(1:20:end);
     luminanceTickMarks = {};
@@ -17,14 +17,13 @@ function LuminanceHistogram(plotTitle, referenceLuminanceMap, luminanceMap, lumi
     end
     
     
-    [N,~] = histcounts(referenceLuminanceMap(:), luminanceEdges);
-    N(find(N==0)) = 0.5;
+    [N,~] = histcounts(sceneLuminanceMap(:), luminanceEdges);
     [xRef,yRef] = stairs(luminanceEdges(1:end-1),N);
     xRef = [xRef; xRef(end)];
     yRef = [yRef; 0];
-    Yrange = [1 max(N)];
+    Yrange = [0 max(N)];
     
-    [N,~] = histcounts(luminanceMap(:), luminanceEdges);
+    [N,~] = histcounts(tonemapLuminanceMap(:), luminanceEdges);
     N(find(N==0)) = 0.5;
     [x,y] = stairs(luminanceEdges(1:end-1),N);
     x = [x; x(end)];
@@ -33,21 +32,27 @@ function LuminanceHistogram(plotTitle, referenceLuminanceMap, luminanceMap, lumi
         Yrange(2) = max(N);
     end
 
-    if (Yrange(2) > numel(luminanceMap)/400)
-        Yrange(2) = numel(luminanceMap)/400;
+    if (Yrange(2) > yAxisClipLevel)
+        Yrange(2) = yAxisClipLevel;
     end
-    
+   
     hold on;
     
-    
-    fill(xRef,yRef,'k-', 'LineWidth', 1.0, 'EdgeColor', [0.7 0.7 0.7], 'FaceColor', [0.9 0.9 0.9]);
-    plot(x,y,'k-', 'LineWidth', 2.0)
+    area(xRef, yRef, 'FaceColor', [0.8 0.8 0.8], 'EdgeColor', [0 0 0]);
+    area(x,y,  'FaceColor', [0.9 0.9 0.9], 'EdgeColor', [1.0 0.09 0.2]);
+  
     plot(maxLumOLED*[1 1], Yrange, 'r--');
-    plot(maxLumLCD*[1 1], Yrange, 'b--');
+    plot(maxLumLCD*[1 1],  Yrange, 'b--');
     
-    set(gca, 'YScale', 'linear', 'YLim', Yrange, 'XScale', 'log', 'XLim', [luminanceRange(1) luminanceRange(2)*1.2], 'XTick', luminanceTicks, 'XTickLabel', luminanceTickMarks);
-    grid off; box off
-    xlabel('image luminance (cd/m2)');
-    ylabel('# of pixels');                
-    title(plotTitle, 'FontName', 'System', 'FontSize', 13);                
+    legend('scene', 'tonemap');
+    set(gca, 'Color', [1.0 1 1], 'YScale', 'linear', 'YLim', Yrange, 'XScale', 'log', 'XLim', [luminanceRange(1) luminanceRange(2)*1.2], 'XTick', luminanceTicks, 'XTickLabel', luminanceTickMarks);
+    set(gca, 'XColor', [0 0 0.8], 'YColor', [0 0 0.8]);
+    grid off; box on
+    xlabel('luminance (cd/m2)');
+    if (showYaxisLabel)
+        ylabel('# of pixels');
+    end
+    
+    title(plotTitle);     
+    
 end
