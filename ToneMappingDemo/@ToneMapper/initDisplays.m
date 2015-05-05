@@ -34,7 +34,7 @@ function initDisplays(obj)
     % Save cal structs
     obj.displays = containers.Map({'OLED', 'LCD'}, {genericOLED, genericLCD});
     
-    % Plot SPDs;
+    % Update GUI
     obj.updateGUIWithCurrentLuminances('OLED');
     obj.updateGUIWithCurrentLuminances('LCD');
 end

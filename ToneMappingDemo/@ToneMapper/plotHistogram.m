@@ -1,35 +1,65 @@
-function plotHistogram(obj, sceneOrToneMappedImage)
+function plotHistogram(obj, sceneOrToneMappedImage, displayName, holdPreviousPlots)
 
+    if (isempty(obj.data))
+        % we have not read an image yet
+        return;
+    end
+    
+    if (strcmp(sceneOrToneMappedImage, 'scene')) && (~isfield(obj.data, 'inputLuminanceHistogram'))
+        % we have not computed a histogram yet
+        return;
+    end
+    
+    if (strcmp(sceneOrToneMappedImage, 'toneMappedImage')) && (~isfield(obj.data, 'toneMappedImageLuminanceHistogram'))
+        % we have not computed a histogram yet
+        return;
+    end
+    
+    % Enable the right axes
     figure(obj.GUI.figHandle);
     
     switch (sceneOrToneMappedImage)
         case 'scene'
             set(obj.GUI.figHandle,'CurrentAxes',obj.GUI.sceneHistogramPlotHandle);
+            hold(obj.GUI.sceneHistogramPlotHandle, holdPreviousPlots);
             luminanceBins   = obj.data.inputLuminanceHistogram.centers;
             luminanceCounts = obj.data.inputLuminanceHistogram.counts;
+            histogramColor = [0.6 0.6 0.1];
         case 'toneMappedImage'
             set(obj.GUI.figHandle,'CurrentAxes',obj.GUI.toneMappedHistogramPlotHandle);
-            luminanceBins   = obj.data.toneMappedImageLuminanceHistogram.centers;
-            luminanceCounts = obj.data.toneMappedImageLuminanceHistogram.counts;
-            
+            hold(obj.GUI.toneMappedHistogramPlotHandle, holdPreviousPlots);
+            luminanceBins   = obj.data.toneMappedImageLuminanceHistogram(displayName).centers;
+            luminanceCounts = obj.data.toneMappedImageLuminanceHistogram(displayName).counts;
+            if (strcmp(displayName, 'OLED'))
+                histogramColor = [0.9 0.2 0.4];
+            else
+                histogramColor = [0.2 0.5 0.9];
+            end
         otherwise
             error('Unknown sceneOrToneMappedImage mode %s', sceneOrToneMappedImage);
     end
    
+    luminanceCounts = luminanceCounts / max(luminanceCounts(:)) * max([obj.displays('OLED').maxLuminance obj.displays('LCD').maxLuminance]);
+    % plot the histogram
+    bar(luminanceBins, luminanceCounts, 'FaceColor', histogramColor, 'EdgeColor', 'none');
     
-    bar(luminanceBins, luminanceCounts, 'FaceColor', [0.99 0.6 0.72]);
+    % Color of plot ticks
+    grayColor = [0.4 0.4 0.4];
     
     switch (sceneOrToneMappedImage)
         case 'scene'
-            set(obj.GUI.sceneHistogramPlotHandle, 'XLim', [min(luminanceBins) max(luminanceBins)], 'XColor', 'b', 'YColor', 'b', 'FontName', 'Helvetica', 'FontSize', 14);
-            xlabel(obj.GUI.sceneHistogramPlotHandle, 'luminance (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'bold');
-            ylabel(obj.GUI.sceneHistogramPlotHandle, 'count', 'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'bold');
+            set(obj.GUI.sceneHistogramPlotHandle, 'XLim', [min(luminanceBins) max(luminanceBins)], 'YLim', [[0 max([obj.displays('OLED').maxLuminance obj.displays('LCD').maxLuminance])]], 'XColor', grayColor, 'YColor', grayColor, 'FontName', 'Helvetica', 'FontSize', 14);
+            xlabel(obj.GUI.sceneHistogramPlotHandle, 'input luminance (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'bold');
+            ylabel(obj.GUI.sceneHistogramPlotHandle, 'display luminance (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'bold');
             box(obj.GUI.sceneHistogramPlotHandle, 'on');
         case 'toneMappedImage'
-            set(obj.GUI.toneMappedHistogramPlotHandle, 'XLim', [min(luminanceBins) max(luminanceBins)], 'XColor', 'b', 'YColor', 'b', 'FontName', 'Helvetica', 'FontSize', 14);
-            xlabel(obj.GUI.toneMappedHistogramPlotHandle, 'luminance (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'bold');
+            if (strcmp(holdPreviousPlots, 'on'))
+                h = legend({'OLED', 'LCD'});
+                set(h, 'FontName', 'Helvetica', 'FontSize', 14);
+            end
+            set(obj.GUI.toneMappedHistogramPlotHandle, 'XLim', [0 max([obj.displays('OLED').maxLuminance obj.displays('LCD').maxLuminance])], 'XColor', grayColor, 'YColor', grayColor, 'FontName', 'Helvetica', 'FontSize', 14);
+            xlabel(obj.GUI.toneMappedHistogramPlotHandle, 'display luminance (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'bold');
             ylabel(obj.GUI.toneMappedHistogramPlotHandle, 'count', 'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'bold');
             box(obj.GUI.toneMappedHistogramPlotHandle, 'on');
     end
-    
 end

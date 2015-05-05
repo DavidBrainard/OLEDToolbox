@@ -1,31 +1,26 @@
-function generateHistogram(obj, sceneOrToneMappedImage)
+function generateHistogram(obj, sceneOrToneMappedImage, displayName)
 
-    widthInPixels  = size(obj.data.inputRGBimage,2);
-    heightInPixels = size(obj.data.inputRGBimage,1);
-    xaxis = 1:obj.processingOptions.imageSubsamplingFactor:widthInPixels;
-    yaxis = 1:obj.processingOptions.imageSubsamplingFactor:heightInPixels;
-    
     switch (sceneOrToneMappedImage)
         case 'scene'
-            rgbData = obj.data.inputRGBimage(yaxis, xaxis,:);     
+            luminanceMap = obj.data.inputSRGBluminanceMap;     
         case 'toneMappedImage'
-            rgbData = obj.data.toneMappedRGBimage(yaxis, xaxis,:);    
+            luminanceMap = obj.data.toneMappedRGBluminanceMap(displayName);  
     end
-    
-    % Compute luminance histogram
-    [RGBcalFormat, cols, rows] = ImageToCalFormat(rgbData);
-    XYZcalFormat = SRGBPrimaryToXYZ(RGBcalFormat);
-    xyYcalFormat = XYZToxyY(XYZcalFormat);
-    luminances =  obj.wattsToLumens * squeeze(xyYcalFormat(3,:));
-    minLum = min(luminances(:));
-    maxLum = max(luminances(:));
+   
+    luminances = luminanceMap(:);
+    minLum = min(luminances);
+    maxLum = max(luminances);
     luminanceCenters = linspace(minLum, maxLum, 1024);
     
+    % compute the histogram
+    [counts, centers] = hist(luminances, luminanceCenters);
+    s = struct('counts', counts, 'centers', centers);
+    
     switch (sceneOrToneMappedImage)
         case 'scene'
-            [obj.data.inputLuminanceHistogram.counts,obj.data.inputLuminanceHistogram.centers] = hist(luminances, luminanceCenters);   
+            obj.data.inputLuminanceHistogram = s;
         case 'toneMappedImage'
-            [obj.data.toneMappedImageLuminanceHistogram.counts,obj.data.toneMappedImageLuminanceHistogram.centers] = hist(luminance, luminanceCenters);
+            obj.data.toneMappedImageLuminanceHistogram(displayName) = s;
     end
     
 end
