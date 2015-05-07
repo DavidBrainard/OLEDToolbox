@@ -17,15 +17,10 @@ function obj = generateGUI(obj)
     
     
     GUI.figHandle = figure(1);
-    clf;
-    
-    % Disable resizing
-    set(GUI.figHandle, 'ResizeFcn',@FigureResizeCallback);
-    
-    % Create and then hide the UI as it is being constructed.
-    set(GUI.figHandle, 'CloseRequestFcn',{@ExitCallback, GUI}, ...
+    set(GUI.figHandle, ...
         'NumberTitle', 'off','Visible','off', 'Name', 'ToneMappingSimulator', ...
-        'MenuBar','None', 'Position',[20,650,1900 768]);
+        'CloseRequestFcn',{@ExitCallback, GUI}, ... % 'ResizeFcn',@FigureResizeCallback, ...
+        'MenuBar','None', 'Position',[20,650,1600 768]);
     
     
     % Create the menus 
