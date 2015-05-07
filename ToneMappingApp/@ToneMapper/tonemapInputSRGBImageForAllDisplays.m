@@ -20,8 +20,6 @@ function tonemapInputSRGBImageForAllDisplays(obj)
         % To cal format for faster computations
         [SRGBcalFormat, nCols, mRows] = ImageToCalFormat(obj.data.inputSRGBimage);
 
-        obj.processingOptions.sRGBXYZconversionAlgorithm
-        
         % To XYZ
         if (strcmp(obj.processingOptions.sRGBXYZconversionAlgorithm, 'PTB3-based'))
             % From gamma-corrected SRGB to linear sRGB
