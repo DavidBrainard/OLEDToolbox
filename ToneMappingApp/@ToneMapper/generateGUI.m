@@ -75,6 +75,7 @@ function obj = generateGUI(obj)
                     uimenu(GUI.subMenu41, 'Label', 'Linear scaling onto display gamut',     'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'LINEAR_SCALING'));
     GUI.subMenu41a = uimenu(GUI.subMenu41, 'Label', 'Clipping at display''s max luminance ...');
                      uimenu(GUI.subMenu41a, 'Label', 'Scene attenuation factor: 1', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'CLIP_AT_DISPLAY_MAX', 1));
+                     uimenu(GUI.subMenu41a, 'Label', 'Scene attenuation factor: 3', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'CLIP_AT_DISPLAY_MAX', 3));
                      uimenu(GUI.subMenu41a, 'Label', 'Scene attenuation factor: 10', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'CLIP_AT_DISPLAY_MAX', 10));
                      uimenu(GUI.subMenu41a, 'Label', 'Scene attenuation factor: 30', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'CLIP_AT_DISPLAY_MAX', 30));
                      uimenu(GUI.subMenu41a, 'Label', 'Scene attenuation factor: 100', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'CLIP_AT_DISPLAY_MAX', 100));
@@ -97,6 +98,7 @@ function obj = generateGUI(obj)
                     uimenu(GUI.subMenu51, 'Label', 'Linear scaling onto display gamut',     'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'LINEAR_SCALING'));
     GUI.subMenu51a = uimenu(GUI.subMenu51, 'Label', 'Clipping at display''s max luminance...');
                      uimenu(GUI.subMenu51a, 'Label', 'Scene attenuation factor: 1', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'CLIP_AT_DISPLAY_MAX', 1));
+                     uimenu(GUI.subMenu51a, 'Label', 'Scene attenuation factor: 3', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'CLIP_AT_DISPLAY_MAX', 3));
                      uimenu(GUI.subMenu51a, 'Label', 'Scene attenuation factor: 10', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'CLIP_AT_DISPLAY_MAX', 10));
                      uimenu(GUI.subMenu51a, 'Label', 'Scene attenuation factor: 30', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'CLIP_AT_DISPLAY_MAX', 30));
                      uimenu(GUI.subMenu51a, 'Label', 'Scene attenuation factor: 100', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'CLIP_AT_DISPLAY_MAX', 100));
