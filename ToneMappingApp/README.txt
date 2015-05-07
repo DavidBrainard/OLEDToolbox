@@ -5,7 +5,7 @@
 
 > You will see the app's main window showing the SPDs of the two simulated displays.
 
-> Load an image: From the app’s Menu bar, choose File->Load image data (and select Rocket.mat - this is the image you sent me, but in a matfile). If you want to read other exr images directly, you will have to compile the MatlabEXR mex files as described in the README.txt file in that directory.
+> Load an image: From the app’s Menu bar, choose File->Load image data (and select Rocket.mat - this is the image you sent me, but in a matfile). If you want to read other exr images directly, you will have to compile the mex files found in external/matlabEXR as described in the README.txt file in that directory.
 
 > The program will go through the default tone mapping (which is linear mapping of input luminance to display luminance), and once completed you will see the the luminance histograms of the input image (right, bottom panel) and of the tone mapped images (right, top panel) for the OLED (red) and the LCD (blue) displays. The bottom panel will also depict the employed tone mapping functions for the two displays (red line: OLED, blue line: LCD). 
 
