@@ -53,45 +53,32 @@ function tonemapInputSRGBImageForAllDisplays(obj)
         % Back to XYZ
         XYZcalFormatToneMapped = xyYToXYZ(xyYcalFormatToneMapped);
         
-        % To SRGB for display
+        % To display RGB primaries
+        RGBPrimariesCalFormatToneMapped = SensorToPrimary(cal, XYZcalFormatToneMapped);
+        
+        % To display gamut
+        [RGBPrimariesCalFormatToneMappedInGamut, obj.data.outOfGamutStats(displayName)] = mapToGamut(RGBPrimariesCalFormatToneMapped, obj.processingOptions.aboveGamutOperation);
+
+        % Back to realizable (by the display) XYZ values
+        XYZcalFormatToneMappedInGamut = PrimaryToSensor(cal, RGBPrimariesCalFormatToneMappedInGamut);
+
+        % To SRGB primaries
         if (strcmp(obj.processingOptions.sRGBXYZconversionAlgorithm, 'PTB3-based'))
             % PTB function
-        	SRGBcalFormatToneMapped = XYZToSRGBPrimary(XYZcalFormatToneMapped);
+        	SRGBcalFormatToneMapped        = XYZToSRGBPrimary(XYZcalFormatToneMapped);
+            SRGBcalFormatToneMappedInGamut = XYZToSRGBPrimary(XYZcalFormatToneMappedInGamut);
+            
             % linear SRGB to gamma-corrected SRGB
-            SRGBcalFormatToneMapped = GammaCompress(SRGBcalFormatToneMapped);
+            SRGBcalFormatToneMapped        = GammaCompress(SRGBcalFormatToneMapped);
+            SRGBcalFormatToneMappedInGamut = GammaCompress(SRGBcalFormatToneMappedInGamut);
         else
             % MATLAB function
-            SRGBcalFormatToneMapped = (xyz2rgb(XYZcalFormatToneMapped', 'ColorSpace','srgb'))';
+            SRGBcalFormatToneMapped        = (xyz2rgb(XYZcalFormatToneMapped', 'ColorSpace','srgb'))';
+            SRGBcalFormatToneMappedInGamut = (xyz2rgb(XYZcalFormatToneMappedInGamut', 'ColorSpace','srgb'))';
         end
         
         % Save tonemappedSRGB image
         obj.data.toneMappedSRGBimage(displayName) = CalFormatToImage(SRGBcalFormatToneMapped, nCols, mRows);
-        
-        % To display primaries
-        RGBPrimariesCalFormatToneMapped = SensorToPrimary(cal, XYZcalFormatToneMapped);
-        
-        obj.processingOptions.ignoreDisplayGamut = false;
-        if (obj.processingOptions.ignoreDisplayGamut)
-            XYZcalFormatToneMappedInGamut = XYZcalFormatToneMapped;
-            obj.data.outOfGamutStats(displayName) = [];
-        else
-            % To display gamut
-            [RGBPrimariesCalFormatToneMappedInGamut, obj.data.outOfGamutStats(displayName)] = mapToGamut(RGBPrimariesCalFormatToneMapped, obj.processingOptions.aboveGamutOperation);
-
-            % back to XYZ so that we have realizable (by the display) XYZ values
-            XYZcalFormatToneMappedInGamut = PrimaryToSensor(cal, RGBPrimariesCalFormatToneMappedInGamut);
-        end
-        
-        % To SRGB for display
-        if (strcmp(obj.processingOptions.sRGBXYZconversionAlgorithm, 'PTB3-based'))
-            % PTB function
-        	SRGBcalFormatToneMappedInGamut = XYZToSRGBPrimary(XYZcalFormatToneMappedInGamut);
-            % linear SRGB to gamma-corrected SRGB
-            SRGBcalFormatToneMappedInGamut = GammaCompress(SRGBcalFormatToneMappedInGamut);
-        else
-            % MATLAB function
-            SRGBcalFormatToneMappedInGamut = (xyz2rgb(XYZcalFormatToneMappedInGamut', 'ColorSpace','srgb'))';
-        end
         
         % Save tonemapped, in gamut SRGB image
         obj.data.toneMappedInGamutSRGBimage(displayName) = CalFormatToImage(SRGBcalFormatToneMappedInGamut, nCols, mRows);        
