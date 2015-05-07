@@ -47,6 +47,8 @@ function redoToneMapAndUpdateGUI(obj)
             waitbar(0.6, obj.progressBarHandle,'4. Preparing results for OLED display  ...');
             pause(0.01);
 
+            fprintf('\n---------------------------------------------\n%s\n---------------------------------------------\n', sprintf('%s',datestr(now)));
+                
             % Render tone mapped images
             obj.drawToneMappedImages('OLED');
 
