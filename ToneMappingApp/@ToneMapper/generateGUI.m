@@ -15,10 +15,13 @@ function obj = generateGUI(obj)
         'MenuBar','None', 'Position',[1640 75 1025 750]);
     
     
+    if (ishandle(1))
+       close(1) 
+    end
     
     GUI.figHandle = figure(1);
     set(GUI.figHandle, ...
-        'NumberTitle', 'off','Visible','off', 'Name', 'ToneMappingSimulator', ...
+        'NumberTitle', 'off','Visible','on', 'Name', 'ToneMappingSimulator', ...
         'CloseRequestFcn',{@ExitCallback, GUI}, ... % 'ResizeFcn',@FigureResizeCallback, ...
         'MenuBar','None', 'Position',[20,650,1600 768]);
     
@@ -150,9 +153,6 @@ function obj = generateGUI(obj)
    GUI.toneMappedHistogramPlotHandle = axes('Units','pixels','Position',[830  430  750 300]);
    set(GUI.sceneHistogramPlotHandle, 'XColor', 'none', 'YColor', 'none', 'FontName', 'Helvetica', 'FontSize', 14);    
    set(GUI.toneMappedHistogramPlotHandle, 'XColor', 'none', 'YColor', 'none', 'FontName', 'Helvetica', 'FontSize', 14);     
-   
-   % Make the UI visible.
-   GUI.figHandle.Visible = 'on';
 
    obj.GUI =  GUI;
 end
