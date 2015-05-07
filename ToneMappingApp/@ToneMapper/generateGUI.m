@@ -1,6 +1,6 @@
 function obj = generateGUI(obj)
 
-   
+    
     % Create image figure
     GUI.imageHandle = figure(2);
     set(GUI.imageHandle, ...
@@ -14,12 +14,9 @@ function obj = generateGUI(obj)
         'CloseRequestFcn',{@NoExitCallback}, ...
         'MenuBar','None', 'Position',[1640 75 1025 750]);
     
-    
-    if (ishandle(1))
-       close(1) 
-    end
-    
+
     GUI.figHandle = figure(1);
+    clf;
     set(GUI.figHandle, ...
         'NumberTitle', 'off','Visible','on', 'Name', 'ToneMappingSimulator', ...
         'CloseRequestFcn',{@ExitCallback, GUI}, ... % 'ResizeFcn',@FigureResizeCallback, ...
