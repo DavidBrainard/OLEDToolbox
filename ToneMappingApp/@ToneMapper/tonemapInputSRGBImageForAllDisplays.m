@@ -18,15 +18,17 @@ function tonemapInputSRGBImageForAllDisplays(obj)
         cal = display.calStruct;
         
         % To cal format for faster computations
-        [RGBcalFormat, nCols, mRows] = ImageToCalFormat(obj.data.inputSRGBimage);
+        [SRGBcalFormat, nCols, mRows] = ImageToCalFormat(obj.data.inputSRGBimage);
 
-        % From SRGB to XYZ
+        % To XYZ
         if (strcmp(obj.processingOptions.sRGBXYZconversionAlgorithm, 'PTB-3-based'))
-            %PTB function
-            XYZcalFormat = SRGBPrimaryToXYZ(RGBcalFormat);
+            % From gamma-corrected SRGB to linear sRGB
+            SRGBcalFormat = GammaExpand(SRGBcalFormat);
+            % PTB function
+            XYZcalFormat = SRGBPrimaryToXYZ(SRGBcalFormat);
         else
             % MATLAB function
-            XYZcalFormat = (rgb2xyz(RGBcalFormat', 'ColorSpace','srgb'))';
+            XYZcalFormat = (rgb2xyz(SRGBcalFormat', 'ColorSpace','srgb'))';
         end
          
         % To xyY
@@ -51,8 +53,19 @@ function tonemapInputSRGBImageForAllDisplays(obj)
         % Back to XYZ
         XYZcalFormatToneMapped = xyYToXYZ(xyYcalFormatToneMapped);
         
+        % To SRGB for display
+        if (strcmp(obj.processingOptions.sRGBXYZconversionAlgorithm, 'PTB3-based'))
+            % PTB function
+        	SRGBcalFormatToneMapped = XYZToSRGBPrimary(XYZcalFormatToneMapped);
+            % linear SRGB to gamma-corrected SRGB
+            SRGBcalFormatToneMapped = GammaCompress(SRGBcalFormatToneMapped);
+        else
+            % MATLAB function
+            SRGBcalFormatToneMapped = (xyz2rgb(XYZcalFormatToneMapped', 'ColorSpace','srgb'))';
+        end
+        
         % Save tonemappedSRGB image
-        obj.data.toneMappedSRGBimage(displayName) = CalFormatToImage((xyz2rgb(XYZcalFormatToneMapped', 'ColorSpace','srgb'))', nCols, mRows);
+        obj.data.toneMappedSRGBimage(displayName) = CalFormatToImage(SRGBcalFormatToneMapped, nCols, mRows);
         
         % To display primaries
         RGBPrimariesCalFormatToneMapped = SensorToPrimary(cal, XYZcalFormatToneMapped);
@@ -70,16 +83,45 @@ function tonemapInputSRGBImageForAllDisplays(obj)
         end
         
         % To SRGB for display
-        if (strcmp(obj.processingOptions.sRGBXYZconversionAlgorithm, 'PTB-3-based'))
+        if (strcmp(obj.processingOptions.sRGBXYZconversionAlgorithm, 'PTB3-based'))
             % PTB function
         	SRGBcalFormatToneMappedInGamut = XYZToSRGBPrimary(XYZcalFormatToneMappedInGamut);
+            % linear SRGB to gamma-corrected SRGB
+            SRGBcalFormatToneMappedInGamut = GammaCompress(SRGBcalFormatToneMappedInGamut);
         else
             % MATLAB function
-            SRGBcalFormatToneMappedInGamut  = (xyz2rgb(XYZcalFormatToneMappedInGamut', 'ColorSpace','srgb'))';
+            SRGBcalFormatToneMappedInGamut = (xyz2rgb(XYZcalFormatToneMappedInGamut', 'ColorSpace','srgb'))';
         end
         
         % Save tonemapped, in gamut SRGB image
         obj.data.toneMappedInGamutSRGBimage(displayName) = CalFormatToImage(SRGBcalFormatToneMappedInGamut, nCols, mRows);        
+    end
+    
+end
+
+function linearSRGB = GammaExpand(gammaCorrectedSRGB)
+    a = 0.055;
+    linearSRGB = 0*gammaCorrectedSRGB;
+    for channel = 1:size(gammaCorrectedSRGB,1)
+        c = squeeze(gammaCorrectedSRGB(channel,:));
+        indicesBelow = find(c <= 0.04045);
+        c(indicesBelow) = c(indicesBelow)/12.92;
+        indicesAbove = setdiff(1:numel(c), indicesBelow);
+        c(indicesAbove) = ((c(indicesAbove) + a)/(1+a)).^(2.4);
+        linearSRGB(channel,:) = c;
+    end
+end
+
+function gammaCorrectedSRGB = GammaCompress(linearSRGB)
+    a = 0.055;
+    gammaCorrectedSRGB = 0*linearSRGB;
+    for channel = 1:size(gammaCorrectedSRGB,1)
+        c = squeeze(linearSRGB(channel,:));
+        indicesBelow = find(c <= 0.0031308);
+        c(indicesBelow) = c(indicesBelow)*12.92;
+        indicesAbove = setdiff(1:numel(c), indicesBelow);
+        c(indicesAbove) = (1+a) * c(indicesAbove).^(1.0/2.4) - a;
+        gammaCorrectedSRGB(channel,:) = c;
     end
     
 end

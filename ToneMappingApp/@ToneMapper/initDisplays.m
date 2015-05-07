@@ -71,5 +71,11 @@ function cal = cleanupCal(fullCal)
     cal = rmfield(cal, 'usebitspp');
     cal = rmfield(cal, 'yoked');
     
+    cal.describe.gamma.fitType = 'crtPolyLinear';
+    cal.describe.gamma.contrastThresh = 1.000e-03;
+    cal.describe.gamma.fitBreakThresh = 0.0200;
+    cal.describe.gamma.exponents = [];
+    cal.describe.gamma.useweight = [];
+    
 end
 
