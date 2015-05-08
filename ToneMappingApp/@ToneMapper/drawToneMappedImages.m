@@ -24,7 +24,7 @@ function drawToneMappedImages(obj, displayName)
         minSRBstim = minSRGBLCD;
         maxSRBstim = maxSRGBLCD;
     end
-    plotTitle = sprintf('%s sRGB image (luminance tonemapped) SRGBrange = [%2.2f - %2.2f]; displayed SRGB range: [0 %2.2f]', displayName, minSRBstim, maxSRBstim, maxSRGBimage);
+    plotTitle = sprintf('%s sRGB image (luminance tonemapped)\nSRGBrange = [%2.2f - %2.2f]; displayed SRGB range: [0 %2.2f]', displayName, minSRBstim, maxSRBstim, maxSRGBimage);
     obj.plotSRGBImage(obj.data.toneMappedSRGBimage(displayName), plotTitle, maxSRGBimage);
  
     
@@ -44,7 +44,7 @@ function drawToneMappedImages(obj, displayName)
         maxSRBstim = maxSRGBLCD;
     end
     
-    plotTitle = sprintf('%s sRGB image (luminance tonemapped, with RGB in gamut); SRGBrange = [%2.2f - %2.2f]; displayed SRGB range: [0 %2.2f]', displayName, minSRBstim, maxSRBstim, maxSRGBimage);
+    plotTitle = sprintf('%s sRGB image (luminance tonemapped, with RGB in gamut)\nSRGBrange = [%2.2f - %2.2f]; displayed SRGB range: [0 %2.2f]', displayName, minSRBstim, maxSRBstim, maxSRGBimage);
     obj.plotSRGBImage(obj.data.toneMappedInGamutSRGBimage(displayName), plotTitle, maxSRGBimage);
     
     
