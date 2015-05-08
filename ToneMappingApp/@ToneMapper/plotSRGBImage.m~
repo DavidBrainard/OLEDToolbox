@@ -1,0 +1,14 @@
+function plotSRGBImage(obj, im, plotTitle) 
+    if (obj.data.inputSRGBimageMax <= 1)
+        im = im / obj.data.inputSRGBimageMax;
+    elseif (obj.data.inputSRGBimageMax <= 1)
+        
+    
+    im = im/obj.data.inputSRGBimageMax;
+    im(im>1) = 1;
+    imshow(im, [0 1]);
+    axis('image');
+    axis('ij');
+    set(gca, 'XTick', [], 'YTick', [], 'CLim', [0 1]);
+    title(plotTitle);
+end

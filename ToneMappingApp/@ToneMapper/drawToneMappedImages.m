@@ -1,13 +1,26 @@
 function drawToneMappedImages(obj, displayName)
+
+    % maxSRGB for plotting
+    maxSRGBOLED = max(max(max(obj.data.toneMappedSRGBimage('OLED'))));
+    maxSRGBLCD  = max(max(max(obj.data.toneMappedSRGBimage('LCD'))));
+    minSRGBOLED = min(min(min(obj.data.toneMappedSRGBimage('OLED'))));
+    minSRGBLCD  = min(min(min(obj.data.toneMappedSRGBimage('LCD'))));
+    
+    maxSRGB = max([ maxSRGBOLED  maxSRGBLCD]);
+    
     figure(obj.GUI.imageHandle);
     
     % The tonemapped, not-in-gamut image
     if (strcmp(displayName, 'OLED'))
         subplot('Position', [0.005 0.35 0.49 0.3]);
+        minSRBdisplay = minSRGBOLED;
+        maxSRBdisplay = maxSRGBOLED;
     else
         subplot('Position', [0.005 0.02 0.49 0.3]);
+        minSRBdisplay = minSRGBLCD;
+        maxSRBdisplay = maxSRGBLCD;
     end
-    obj.plotSRGBImage(obj.data.toneMappedSRGBimage(displayName), sprintf('%s sRGB image (luminance tonemapped)', displayName));
+    obj.plotSRGBImage(obj.data.toneMappedSRGBimage(displayName), sprintf('%s sRGB image (luminance tonemapped) SRGBrange = [%2.2f - %2.2f]', displayName, minSRBdisplay, maxSRBdisplay), 1);
 
     
     % Now the tonemapped, in-gamut image
@@ -16,16 +29,13 @@ function drawToneMappedImages(obj, displayName)
     else
         subplot('Position', [0.505 0.02 0.49 0.3]);
     end
-    obj.plotSRGBImage(obj.data.toneMappedInGamutSRGBimage(displayName), sprintf('%s sRGB image (luminance tonemapped, with RGB in gamut)', displayName));
+    obj.plotSRGBImage(obj.data.toneMappedInGamutSRGBimage(displayName), sprintf('%s sRGB image (luminance tonemapped, with RGB in gamut)', displayName), 1);
     
     
     % Now do the sRGB mapping plots
     figure(obj.GUI.mappingPlotsHandle);
     
-    % maxSRGB for plotting
-    maxSRGB = max([  max(max(max(obj.data.toneMappedSRGBimage('OLED'))))  max(max(max(obj.data.toneMappedSRGBimage('LCD')))) ]);
-    minSRGB = min([  min(min(min(obj.data.toneMappedSRGBimage('OLED'))))  min(min(min(obj.data.toneMappedSRGBimage('LCD')))) ]);
-    
+   
     % The tonemapped, not-in-gamut image
     if (strcmp(displayName, 'OLED'))
         subplot('Position', [0.04 0.39 0.45 0.28]);
@@ -34,7 +44,7 @@ function drawToneMappedImages(obj, displayName)
     end
     stats = obj.data.outOfGamutStats(displayName);
     stats.displayName = displayName;
-    plotRGBcorrespondences(obj.data.inputSRGBimage, obj.data.toneMappedSRGBimage(displayName), stats,  minSRGB, maxSRGB, sprintf('%s sRGB primaries (luminance tonemapped)', displayName));
+    plotRGBcorrespondences(obj.data.inputSRGBimage, obj.data.toneMappedSRGBimage(displayName), stats,  0, maxSRGB, sprintf('%s sRGB primaries (luminance tonemapped)', displayName));
     
      % Now the tonemapped, in-gamut image
     if (strcmp(displayName, 'OLED'))
@@ -42,7 +52,7 @@ function drawToneMappedImages(obj, displayName)
     else
         subplot('Position', [0.53 0.05 0.45 0.28]);
     end
-    plotRGBcorrespondences(obj.data.inputSRGBimage, obj.data.toneMappedInGamutSRGBimage(displayName), [],  minSRGB, maxSRGB, sprintf('%s sRGB primaries (luminance tonemapped, with RGB in gamut)', displayName));
+    plotRGBcorrespondences(obj.data.inputSRGBimage, obj.data.toneMappedInGamutSRGBimage(displayName), [],  0, maxSRGB, sprintf('%s sRGB primaries (luminance tonemapped, with RGB in gamut)', displayName));
     
 end
 

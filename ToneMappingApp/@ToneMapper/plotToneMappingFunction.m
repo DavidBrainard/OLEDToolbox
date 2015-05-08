@@ -29,9 +29,6 @@ function plotToneMappingFunction(obj, displayName)
             set(h, 'FontName', 'Helvetica', 'FontSize', 12, 'Location', 'SouthEast');
            
     end
-    
-    %xlabel(obj.GUI.sceneHistogramPlotHandle, 'input luminance (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'bold');
-    %ylabel(obj.GUI.sceneHistogramPlotHandle, 'count', 'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'bold');
     box(obj.GUI.sceneHistogramPlotHandle, 'on');
 end
 

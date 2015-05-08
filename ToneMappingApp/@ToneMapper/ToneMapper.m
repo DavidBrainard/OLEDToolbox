@@ -8,6 +8,7 @@ classdef ToneMapper < handle
     properties(SetAccess=private)
         % the GUI
         GUI
+        
         % container with display params for OLED and LCD displays
         displays
         
@@ -119,7 +120,7 @@ classdef ToneMapper < handle
         renderToneMappedImage(obj, displayName);
         
         % Method to plot an SRGB image
-        plotSRGBImage(obj, im, titleText);
+        plotSRGBImage(obj, im, plotTitle, maxSRGB);
         
         % Method to plot the SPDs;
         plotSPDs(obj, displayName);

@@ -23,7 +23,7 @@ function tonemapInputSRGBImageForAllDisplays(obj)
         % To XYZ
         if (strcmp(obj.processingOptions.sRGBXYZconversionAlgorithm, 'PTB3-based'))
             % From gamma-corrected SRGB to linear sRGB
-            SRGBcalFormat = GammaExpand(SRGBcalFormat);
+            SRGBcalFormat = sRGB.gammaUndo(SRGBcalFormat);
             % PTB function
             XYZcalFormat = SRGBPrimaryToXYZ(SRGBcalFormat);
         else
@@ -67,10 +67,10 @@ function tonemapInputSRGBImageForAllDisplays(obj)
             % PTB function
         	SRGBcalFormatToneMapped        = XYZToSRGBPrimary(XYZcalFormatToneMapped);
             SRGBcalFormatToneMappedInGamut = XYZToSRGBPrimary(XYZcalFormatToneMappedInGamut);
-            
+        
             % linear SRGB to gamma-corrected SRGB
-            SRGBcalFormatToneMapped        = GammaCompress(SRGBcalFormatToneMapped);
-            SRGBcalFormatToneMappedInGamut = GammaCompress(SRGBcalFormatToneMappedInGamut);
+            SRGBcalFormatToneMapped        = sRGB.gammaCorrect(SRGBcalFormatToneMapped);
+            SRGBcalFormatToneMappedInGamut = sRGB.gammaCorrect(SRGBcalFormatToneMappedInGamut);
         else
             % MATLAB function
             SRGBcalFormatToneMapped        = (xyz2rgb(XYZcalFormatToneMapped', 'ColorSpace','srgb'))';
@@ -82,36 +82,13 @@ function tonemapInputSRGBImageForAllDisplays(obj)
         
         % Save tonemapped, in gamut SRGB image
         obj.data.toneMappedInGamutSRGBimage(displayName) = CalFormatToImage(SRGBcalFormatToneMappedInGamut, nCols, mRows);        
+ 
     end
     
 end
 
-function linearSRGB = GammaExpand(gammaCorrectedSRGB)
-    a = 0.055;
-    linearSRGB = 0*gammaCorrectedSRGB;
-    for channel = 1:size(gammaCorrectedSRGB,1)
-        c = squeeze(gammaCorrectedSRGB(channel,:));
-        indicesBelow = find(c <= 0.04045);
-        c(indicesBelow) = c(indicesBelow)/12.92;
-        indicesAbove = setdiff(1:numel(c), indicesBelow);
-        c(indicesAbove) = ((c(indicesAbove) + a)/(1+a)).^(2.4);
-        linearSRGB(channel,:) = c;
-    end
-end
 
-function gammaCorrectedSRGB = GammaCompress(linearSRGB)
-    a = 0.055;
-    gammaCorrectedSRGB = 0*linearSRGB;
-    for channel = 1:size(gammaCorrectedSRGB,1)
-        c = squeeze(linearSRGB(channel,:));
-        indicesBelow = find(c <= 0.0031308);
-        c(indicesBelow) = c(indicesBelow)*12.92;
-        indicesAbove = setdiff(1:numel(c), indicesBelow);
-        c(indicesAbove) = (1+a) * c(indicesAbove).^(1.0/2.4) - a;
-        gammaCorrectedSRGB(channel,:) = c;
-    end
-    
-end
+
 
 
 function [inGamutPrimaries, s] = mapToGamut(primaries, aboveGamutOperation)
@@ -120,7 +97,7 @@ function [inGamutPrimaries, s] = mapToGamut(primaries, aboveGamutOperation)
     totalSubPixelsAboveGamut = 0;
     
     for channel = 1:3
-        p = find(primaries(channel,:) < 0.001);
+        p = find(primaries(channel,:) < eps);
         primaries(channel, p) = 0;
         if (channel == 1)
             s.belowGamutRedPrimaryIndices = p;

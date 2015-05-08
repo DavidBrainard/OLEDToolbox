@@ -1,11 +1,6 @@
 function updateGUIWithCurrentLuminances(obj, displayName)
 
-    % get the display's cal struct
     display = obj.displays(displayName);
-    cal = display.calStruct;
-    
-    % save data
-    obj.displays(displayName) = display;
     
     % Update GUI
     switch displayName

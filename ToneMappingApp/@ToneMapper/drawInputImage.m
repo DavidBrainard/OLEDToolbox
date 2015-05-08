@@ -2,7 +2,14 @@ function drawInputImage(obj)
     if (~isempty(obj.data))
         figure(obj.GUI.imageHandle);
         subplot('Position', [0.27 0.68 0.48 0.29]);
-        obj.plotSRGBImage(obj.data.inputSRGBimage, sprintf('input SRGB image minRGB:%2.2f, maxRGB:%2.2f', min(obj.data.inputSRGBimage(:)), max(obj.data.inputSRGBimage(:))));
+        plotTitle = sprintf('input SRGB image RGBrange = [%2.2f - %2.2f]', obj.data.inputSRGBimageMin, obj.data.inputSRGBimageMax);
+        
+        maxSRGB = max([1 obj.data.inputSRGBimageMax * 0.1]);
+        if (obj.data.inputSRGBimageMin/2 > 0.2)
+            k = 0.2 / obj.data.inputSRGBimageMin;
+            maxSRGB  = obj.data.inputSRGBimageMin / 0.2;
+        end
+        obj.plotSRGBImage(obj.data.inputSRGBimage, plotTitle, maxSRGB);
     end
     
 end
