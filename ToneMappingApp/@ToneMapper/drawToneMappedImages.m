@@ -82,24 +82,24 @@ function plotRGBcorrespondences(input, output, outOfGamutStats, minSRGB, maxSRGB
     ylabel('mapped sRGB');
     if (~isempty(outOfGamutStats))
         outOfGamutStats
-        if isfield(outOfGamutStats, 'belowGamutRedPrimaryIndices')
-            sprintf('< pixels (R < 0): %d', numel(outOfGamutStats.belowGamutRedPrimaryIndices));
-        end
-        if isfield(outOfGamutStats, 'belowGamutGreenPrimaryIndices')
-            sprintf('< pixels (G < 0): %d', numel(outOfGamutStats.belowGamutGreenPrimaryIndices));
-        end
-        if isfield(outOfGamutStats, 'belowGamutBluePrimaryIndices')
-            sprintf('< pixels (B < 0): %d', numel(outOfGamutStats.belowGamutBluePrimaryIndices));
-        end
-        if isfield(outOfGamutStats, 'aboveGamutRedPrimaryIndices')
-            sprintf('> pixels (R > 1): %d', numel(outOfGamutStats.aboveGamutRedPrimaryIndices));
-        end
-        if isfield(outOfGamutStats, 'aboveGamutGreenPrimaryIndices')
-            sprintf('> pixels (G > 1): %d', numel(outOfGamutStats.aboveGamutGreenPrimaryIndices));
-        end
-        if isfield(outOfGamutStats, 'aboveGamutBluePrimaryIndices')
-            sprintf('> pixels (B > 1): %d', numel(outOfGamutStats.aboveGamutBluePrimaryIndices));
-        end
+%         if isfield(outOfGamutStats, 'belowGamutRedPrimaryIndices')
+%             sprintf('< pixels (R < 0): %d', numel(outOfGamutStats.belowGamutRedPrimaryIndices));
+%         end
+%         if isfield(outOfGamutStats, 'belowGamutGreenPrimaryIndices')
+%             sprintf('< pixels (G < 0): %d', numel(outOfGamutStats.belowGamutGreenPrimaryIndices));
+%         end
+%         if isfield(outOfGamutStats, 'belowGamutBluePrimaryIndices')
+%             sprintf('< pixels (B < 0): %d', numel(outOfGamutStats.belowGamutBluePrimaryIndices));
+%         end
+%         if isfield(outOfGamutStats, 'aboveGamutRedPrimaryIndices')
+%             sprintf('> pixels (R > 1): %d', numel(outOfGamutStats.aboveGamutRedPrimaryIndices));
+%         end
+%         if isfield(outOfGamutStats, 'aboveGamutGreenPrimaryIndices')
+%             sprintf('> pixels (G > 1): %d', numel(outOfGamutStats.aboveGamutGreenPrimaryIndices));
+%         end
+%         if isfield(outOfGamutStats, 'aboveGamutBluePrimaryIndices')
+%             sprintf('> pixels (B > 1): %d', numel(outOfGamutStats.aboveGamutBluePrimaryIndices));
+%         end
     end
     
     title(titleText);

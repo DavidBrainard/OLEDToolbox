@@ -61,7 +61,7 @@ function plotHistogram(obj, sceneOrToneMappedImage, displayName, holdPreviousPlo
         case 'toneMappedImage'
             if (strcmp(holdPreviousPlots, 'on'))
                 h = legend({'OLED image luminance', 'LCD image luminance'});
-                set(h, 'FontName', 'Helvetica', 'FontSize', 12);
+                set(h, 'FontName', 'Helvetica', 'FontSize', 12, 'FontWeight', 'bold', 'Location', 'North');
             end
             set(obj.GUI.toneMappedHistogramPlotHandle, 'XLim', [0 max([obj.displays('OLED').maxLuminance obj.displays('LCD').maxLuminance])], 'YLim', [0 maxHistogramCount], 'XColor', grayColor, 'YColor', grayColor, 'FontName', 'Helvetica', 'FontSize', 12);
             xlabel(obj.GUI.toneMappedHistogramPlotHandle, 'display luminance (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 12, 'FontWeight', 'bold');

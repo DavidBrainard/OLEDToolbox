@@ -26,7 +26,7 @@ function plotToneMappingFunction(obj, displayName)
         case 'LCD' 
             plot(inputLuminance, outputLuminance, 'b-');
             h = legend({'input image luminance','OLED tone mapping', 'LCD tone mapping'});
-            set(h, 'FontName', 'Helvetica', 'FontSize', 12, 'Location', 'SouthEast');
+            set(h, 'FontName', 'Helvetica', 'FontSize', 12, 'Location', 'North', 'FontWeight', 'bold');
            
     end
     box(obj.GUI.sceneHistogramPlotHandle, 'on');
