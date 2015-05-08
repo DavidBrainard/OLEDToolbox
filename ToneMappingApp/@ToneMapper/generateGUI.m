@@ -136,22 +136,22 @@ function obj = generateGUI(obj)
    GUI.subMenu63 = uimenu(GUI.mainMenu6, 'Label', 'Above-gamut operation (currently: ??) ...');                
                    uimenu(GUI.subMenu63, 'Label', ' Clip individual primaries',  'Callback', @(src,event)setAboveGamutPrimaryOperation(obj,src,event, 'Clip Individual Primaries'));
                    uimenu(GUI.subMenu63, 'Label', ' Scale RGBprimary triplet',   'Callback', @(src,event)setAboveGamutPrimaryOperation(obj,src,event, 'Scale RGBPrimary Triplet'));
-   GUI.subMenu64 = uimenu(GUI.mainMenu6, 'Label', 'Display max luminance limiting factor (currently: ??)');
-                   uimenu(GUI.subMenu64, 'Label', 'Use 2000% of max luminance',  'Callback', @(src,event)setDisplayMaxLuminanceLimitingFactor(obj,src,event, 20.0));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 1000% of max luminance',  'Callback', @(src,event)setDisplayMaxLuminanceLimitingFactor(obj,src,event, 10.0));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 400% of max luminance',  'Callback', @(src,event)setDisplayMaxLuminanceLimitingFactor(obj,src,event, 4.0));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 200% of max luminance',  'Callback', @(src,event)setDisplayMaxLuminanceLimitingFactor(obj,src,event, 2.0));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 100% of max luminance',  'Callback', @(src,event)setDisplayMaxLuminanceLimitingFactor(obj,src,event, 1.0));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 95% of max luminance',  'Callback', @(src,event)setDisplayMaxLuminanceLimitingFactor(obj,src,event, 0.95));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 90% of max luminance',  'Callback', @(src,event)setDisplayMaxLuminanceLimitingFactor(obj,src,event, 0.90));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 85% of max luminance',  'Callback', @(src,event)setDisplayMaxLuminanceLimitingFactor(obj,src,event, 0.85));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 80% of max luminance',  'Callback', @(src,event)setDisplayMaxLuminanceLimitingFactor(obj,src,event, 0.80));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 75% of max luminance',  'Callback', @(src,event)setDisplayMaxLuminanceLimitingFactor(obj,src,event, 0.75));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 70% of max luminance',  'Callback', @(src,event)setDisplayMaxLuminanceLimitingFactor(obj,src,event, 0.70));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 65% of max luminance',  'Callback', @(src,event)setDisplayMaxLuminanceLimitingFactor(obj,src,event, 0.65));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 60% of max luminance',  'Callback', @(src,event)setDisplayMaxLuminanceLimitingFactor(obj,src,event, 0.60));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 55% of max luminance',  'Callback', @(src,event)setDisplayMaxLuminanceLimitingFactor(obj,src,event, 0.55));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 50% of max luminance',  'Callback', @(src,event)setDisplayMaxLuminanceLimitingFactor(obj,src,event, 0.50));
+   GUI.subMenu64 = uimenu(GUI.mainMenu6, 'Label', 'Luminance fraction for tone mapping (currently: ??)');
+                   uimenu(GUI.subMenu64, 'Label', 'Use 2000% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 20.0));
+                   uimenu(GUI.subMenu64, 'Label', 'Use 1000% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 10.0));
+                   uimenu(GUI.subMenu64, 'Label', 'Use 400% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 4.0));
+                   uimenu(GUI.subMenu64, 'Label', 'Use 200% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 2.0));
+                   uimenu(GUI.subMenu64, 'Label', 'Use 100% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 1.0));
+                   uimenu(GUI.subMenu64, 'Label', 'Use 95% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 0.95));
+                   uimenu(GUI.subMenu64, 'Label', 'Use 90% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 0.90));
+                   uimenu(GUI.subMenu64, 'Label', 'Use 85% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 0.85));
+                   uimenu(GUI.subMenu64, 'Label', 'Use 80% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 0.80));
+                   uimenu(GUI.subMenu64, 'Label', 'Use 75% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 0.75));
+                   uimenu(GUI.subMenu64, 'Label', 'Use 70% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 0.70));
+                   uimenu(GUI.subMenu64, 'Label', 'Use 65% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 0.65));
+                   uimenu(GUI.subMenu64, 'Label', 'Use 60% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 0.60));
+                   uimenu(GUI.subMenu64, 'Label', 'Use 55% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 0.55));
+                   uimenu(GUI.subMenu64, 'Label', 'Use 50% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 0.50));
     
    % Create SPD plot axes
    GUI.spdOLEDPlotHandle = axes('Units','pixels','Position',[70  50 300  680]);

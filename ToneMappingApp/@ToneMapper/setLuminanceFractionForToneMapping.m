@@ -1,7 +1,7 @@
-function setDisplayMaxLuminanceLimitingFactor(obj, ~,~, varargin)
+function setLuminanceFractionForToneMapping(obj, ~,~, varargin)
 
     % Get new value
-    obj.processingOptions.displayMaxLuminanceLimitingFactor = varargin{1};
+    obj.processingOptions.luminanceFractionForToneMapping = varargin{1};
     
     % Update GUI
     obj.updateGUIWithCurrentProcessingOptions();

@@ -6,7 +6,7 @@ function outputLuminance = tonemapInputLuminance(obj, displayName, inputLuminanc
     cal = display.calStruct; 
     
     % Apply max luminance limiting factor
-    maxLuminanceAvailableForToneMapping = obj.processingOptions.displayMaxLuminanceLimitingFactor * display.maxLuminance;
+    maxLuminanceAvailableForToneMapping = obj.processingOptions.luminanceFractionForToneMapping * display.maxLuminance;
     
     % Compute min and max input luminance
     minInputLuminance = min(inputLuminance(:));
