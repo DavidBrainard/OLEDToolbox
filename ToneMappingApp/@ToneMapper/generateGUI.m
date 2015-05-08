@@ -6,7 +6,7 @@ function obj = generateGUI(obj)
     set(GUI.imageHandle, ...
         'NumberTitle', 'off','Visible','off', 'Name', 'Input & Tonemapped images',...
         'CloseRequestFcn',{@NoExitCallback}, ...
-        'MenuBar','None', 'Position',[1640 475 1025 750]);
+        'MenuBar','None', 'Position',[1640 475 1130 750]);
     
     GUI.mappingPlotsHandle = figure(3);
     set(GUI.mappingPlotsHandle, ...
@@ -81,10 +81,14 @@ function obj = generateGUI(obj)
                      
     GUI.subMenu41b = uimenu(GUI.subMenu41, 'Label', 'Reinhardt global');
                         uimenu(GUI.subMenu41b, 'Label', 'alpha:  0.01', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'REINHARDT_GLOBAL',  0.01));
+                        uimenu(GUI.subMenu41b, 'Label', 'alpha:  0.03', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'REINHARDT_GLOBAL',  0.03));
+                        uimenu(GUI.subMenu41b, 'Label', 'alpha:  0.06', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'REINHARDT_GLOBAL',  0.06));
                         uimenu(GUI.subMenu41b, 'Label', 'alpha:  0.10', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'REINHARDT_GLOBAL',  0.10));
-                        uimenu(GUI.subMenu41b, 'Label', 'alpha:  0.50', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'REINHARDT_GLOBAL',  0.50));
+                        uimenu(GUI.subMenu41b, 'Label', 'alpha:  0.30', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'REINHARDT_GLOBAL',  0.30));
+                        uimenu(GUI.subMenu41b, 'Label', 'alpha:  0.60', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'REINHARDT_GLOBAL',  0.60));
                         uimenu(GUI.subMenu41b, 'Label', 'alpha:  1.00', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'REINHARDT_GLOBAL',  1.00));
-                        uimenu(GUI.subMenu41b, 'Label', 'alpha:  5.00', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'REINHARDT_GLOBAL',  5.00));
+                        uimenu(GUI.subMenu41b, 'Label', 'alpha:  3.00', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'REINHARDT_GLOBAL',  3.00));
+                        uimenu(GUI.subMenu41b, 'Label', 'alpha:  6.00', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'REINHARDT_GLOBAL',  6.00));
                         uimenu(GUI.subMenu41b, 'Label', 'alpha: 10.00', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'REINHARDT_GLOBAL', 10.00));
                         uimenu(GUI.subMenu41b, 'Label', 'alpha: 50.00', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'REINHARDT_GLOBAL', 50.00));
                     
@@ -104,10 +108,14 @@ function obj = generateGUI(obj)
                      
     GUI.subMenu51b = uimenu(GUI.subMenu51, 'Label', 'Reinhardt global');
                         uimenu(GUI.subMenu51b, 'Label', 'alpha:  0.01', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'REINHARDT_GLOBAL',  0.01));
+                        uimenu(GUI.subMenu51b, 'Label', 'alpha:  0.03', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'REINHARDT_GLOBAL',  0.03));
+                        uimenu(GUI.subMenu51b, 'Label', 'alpha:  0.06', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'REINHARDT_GLOBAL',  0.06));
                         uimenu(GUI.subMenu51b, 'Label', 'alpha:  0.10', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'REINHARDT_GLOBAL',  0.10));
-                        uimenu(GUI.subMenu51b, 'Label', 'alpha:  0.50', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'REINHARDT_GLOBAL',  0.50));
+                        uimenu(GUI.subMenu51b, 'Label', 'alpha:  0.30', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'REINHARDT_GLOBAL',  0.30));
+                        uimenu(GUI.subMenu51b, 'Label', 'alpha:  0.60', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'REINHARDT_GLOBAL',  0.60));
                         uimenu(GUI.subMenu51b, 'Label', 'alpha:  1.00', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'REINHARDT_GLOBAL',  1.00));
-                        uimenu(GUI.subMenu51b, 'Label', 'alpha:  5.00', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'REINHARDT_GLOBAL',  5.00));
+                        uimenu(GUI.subMenu51b, 'Label', 'alpha:  3.00', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'REINHARDT_GLOBAL',  3.00));
+                        uimenu(GUI.subMenu51b, 'Label', 'alpha:  6.00', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'REINHARDT_GLOBAL',  6.00));
                         uimenu(GUI.subMenu51b, 'Label', 'alpha: 10.00', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'REINHARDT_GLOBAL', 10.00));
                         uimenu(GUI.subMenu51b, 'Label', 'alpha: 50.00', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'REINHARDT_GLOBAL', 50.00));
                     
