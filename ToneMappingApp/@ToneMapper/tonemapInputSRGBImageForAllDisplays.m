@@ -43,9 +43,6 @@ function tonemapInputSRGBImageForAllDisplays(obj)
         % Compute the tonemapped luminance channel
         outputLuminance = obj.tonemapInputLuminance(displayName, inputLuminance);
 
-        % Save tonemapped luminance map for later visualization of histograms
-        obj.data.toneMappedRGBluminanceMap(displayName) = CalFormatToImage(outputLuminance, nCols, mRows);
-        
         % Replace luminance channel with tone mapped luminance channel
         xyYcalFormatToneMapped = xyYcalFormat;
         xyYcalFormatToneMapped(3,:) = outputLuminance / obj.wattsToLumens;
@@ -62,6 +59,12 @@ function tonemapInputSRGBImageForAllDisplays(obj)
         % Back to realizable (by the display) XYZ values
         XYZcalFormatToneMappedInGamut = PrimaryToSensor(cal, RGBPrimariesCalFormatToneMappedInGamut);
 
+        % Compute realizable tone mapped luminance
+        realizableOutputLuminanceCalFormat = XYZcalFormatToneMappedInGamut(2,:) * obj.wattsToLumens;
+        
+        % Save tonemapped luminance map for later visualization of histograms
+        obj.data.toneMappedRGBluminanceMap(displayName) = CalFormatToImage(realizableOutputLuminanceCalFormat, nCols, mRows); 
+        
         % To SRGB primaries
         if (strcmp(obj.processingOptions.sRGBXYZconversionAlgorithm, 'PTB3-based'))
             % PTB function
