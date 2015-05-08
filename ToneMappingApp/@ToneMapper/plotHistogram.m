@@ -25,8 +25,11 @@ function plotHistogram(obj, sceneOrToneMappedImage, displayName, holdPreviousPlo
             luminanceBins   = obj.data.inputLuminanceHistogram.centers;
             luminanceCounts = obj.data.inputLuminanceHistogram.counts;
             histogramColor = [0.6 0.6 0.1];
-            maxHistogramCount = min(luminanceCounts(luminanceCounts>0))*obj.visualizationOptions.histogramCountHeight;
-        
+            maxHistogramCount = 40*min(luminanceCounts(luminanceCounts>0))*obj.visualizationOptions.histogramCountHeight / (obj.processingOptions.imageSubsamplingFactor)^2;
+            % normalize, then scale to max luminance so we can plot histogram and
+            % luminance tone mapping function on same y-axis
+            luminanceCounts = luminanceCounts / maxHistogramCount * max([obj.displays('OLED').maxLuminance obj.displays('LCD').maxLuminance]);
+    
         case 'toneMappedImage'
             set(obj.GUI.figHandle,'CurrentAxes',obj.GUI.toneMappedHistogramPlotHandle);
             hold(obj.GUI.toneMappedHistogramPlotHandle, holdPreviousPlots);
@@ -42,9 +45,7 @@ function plotHistogram(obj, sceneOrToneMappedImage, displayName, holdPreviousPlo
     end
    
 
-    % normalize, then scale to max luminance so we can plot histogram and
-    % luminance tone mapping function on same y-axis
-    luminanceCounts = luminanceCounts / maxHistogramCount * max([obj.displays('OLED').maxLuminance obj.displays('LCD').maxLuminance]);
+    
     
     % plot the histogram
     bar(luminanceBins, luminanceCounts, 'FaceColor', histogramColor, 'EdgeColor', 'none');
