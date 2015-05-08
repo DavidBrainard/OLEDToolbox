@@ -14,17 +14,17 @@ function drawToneMappedImages(obj, displayName)
     minSRGBOLED = min(min(min(obj.data.toneMappedSRGBimage('OLED'))));
     minSRGBLCD  = min(min(min(obj.data.toneMappedSRGBimage('LCD'))));
     
-    maxSRGB1 = max([ maxSRGBOLED  maxSRGBLCD]);
+    maxSRGB1 = max([maxSRGBOLED  maxSRGBLCD]);
     if (strcmp(displayName, 'OLED'))
         subplot('Position', [0.005 0.35 0.49 0.3]);
-        minSRBdisplay = minSRGBOLED;
-        maxSRBdisplay = maxSRGBOLED;
+        minSRBstim = minSRGBOLED;
+        maxSRBstim = maxSRGBOLED;
     else
         subplot('Position', [0.005 0.02 0.49 0.3]);
-        minSRBdisplay = minSRGBLCD;
-        maxSRBdisplay = maxSRGBLCD;
+        minSRBstim = minSRGBLCD;
+        maxSRBstim = maxSRGBLCD;
     end
-    plotTitle = sprintf('%s sRGB image (luminance tonemapped) SRGBrange = [%2.2f - %2.2f]; displayed SRGB range: [0 %2.2f]', displayName, minSRBdisplay, maxSRBdisplay, maxSRGBimage);
+    plotTitle = sprintf('%s sRGB image (luminance tonemapped) SRGBrange = [%2.2f - %2.2f]; displayed SRGB range: [0 %2.2f]', displayName, minSRBstim, maxSRBstim, maxSRGBimage);
     obj.plotSRGBImage(obj.data.toneMappedSRGBimage(displayName), plotTitle, maxSRGBimage);
  
     
@@ -36,15 +36,15 @@ function drawToneMappedImages(obj, displayName)
     maxSRGB2 = max([ maxSRGBOLED  maxSRGBLCD]);
     if (strcmp(displayName, 'OLED'))
         subplot('Position', [0.505 0.35 0.49 0.3]);
-        minSRBdisplay = minSRGBOLED;
-        maxSRBdisplay = maxSRGBOLED;
+        minSRBstim = minSRGBOLED;
+        maxSRBstim = maxSRGBOLED;
     else
         subplot('Position', [0.505 0.02 0.49 0.3]);
-        minSRBdisplay = minSRGBLCD;
-        maxSRBdisplay = maxSRGBLCD;
+        minSRBstim = minSRGBLCD;
+        maxSRBstim = maxSRGBLCD;
     end
     
-    plotTitle = sprintf('%s sRGB image (luminance tonemapped, with RGB in gamut); SRGBrange = [%2.2f - %2.2f]; displayed SRGB range: [0 %2.2f]', displayName, minSRBdisplay, maxSRBdisplay, maxSRGBimage);
+    plotTitle = sprintf('%s sRGB image (luminance tonemapped, with RGB in gamut); SRGBrange = [%2.2f - %2.2f]; displayed SRGB range: [0 %2.2f]', displayName, minSRBstim, maxSRBstim, maxSRGBimage);
     obj.plotSRGBImage(obj.data.toneMappedInGamutSRGBimage(displayName), plotTitle, maxSRGBimage);
     
     
