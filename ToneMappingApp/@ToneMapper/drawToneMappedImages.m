@@ -1,11 +1,9 @@
 function drawToneMappedImages(obj, displayName)
 
-
     im1 = obj.data.toneMappedInGamutSRGBimage('OLED');
     im2 = obj.data.toneMappedInGamutSRGBimage('LCD');
     maxSRGBimage = max([max(im1(:)) max(im2(:))]);
 
-    
     figure(obj.GUI.imageHandle);
     
     % The tonemapped, not-in-gamut image

@@ -23,6 +23,9 @@ classdef ToneMapper < handle
         
         % Various processing options
         processingOptions
+        
+        % Various visualization options
+        visualizationOptions
     end
     
     properties (Constant)
@@ -47,6 +50,9 @@ classdef ToneMapper < handle
             
             % init the processing options
             obj.initProcessingOptions();
+            
+            % init the visualization options
+            obj.initVisualizationOptions();
             
             % init the data
             obj.data = [];

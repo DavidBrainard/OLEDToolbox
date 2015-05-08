@@ -25,7 +25,7 @@ function plotHistogram(obj, sceneOrToneMappedImage, displayName, holdPreviousPlo
             luminanceBins   = obj.data.inputLuminanceHistogram.centers;
             luminanceCounts = obj.data.inputLuminanceHistogram.counts;
             histogramColor = [0.6 0.6 0.1];
-            maxHistogramCount = min(luminanceCounts(luminanceCounts>0))*1000;
+            maxHistogramCount = min(luminanceCounts(luminanceCounts>0))*obj.visualizationOptions.histogramCountHeight;
         
         case 'toneMappedImage'
             set(obj.GUI.figHandle,'CurrentAxes',obj.GUI.toneMappedHistogramPlotHandle);
