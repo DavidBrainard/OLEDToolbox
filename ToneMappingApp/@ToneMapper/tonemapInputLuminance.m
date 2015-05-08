@@ -6,7 +6,7 @@ function outputLuminance = tonemapInputLuminance(obj, displayName, inputLuminanc
     cal = display.calStruct; 
     
     % Apply max luminance limiting factor
-    maxDisplayLuminance = obj.processingOptions.displayMaxLuminanceLimitingFactor * display.maxLuminance;
+    maxLuminanceAvailableForToneMapping = obj.processingOptions.displayMaxLuminanceLimitingFactor * display.maxLuminance;
     
     % Compute min and max input luminance
     minInputLuminance = min(inputLuminance(:));
@@ -17,26 +17,26 @@ function outputLuminance = tonemapInputLuminance(obj, displayName, inputLuminanc
     
     if (strcmp(toneMapping.name, 'LINEAR_SCALING'))
         normInputLuminance = (inputLuminance - minInputLuminance)/(maxInputLuminance-minInputLuminance);
-        outputLuminance = normInputLuminance * maxDisplayLuminance;
+        outputLuminance = normInputLuminance * maxLuminanceAvailableForToneMapping;
         
     elseif (strcmp(toneMapping.name, 'CLIP_AT_DISPLAY_MAX'))
         outputLuminance = inputLuminance/toneMapping.sceneScalingFactor;
-        outputLuminance(outputLuminance > maxDisplayLuminance) = maxDisplayLuminance;
+        outputLuminance(outputLuminance > maxLuminanceAvailableForToneMapping) = maxLuminanceAvailableForToneMapping;
         
     elseif (strcmp(toneMapping.name, 'REINHARDT_GLOBAL'))
         % compute scene key
-        delta = 0.0001; % small delta to avoid taking log(0) when encountering pixels with sceneLuma = 0
+        delta = 0.0001; % small delta to avoid taking log(0) when encountering pixels with zero luminance
         sceneKey = exp((1/numel(inputLuminance))*sum(log(inputLuminance + delta)));
         % Scale luminance according to alpha parameter and scene key
         scaledInputLuminance = toneMapping.alpha / sceneKey * inputLuminance;
-        % Compress
+        % Compress high luminances
         outputLuminance = scaledInputLuminance ./ (1.0+scaledInputLuminance);
         minToneMappedSceneLum = min(outputLuminance(:));
         maxToneMappedSceneLum = max(outputLuminance(:));
         normalizedOutputLuminance = (outputLuminance-minToneMappedSceneLum)/(maxToneMappedSceneLum-minToneMappedSceneLum);
-        outputLuminance = normalizedOutputLuminance * maxDisplayLuminance;
+        outputLuminance = normalizedOutputLuminance * maxLuminanceAvailableForToneMapping;
     else
-        error('Tonemapping %s not implemented yet', toneMapping.name);
+        error('Tonemapping ''%s'' not implemented yet', toneMapping.name);
     end
 end
 

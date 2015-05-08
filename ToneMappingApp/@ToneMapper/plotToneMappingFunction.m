@@ -25,8 +25,8 @@ function plotToneMappingFunction(obj, displayName)
             plot(inputLuminance, outputLuminance, 'r-');
         case 'LCD' 
             plot(inputLuminance, outputLuminance, 'b-');
-            h = legend({'input luminance','OLED tone mapping', 'LCD tone mapping'});
-            set(h, 'FontName', 'Helvetica', 'FontSize', 14, 'Location', 'SouthEast');
+            h = legend({'input image luminance','OLED tone mapping', 'LCD tone mapping'});
+            set(h, 'FontName', 'Helvetica', 'FontSize', 12, 'Location', 'SouthEast');
            
     end
     

@@ -146,10 +146,17 @@ function obj = generateGUI(obj)
    GUI.spdLCDPlotHandle  = axes('Units','pixels','Position',[450 50 300  680]);
     
    % Create histogram plot axes
+   grayColor = [0.4 0.4 0.4];
    GUI.sceneHistogramPlotHandle = axes('Units','pixels','Position',[830  50  750 300]);
+   box(GUI.sceneHistogramPlotHandle, 'on');
+   set(GUI.sceneHistogramPlotHandle, 'XColor', grayColor, 'YColor', grayColor);
+            
    GUI.toneMappedHistogramPlotHandle = axes('Units','pixels','Position',[830  430  750 300]);
-   set(GUI.sceneHistogramPlotHandle, 'XColor', 'none', 'YColor', 'none', 'FontName', 'Helvetica', 'FontSize', 14);    
-   set(GUI.toneMappedHistogramPlotHandle, 'XColor', 'none', 'YColor', 'none', 'FontName', 'Helvetica', 'FontSize', 14);     
+   box(GUI.toneMappedHistogramPlotHandle, 'on');
+   set(GUI.toneMappedHistogramPlotHandle, 'XColor', grayColor, 'YColor', grayColor);
+   
+   set(GUI.sceneHistogramPlotHandle,  'FontName', 'Helvetica', 'FontSize', 12);    
+   set(GUI.toneMappedHistogramPlotHandle, 'FontName', 'Helvetica', 'FontSize', 12);     
 
    obj.GUI =  GUI;
 end

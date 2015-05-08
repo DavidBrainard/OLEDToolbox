@@ -54,18 +54,18 @@ function plotHistogram(obj, sceneOrToneMappedImage, displayName, holdPreviousPlo
     
     switch (sceneOrToneMappedImage)
         case 'scene'
-            set(obj.GUI.sceneHistogramPlotHandle, 'XLim', [min(luminanceBins) max(luminanceBins)], 'YLim', [[0 max([obj.displays('OLED').maxLuminance obj.displays('LCD').maxLuminance])]], 'XColor', grayColor, 'YColor', grayColor, 'FontName', 'Helvetica', 'FontSize', 14);
-            xlabel(obj.GUI.sceneHistogramPlotHandle, 'input luminance (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'bold');
-            ylabel(obj.GUI.sceneHistogramPlotHandle, 'display luminance (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'bold');
+            set(obj.GUI.sceneHistogramPlotHandle, 'XLim', [min(luminanceBins) max(luminanceBins)], 'YLim', [[0 max([obj.displays('OLED').maxLuminance obj.displays('LCD').maxLuminance])]], 'XColor', grayColor, 'YColor', grayColor, 'FontName', 'Helvetica', 'FontSize', 12);
+            xlabel(obj.GUI.sceneHistogramPlotHandle, 'input luminance (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 12, 'FontWeight', 'bold');
+            ylabel(obj.GUI.sceneHistogramPlotHandle, 'display luminance (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 12, 'FontWeight', 'bold');
             box(obj.GUI.sceneHistogramPlotHandle, 'on');
         case 'toneMappedImage'
             if (strcmp(holdPreviousPlots, 'on'))
-                h = legend({'OLED', 'LCD'});
-                set(h, 'FontName', 'Helvetica', 'FontSize', 14);
+                h = legend({'OLED image luminance', 'LCD image luminance'});
+                set(h, 'FontName', 'Helvetica', 'FontSize', 12);
             end
-            set(obj.GUI.toneMappedHistogramPlotHandle, 'XLim', [0 max([obj.displays('OLED').maxLuminance obj.displays('LCD').maxLuminance])], 'YLim', [0 maxHistogramCount], 'XColor', grayColor, 'YColor', grayColor, 'FontName', 'Helvetica', 'FontSize', 14);
-            xlabel(obj.GUI.toneMappedHistogramPlotHandle, 'display luminance (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'bold');
-            ylabel(obj.GUI.toneMappedHistogramPlotHandle, 'count', 'FontName', 'Helvetica', 'FontSize', 16, 'FontWeight', 'bold');
+            set(obj.GUI.toneMappedHistogramPlotHandle, 'XLim', [0 max([obj.displays('OLED').maxLuminance obj.displays('LCD').maxLuminance])], 'YLim', [0 maxHistogramCount], 'XColor', grayColor, 'YColor', grayColor, 'FontName', 'Helvetica', 'FontSize', 12);
+            xlabel(obj.GUI.toneMappedHistogramPlotHandle, 'display luminance (cd/m2)', 'FontName', 'Helvetica', 'FontSize', 12, 'FontWeight', 'bold');
+            ylabel(obj.GUI.toneMappedHistogramPlotHandle, 'count', 'FontName', 'Helvetica', 'FontSize', 12, 'FontWeight', 'bold');
             box(obj.GUI.toneMappedHistogramPlotHandle, 'on');
     end
 end
