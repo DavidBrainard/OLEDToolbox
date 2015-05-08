@@ -1,10 +1,7 @@
 function plotSRGBImage(obj, im, plotTitle, maxSRGB)
 
     im = im/maxSRGB;
-    if (any(im > 1))
-        error('Passed maxSRB param must be such that the normalized image does not exceed 1. Check the code');
-    end
-
+    im(im>1) = 1;
     im(im<0) = 0;
     
     imshow(im, [0 1]);
