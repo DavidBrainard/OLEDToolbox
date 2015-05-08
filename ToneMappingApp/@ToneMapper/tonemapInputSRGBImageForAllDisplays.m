@@ -85,14 +85,8 @@ function tonemapInputSRGBImageForAllDisplays(obj)
         
         % Save tonemapped, in gamut SRGB image
         obj.data.toneMappedInGamutSRGBimage(displayName) = CalFormatToImage(SRGBcalFormatToneMappedInGamut, nCols, mRows);        
- 
     end
-    
 end
-
-
-
-
 
 function [inGamutPrimaries, s] = mapToGamut(primaries, aboveGamutOperation)
 
