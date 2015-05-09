@@ -17,6 +17,7 @@ function subSampleInputImage(obj)
         obj.data.inputSRGBimage = obj.data.inputSRGBimageFullResolution(yaxis, xaxis,:);
         obj.data.inputSRGBimageMax = max(obj.data.inputSRGBimage(:));
         obj.data.inputSRGBimageMin = min(obj.data.inputSRGBimage(:));
+        obj.data.inputSRGBpixelsNum = numel(xaxis)*numel(yaxis);
     end
     
 end
