@@ -2,7 +2,7 @@
 function initToneMapping(obj)
 
     % Default tonemap is linear scaling, i.e, no tone mapping 
-    toneMapping = struct('name', 'LINEAR_SCALING');
+    toneMapping = struct('name', 'LINEAR_SCALING', 'luminanceGain', 100.0);
     
     % save tone mapping methods
     obj.toneMappingMethods = containers.Map({'OLED', 'LCD'}, {toneMapping, toneMapping});

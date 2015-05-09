@@ -16,9 +16,4 @@ function updateGUIWithCurrentLuminances(obj, displayName)
     
     % Plot SPDs
     obj.plotSPDs(displayName);
-    
-    % Do the work
-    if (~isempty(obj.data))
-        obj.redoToneMapAndUpdateGUI();
-    end
 end

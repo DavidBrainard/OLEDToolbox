@@ -5,9 +5,6 @@ function outputLuminance = tonemapInputLuminance(obj, displayName, inputLuminanc
     display = obj.displays(displayName);
     cal = display.calStruct; 
     
-    % Apply max luminance limiting factor
-    maxLuminanceAvailableForToneMapping = obj.processingOptions.luminanceFractionForToneMapping * display.maxLuminance;
-    
     % Compute min and max input luminance
     minInputLuminance = min(inputLuminance(:));
     maxInputLuminance = max(inputLuminance(:));
@@ -15,13 +12,12 @@ function outputLuminance = tonemapInputLuminance(obj, displayName, inputLuminanc
     % Get the display's tonemapping method
     toneMapping = obj.toneMappingMethods(displayName);
     
+    % Apply max luminance limiting factor
+    maxLuminanceAvailableForToneMapping = toneMapping.luminanceGain/100.0 * display.maxLuminance;
+    
     if (strcmp(toneMapping.name, 'LINEAR_SCALING'))
         normInputLuminance = (inputLuminance - minInputLuminance)/(maxInputLuminance-minInputLuminance);
         outputLuminance = normInputLuminance * maxLuminanceAvailableForToneMapping;
-        
-    elseif (strcmp(toneMapping.name, 'CLIP_AT_DISPLAY_MAX'))
-        outputLuminance = inputLuminance/toneMapping.sceneScalingFactor;
-        outputLuminance(outputLuminance > maxLuminanceAvailableForToneMapping) = maxLuminanceAvailableForToneMapping;
         
     elseif (strcmp(toneMapping.name, 'REINHARDT_GLOBAL'))
         % compute scene key

@@ -10,7 +10,6 @@ function tonemapInputSRGBImageForAllDisplays(obj)
     obj.data.toneMappedRGBluminanceMap = containers.Map();
     obj.data.toneMappedImageLuminanceHistogram = containers.Map();
     
-    
     displayNames = keys(obj.displays);
     for k = 1:numel(displayNames)
         displayName = displayNames{k};
@@ -22,12 +21,12 @@ function tonemapInputSRGBImageForAllDisplays(obj)
 
         % To XYZ
         if (strcmp(obj.processingOptions.sRGBXYZconversionAlgorithm, 'PTB3-based'))
-            % From gamma-corrected SRGB to linear sRGB
-            SRGBcalFormat = sRGB.gammaUndo(SRGBcalFormat);
             % PTB function
             XYZcalFormat = SRGBPrimaryToXYZ(SRGBcalFormat);
         else
-            % MATLAB function
+            % MATLAB function assumes image is gamma-corrected, so gamma correct the linear sRGB
+            % before calling the rgb2xyz function
+            SRGBcalFormat = sRGB.gammaCorrect(SRGBcalFormat);
             XYZcalFormat = (rgb2xyz(SRGBcalFormat', 'ColorSpace','srgb'))';
         end
          
@@ -72,12 +71,15 @@ function tonemapInputSRGBImageForAllDisplays(obj)
             SRGBcalFormatToneMappedInGamut = XYZToSRGBPrimary(XYZcalFormatToneMappedInGamut);
         
             % linear SRGB to gamma-corrected SRGB
-            SRGBcalFormatToneMapped        = sRGB.gammaCorrect(SRGBcalFormatToneMapped);
-            SRGBcalFormatToneMappedInGamut = sRGB.gammaCorrect(SRGBcalFormatToneMappedInGamut);
+            %SRGBcalFormatToneMapped        = sRGB.gammaCorrect(SRGBcalFormatToneMapped);
+            %SRGBcalFormatToneMappedInGamut = sRGB.gammaCorrect(SRGBcalFormatToneMappedInGamut);
         else
             % MATLAB function
             SRGBcalFormatToneMapped        = (xyz2rgb(XYZcalFormatToneMapped', 'ColorSpace','srgb'))';
             SRGBcalFormatToneMappedInGamut = (xyz2rgb(XYZcalFormatToneMappedInGamut', 'ColorSpace','srgb'))';
+            % MATLAB function returns gamma-corrected, so need to uncorrect to get linear sRGB
+            SRGBcalFormatToneMapped        = sRGB.gammaUndo(SRGBcalFormatToneMapped);
+            SRGBcalFormatToneMappedInGamut = sRGB.gammaUndo(SRGBcalFormatToneMappedInGamut);
         end
         
         % Save tonemappedSRGB image

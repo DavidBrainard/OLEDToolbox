@@ -46,6 +46,7 @@ classdef ToneMapper < handle
             % Initialize the displays
             obj.initDisplays();
             
+            % Initialize the tone mapping params
             obj.initToneMapping();
             
             % init the processing options
@@ -107,13 +108,16 @@ classdef ToneMapper < handle
         
         % GUI callback methods: tonemapping
         setToneMappingMethodAndParams(obj,srcHandle,eventData, varargin);
+        setLuminanceGainForToneMapping(obj, srcHandle,eventData, varargin);
         
         % GUI callback methods: processing
         setImageSubSamplingFactor(obj,srcHandle,eventData, varargin);
         setSRGBconversionAlgorithm(obj,srcHandle,eventData, varargin)
         setAboveGamutPrimaryOperation(obj, srcHandle,eventData, varargin);
-        setDisplayMaxLuminanceLimitingFactor(obj, srcHandle,eventData, varargin);
         
+        % GUI callback
+        resetSettings(obj, srcHandle,eventData, varargin);
+         
         % GUI menu updating methods
         updateGUIWithCurrentLuminances(obj, displayName);
         updateGUIWithCurrentToneMappingMethod(obj, displayName);

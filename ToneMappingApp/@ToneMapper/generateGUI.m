@@ -5,6 +5,7 @@ function obj = generateGUI(obj)
     GUI.imageHandle = figure(2);
     set(GUI.imageHandle, ...
         'NumberTitle', 'off','Visible','off', 'Name', 'Input & Tonemapped images',...
+        'Color', [0 0 0], ...
         'CloseRequestFcn',{@NoExitCallback}, ...
         'MenuBar','None', 'Position',[1640 475 1070 800]);
     
@@ -12,9 +13,8 @@ function obj = generateGUI(obj)
     set(GUI.mappingPlotsHandle, ...
         'NumberTitle', 'off','Visible','off', 'Name', 'RGB mappings',...
         'CloseRequestFcn',{@NoExitCallback}, ...
-        'MenuBar','None', 'Position',[1640 75 1025 750]);
+        'MenuBar','None', 'Position',[1640 75 800 640]);
     
-
     GUI.figHandle = figure(1);
     clf;
     set(GUI.figHandle, ...
@@ -22,14 +22,12 @@ function obj = generateGUI(obj)
         'CloseRequestFcn',{@ExitCallback, GUI}, ... % 'ResizeFcn',@FigureResizeCallback, ...
         'MenuBar','None', 'Position',[20,650,1600 768]);
     
-    
     % Create the menus 
     GUI.mainMenu1 = uimenu(GUI.figHandle, 'Label', 'File ...'); 
     GUI.subMenu11 = uimenu(GUI.mainMenu1, 'Label', 'Load new image data (.exr or .mat)', 'Callback', @obj.loadImageCallback);
-    GUI.subMenu11 = uimenu(GUI.mainMenu1, 'Label', 'Save input exr image to a .mat file', 'Callback', @obj.saveImageCallback);
+    GUI.subMenu11 = uimenu(GUI.mainMenu1, 'Label', 'Save input (linearsRGB) image to a .mat file', 'Callback', @obj.saveImageCallback);
     GUI.subMenu12 = uimenu(GUI.mainMenu1, 'Label', 'Quit', 'Callback', {@ExitCallback, GUI});
     
-     
     GUI.mainMenu2 = uimenu(GUI.figHandle, 'Label', 'OLED Display properties ...');
     GUI.subMenu21 = uimenu(GUI.mainMenu2, 'Label', 'Max luminance (currently: ?? cd/m2) ...');
                     uimenu(GUI.subMenu21, 'Label', ' 200 cd/m2', 'Callback', @(src,event)setMaxDisplayLuminance(obj,src,event, 'OLED', 200));
@@ -67,18 +65,7 @@ function obj = generateGUI(obj)
               
     GUI.mainMenu4 = uimenu(GUI.figHandle, 'Label', 'OLED Tone mapping method & parameters ...');
     GUI.subMenu41 = uimenu(GUI.mainMenu4, 'Label', 'Current method: ?? ...');
-                    uimenu(GUI.subMenu41, 'Label', 'Linear scaling onto display gamut',     'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'LINEAR_SCALING'));
-    GUI.subMenu41a = uimenu(GUI.subMenu41, 'Label', 'Clipping at display''s max luminance ...');
-                     uimenu(GUI.subMenu41a, 'Label', 'Scene attenuation factor: 1', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'CLIP_AT_DISPLAY_MAX', 1));
-                     uimenu(GUI.subMenu41a, 'Label', 'Scene attenuation factor: 3', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'CLIP_AT_DISPLAY_MAX', 3));
-                     uimenu(GUI.subMenu41a, 'Label', 'Scene attenuation factor: 10', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'CLIP_AT_DISPLAY_MAX', 10));
-                     uimenu(GUI.subMenu41a, 'Label', 'Scene attenuation factor: 30', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'CLIP_AT_DISPLAY_MAX', 30));
-                     uimenu(GUI.subMenu41a, 'Label', 'Scene attenuation factor: 100', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'CLIP_AT_DISPLAY_MAX', 100));
-                     uimenu(GUI.subMenu41a, 'Label', 'Scene attenuation factor: 300', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'CLIP_AT_DISPLAY_MAX', 300));
-                     uimenu(GUI.subMenu41a, 'Label', 'Scene attenuation factor: 1000', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'CLIP_AT_DISPLAY_MAX', 1000));
-                     uimenu(GUI.subMenu41a, 'Label', 'Scene attenuation factor: 3000', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'CLIP_AT_DISPLAY_MAX', 3000));
-                     uimenu(GUI.subMenu41a, 'Label', 'Scene attenuation factor: 3000', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'CLIP_AT_DISPLAY_MAX', 10000));
-                     
+                    uimenu(GUI.subMenu41, 'Label', 'Linear scaling',     'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'LINEAR_SCALING'));               
     GUI.subMenu41b = uimenu(GUI.subMenu41, 'Label', 'Reinhardt global');
                         uimenu(GUI.subMenu41b, 'Label', 'alpha:  0.01', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'REINHARDT_GLOBAL',  0.01));
                         uimenu(GUI.subMenu41b, 'Label', 'alpha:  0.03', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'REINHARDT_GLOBAL',  0.03));
@@ -91,21 +78,28 @@ function obj = generateGUI(obj)
                         uimenu(GUI.subMenu41b, 'Label', 'alpha:  6.00', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'REINHARDT_GLOBAL',  6.00));
                         uimenu(GUI.subMenu41b, 'Label', 'alpha: 10.00', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'REINHARDT_GLOBAL', 10.00));
                         uimenu(GUI.subMenu41b, 'Label', 'alpha: 50.00', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'REINHARDT_GLOBAL', 50.00));
-                    
+    GUI.subMenu42 = uimenu(GUI.mainMenu4, 'Label', 'Luminance gain (currently: ??)');
+                   uimenu(GUI.subMenu42, 'Label', '2000% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', 2000.0));
+                   uimenu(GUI.subMenu42, 'Label', '1000% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', 1000.0));
+                   uimenu(GUI.subMenu42, 'Label', ' 500% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', 500.0));
+                   uimenu(GUI.subMenu42, 'Label', ' 300% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', 300.0));
+                   uimenu(GUI.subMenu42, 'Label', ' 200% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', 200.0));
+                   uimenu(GUI.subMenu42, 'Label', ' 150% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', 150.0));
+                   uimenu(GUI.subMenu42, 'Label', ' 100% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', 100.0));
+                   uimenu(GUI.subMenu42, 'Label', '  95% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', 95.0));
+                   uimenu(GUI.subMenu42, 'Label', '  90% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', 90.0));
+                   uimenu(GUI.subMenu42, 'Label', '  85% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', 85.0));
+                   uimenu(GUI.subMenu42, 'Label', '  80% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', 80.0));
+                   uimenu(GUI.subMenu42, 'Label', '  75% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', 75.0));
+                   uimenu(GUI.subMenu42, 'Label', '  70% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', 70.0));
+                   uimenu(GUI.subMenu42, 'Label', '  65% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', 65.0));
+                   uimenu(GUI.subMenu42, 'Label', '  60% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', 60.0));
+                   uimenu(GUI.subMenu42, 'Label', '  55% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', 55.0));
+                   uimenu(GUI.subMenu42, 'Label', '  50% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', 50.0));
+                   
     GUI.mainMenu5 = uimenu(GUI.figHandle, 'Label', 'LCD Tone mapping method & parameters ...');
     GUI.subMenu51 = uimenu(GUI.mainMenu5, 'Label', 'Current method: ?? ...');
-                    uimenu(GUI.subMenu51, 'Label', 'Linear scaling onto display gamut',     'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'LINEAR_SCALING'));
-    GUI.subMenu51a = uimenu(GUI.subMenu51, 'Label', 'Clipping at display''s max luminance...');
-                     uimenu(GUI.subMenu51a, 'Label', 'Scene attenuation factor: 1', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'CLIP_AT_DISPLAY_MAX', 1));
-                     uimenu(GUI.subMenu51a, 'Label', 'Scene attenuation factor: 3', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'CLIP_AT_DISPLAY_MAX', 3));
-                     uimenu(GUI.subMenu51a, 'Label', 'Scene attenuation factor: 10', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'CLIP_AT_DISPLAY_MAX', 10));
-                     uimenu(GUI.subMenu51a, 'Label', 'Scene attenuation factor: 30', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'CLIP_AT_DISPLAY_MAX', 30));
-                     uimenu(GUI.subMenu51a, 'Label', 'Scene attenuation factor: 100', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'CLIP_AT_DISPLAY_MAX', 100));
-                     uimenu(GUI.subMenu51a, 'Label', 'Scene attenuation factor: 300', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'CLIP_AT_DISPLAY_MAX', 300));
-                     uimenu(GUI.subMenu51a, 'Label', 'Scene attenuation factor: 1000', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'CLIP_AT_DISPLAY_MAX', 1000));
-                     uimenu(GUI.subMenu51a, 'Label', 'Scene attenuation factor: 3000', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'CLIP_AT_DISPLAY_MAX', 3000));
-                     uimenu(GUI.subMenu51a, 'Label', 'Scene attenuation factor: 10000', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'CLIP_AT_DISPLAY_MAX', 10000));
-                     
+                    uimenu(GUI.subMenu51, 'Label', 'Linear scaling onto display gamut',     'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'LINEAR_SCALING'));                  
     GUI.subMenu51b = uimenu(GUI.subMenu51, 'Label', 'Reinhardt global');
                         uimenu(GUI.subMenu51b, 'Label', 'alpha:  0.01', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'REINHARDT_GLOBAL',  0.01));
                         uimenu(GUI.subMenu51b, 'Label', 'alpha:  0.03', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'REINHARDT_GLOBAL',  0.03));
@@ -118,7 +112,25 @@ function obj = generateGUI(obj)
                         uimenu(GUI.subMenu51b, 'Label', 'alpha:  6.00', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'REINHARDT_GLOBAL',  6.00));
                         uimenu(GUI.subMenu51b, 'Label', 'alpha: 10.00', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'REINHARDT_GLOBAL', 10.00));
                         uimenu(GUI.subMenu51b, 'Label', 'alpha: 50.00', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'REINHARDT_GLOBAL', 50.00));
-                    
+    GUI.subMenu52 = uimenu(GUI.mainMenu5, 'Label', 'Luminance gain (currently: ??)');
+                   uimenu(GUI.subMenu52, 'Label', '2000% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', 2000.0));
+                   uimenu(GUI.subMenu52, 'Label', '1000% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', 1000.0));
+                   uimenu(GUI.subMenu52, 'Label', ' 500% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', 500.0));
+                   uimenu(GUI.subMenu52, 'Label', ' 300% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', 300.0));
+                   uimenu(GUI.subMenu52, 'Label', ' 200% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', 200.0));
+                   uimenu(GUI.subMenu52, 'Label', ' 150% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', 150.0));
+                   uimenu(GUI.subMenu52, 'Label', ' 100% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', 100.0));
+                   uimenu(GUI.subMenu52, 'Label', '  95% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', 95.0));
+                   uimenu(GUI.subMenu52, 'Label', '  90% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', 90.0));
+                   uimenu(GUI.subMenu52, 'Label', '  85% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', 85.0));
+                   uimenu(GUI.subMenu52, 'Label', '  80% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', 80.0));
+                   uimenu(GUI.subMenu52, 'Label', '  75% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', 75.0));
+                   uimenu(GUI.subMenu52, 'Label', '  70% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', 70.0));
+                   uimenu(GUI.subMenu52, 'Label', '  65% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', 65.0));
+                   uimenu(GUI.subMenu52, 'Label', '  60% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', 60.0));
+                   uimenu(GUI.subMenu52, 'Label', '  55% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', 55.0));
+                   uimenu(GUI.subMenu52, 'Label', '  50% of max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', 50.0));
+             
                         
    GUI.mainMenu6 = uimenu(GUI.figHandle,  'Label', 'Processing options ...');                     
    GUI.subMenu61 = uimenu(GUI.mainMenu6,  'Label', 'Image sub-sampling factor (currently: ??) ...');
@@ -136,23 +148,13 @@ function obj = generateGUI(obj)
    GUI.subMenu63 = uimenu(GUI.mainMenu6, 'Label', 'Above-gamut operation (currently: ??) ...');                
                    uimenu(GUI.subMenu63, 'Label', ' Clip individual primaries',  'Callback', @(src,event)setAboveGamutPrimaryOperation(obj,src,event, 'Clip Individual Primaries'));
                    uimenu(GUI.subMenu63, 'Label', ' Scale RGBprimary triplet',   'Callback', @(src,event)setAboveGamutPrimaryOperation(obj,src,event, 'Scale RGBPrimary Triplet'));
-   GUI.subMenu64 = uimenu(GUI.mainMenu6, 'Label', 'Luminance fraction for tone mapping (currently: ??)');
-                   uimenu(GUI.subMenu64, 'Label', 'Use 2000% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 20.0));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 1000% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 10.0));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 400% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 4.0));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 200% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 2.0));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 100% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 1.0));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 95% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 0.95));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 90% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 0.90));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 85% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 0.85));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 80% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 0.80));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 75% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 0.75));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 70% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 0.70));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 65% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 0.65));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 60% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 0.60));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 55% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 0.55));
-                   uimenu(GUI.subMenu64, 'Label', 'Use 50% of max luminance',  'Callback', @(src,event)setLuminanceFractionForToneMapping(obj,src,event, 0.50));
     
+   GUI.mainMenu7 = uimenu(GUI.figHandle, 'Label', 'Reset to default ...'); 
+                   uimenu(GUI.mainMenu7, 'Label', 'All settings',   'Callback', @(src,event)resetSettings(obj,src,event, 'All'));
+                   uimenu(GUI.mainMenu7, 'Label', 'OLED & LCD display properties',   'Callback', @(src,event)resetSettings(obj,src,event, 'Displays'));
+                   uimenu(GUI.mainMenu7, 'Label', 'OLED & LCD tone mapping methods',   'Callback', @(src,event)resetSettings(obj,src,event, 'Tone Mapping'));
+                   uimenu(GUI.mainMenu7, 'Label', 'Processing options',   'Callback', @(src,event)resetSettings(obj,src,event, 'Processing Options'));
+                   
    % Create SPD plot axes
    GUI.spdOLEDPlotHandle = axes('Units','pixels','Position',[70  50 300  680]);
    GUI.spdLCDPlotHandle  = axes('Units','pixels','Position',[450 50 300  680]);

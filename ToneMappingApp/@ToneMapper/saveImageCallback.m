@@ -6,8 +6,8 @@ function saveImageCallback(obj,~,~)
         % disp('User selected Cancel')
     else
         fullfilename = fullfile(pathname,filename);
-        inputSRGBimage = obj.data.inputSRGBimageFullResolution;
-        save(fullfilename, 'inputSRGBimage');
+        linearSRGBimage = obj.data.inputSRGBimageFullResolution;
+        save(fullfilename, 'linearSRGBimage');
         fprintf('Data saved to %s\n', fullfilename);
     end
 end

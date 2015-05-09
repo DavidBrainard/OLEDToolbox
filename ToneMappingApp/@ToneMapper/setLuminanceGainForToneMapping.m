@@ -1,5 +1,5 @@
-% GUI callback method to set the tonemapping method and its params
-function setToneMappingMethodAndParams(obj,~,~, varargin)
+function setLuminanceGainForToneMapping(obj, ~,~, varargin)
+
     % get display name
     displayName = varargin{1};
     
@@ -11,11 +11,7 @@ function setToneMappingMethodAndParams(obj,~,~, varargin)
     toneMapping = obj.toneMappingMethods(displayName);
     
     % update toneMapping
-    toneMapping.name = varargin{2};
-    
-    if (strcmp(toneMapping.name, 'REINHARDT_GLOBAL'))
-       toneMapping.alpha = varargin{3}; 
-    end
+    toneMapping.luminanceGain = varargin{2};
     
     % save toneMpping
     obj.toneMappingMethods(displayName) = toneMapping;
@@ -26,3 +22,4 @@ function setToneMappingMethodAndParams(obj,~,~, varargin)
     % Do the work
     obj.redoToneMapAndUpdateGUI();
 end
+

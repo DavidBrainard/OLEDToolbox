@@ -8,25 +8,19 @@ function updateGUIWithCurrentToneMappingMethod(obj, displayName)
         case 'OLED'
             if (strcmp(toneMapping.name, 'REINHARDT_GLOBAL'))
                 set(obj.GUI.subMenu41, 'Label', sprintf('Current method: ''%s'' with alpha:%2.3f ...', toneMapping.name, toneMapping.alpha));
-            elseif (strcmp(toneMapping.name, 'CLIP_AT_DISPLAY_MAX'))
-                 set(obj.GUI.subMenu41, 'Label', sprintf('Current method: ''%s'' with scene attenuation factor: %2.0f', toneMapping.name, toneMapping.sceneScalingFactor));
             else
                 set(obj.GUI.subMenu41, 'Label', sprintf('Current method: ''%s'' ...', toneMapping.name));
             end
+            set(obj.GUI.subMenu42, 'Label', sprintf('Luminance gain (currently: %2.1f%% of max luminance)', toneMapping.luminanceGain));
         case 'LCD'
             if (strcmp(toneMapping.name, 'REINHARDT_GLOBAL'))
                 set(obj.GUI.subMenu51, 'Label', sprintf('Current method: ''%s'' with alpha:%2.3f ...', toneMapping.name, toneMapping.alpha));
-            elseif (strcmp(toneMapping.name, 'CLIP_AT_DISPLAY_MAX'))
-                 set(obj.GUI.subMenu51, 'Label', sprintf('Current method: ''%s'' with scene attenuation factor: %2.0f', toneMapping.name, toneMapping.sceneScalingFactor));
             else
                 set(obj.GUI.subMenu51, 'Label', sprintf('Current method: ''%s'' ...', toneMapping.name));
             end
+            set(obj.GUI.subMenu52, 'Label', sprintf('Luminance gain (currently: %2.1f%% of max luminance)', toneMapping.luminanceGain));
         otherwise
             error('Unknown display name (%s)', displayName);
-    end
-    
-    if (~isempty(obj.data))
-        obj.redoToneMapAndUpdateGUI();
     end
 
 end

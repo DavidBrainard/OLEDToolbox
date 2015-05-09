@@ -14,11 +14,11 @@ function drawToneMappedImages(obj, displayName)
     
     maxSRGB1 = max([maxSRGBOLED  maxSRGBLCD]);
     if (strcmp(displayName, 'OLED'))
-        subplot('Position', [0.005 0.35 0.49 0.3]);
+        subplot('Position', [0.005 0.345 0.49 0.29]);
         minSRBstim = minSRGBOLED;
         maxSRBstim = maxSRGBOLED;
     else
-        subplot('Position', [0.005 0.02 0.49 0.3]);
+        subplot('Position', [0.005 0.01 0.49 0.29]);
         minSRBstim = minSRGBLCD;
         maxSRBstim = maxSRGBLCD;
     end
@@ -33,11 +33,11 @@ function drawToneMappedImages(obj, displayName)
     minSRGBLCD  = min(min(min(obj.data.toneMappedInGamutSRGBimage('LCD'))));
     maxSRGB2 = max([ maxSRGBOLED  maxSRGBLCD]);
     if (strcmp(displayName, 'OLED'))
-        subplot('Position', [0.505 0.35 0.49 0.3]);
+        subplot('Position', [0.505 0.345 0.49 0.29]);
         minSRBstim = minSRGBOLED;
         maxSRBstim = maxSRGBOLED;
     else
-        subplot('Position', [0.505 0.02 0.49 0.3]);
+        subplot('Position', [0.505 0.01 0.49 0.29]);
         minSRBstim = minSRGBLCD;
         maxSRBstim = maxSRGBLCD;
     end
@@ -52,9 +52,9 @@ function drawToneMappedImages(obj, displayName)
    
     % The tonemapped, not-in-gamut image
     if (strcmp(displayName, 'OLED'))
-        subplot('Position', [0.04 0.39 0.45 0.28]);
+        subplot('Position', [0.05 0.54 0.43 0.41]);
     else
-        subplot('Position', [0.04 0.05 0.45 0.28]);
+        subplot('Position', [0.05 0.05 0.43 0.41]);
     end
     stats = obj.data.outOfGamutStats(displayName);
     stats.displayName = displayName;
@@ -62,9 +62,9 @@ function drawToneMappedImages(obj, displayName)
     
      % Now the tonemapped, in-gamut image
     if (strcmp(displayName, 'OLED'))
-        subplot('Position', [0.53 0.39 0.45 0.28]);
+        subplot('Position', [0.55 0.54 0.43 0.41]);
     else
-        subplot('Position', [0.53 0.05 0.45 0.28]);
+        subplot('Position', [0.55 0.05 0.43 0.41]);
     end
     plotRGBcorrespondences(obj.data.inputSRGBimage, obj.data.toneMappedInGamutSRGBimage(displayName), [],  0, maxSRGB, sprintf('%s sRGB primaries (luminance tonemapped, with RGB in gamut)', displayName));
     
@@ -78,8 +78,8 @@ function plotRGBcorrespondences(input, output, outOfGamutStats, minSRGB, maxSRGB
     plot(input(:,:,3), output(:,:,3), 'b.');
     set(gca, 'YLim', [minSRGB  maxSRGB]);
     hold off;
-    xlabel('input sRGB');
-    ylabel('mapped sRGB');
+    xlabel('input sRGB', 'FontSize', 12, 'FontName', 'Helvetica', 'FontWeight', 'bold');
+    ylabel('mapped sRGB', 'FontSize', 12, 'FontName', 'Helvetica', 'FontWeight', 'bold');
     if (~isempty(outOfGamutStats))
         outOfGamutStats
 %         if isfield(outOfGamutStats, 'belowGamutRedPrimaryIndices')

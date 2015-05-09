@@ -39,6 +39,9 @@ function adjustDisplaySPDForMaxLuminance(obj, displayName, maxDesiredLuminance)
     
     % update GUI
     obj.updateGUIWithCurrentLuminances(displayName);
+    
+    % Do the work
+    obj.redoToneMapAndUpdateGUI();
 end
 
 
