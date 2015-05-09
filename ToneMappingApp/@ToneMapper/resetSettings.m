@@ -40,8 +40,12 @@ function resetSettings(obj, ~,~, varargin)
            
        otherwise
            error('Unknown reset mode (''%s'')', resetMode);
-   end
+    end
    
+    if (strcmp(resetMode, 'GUI'))
+       obj.plotSPDs('OLED');
+       obj.plotSPDs('LCD');
+    end
    
     % Subsample image
     obj.subSampleInputImage();
@@ -53,12 +57,6 @@ function resetSettings(obj, ~,~, varargin)
     % force-recomputation of the inputLuminanceHistogram
     obj.data = rmfield(obj.data, 'inputLuminanceHistogram');
     obj.redoToneMapAndUpdateGUI(); 
-   
-    if (strcmp(resetMode, 'GUI'))
-       obj.plotSPDs('OLED');
-       obj.plotSPDs('LCD');
-   end
-   
-   
+
 end
 
