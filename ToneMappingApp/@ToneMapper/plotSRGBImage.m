@@ -11,5 +11,5 @@ function plotSRGBImage(obj, im, plotTitle, maxSRGB)
     axis('image');
     axis('ij');
     set(gca, 'XTick', [], 'YTick', [], 'CLim', [0 1]);
-    title(plotTitle, 'Color', [0.8 0.8 0.5], 'FontName', 'System', 'FontSize', 12);
+    title(plotTitle, 'Color', [0.8 0.8 0.5], 'FontName', 'System', 'FontSize', 14);
 end
