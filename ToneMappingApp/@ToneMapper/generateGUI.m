@@ -13,7 +13,7 @@ function obj = generateGUI(obj)
     set(GUI.mappingPlotsHandle, ...
         'NumberTitle', 'off','Visible','off', 'Name', 'RGB mappings',...
         'CloseRequestFcn',{@NoExitCallback}, ...
-        'MenuBar','None', 'Position',[1640 75 800 640]);
+        'MenuBar','None', 'Position',[20 365 800 640]);
     
     GUI.figHandle = figure(1);
     clf;
@@ -150,10 +150,11 @@ function obj = generateGUI(obj)
                    uimenu(GUI.subMenu63, 'Label', ' Scale RGBprimary triplet',   'Callback', @(src,event)setAboveGamutPrimaryOperation(obj,src,event, 'Scale RGBPrimary Triplet'));
     
    GUI.mainMenu7 = uimenu(GUI.figHandle, 'Label', 'Reset to default ...'); 
-                   uimenu(GUI.mainMenu7, 'Label', 'All settings',   'Callback', @(src,event)resetSettings(obj,src,event, 'All'));
-                   uimenu(GUI.mainMenu7, 'Label', 'OLED & LCD display properties',   'Callback', @(src,event)resetSettings(obj,src,event, 'Displays'));
-                   uimenu(GUI.mainMenu7, 'Label', 'OLED & LCD tone mapping methods',   'Callback', @(src,event)resetSettings(obj,src,event, 'Tone Mapping'));
-                   uimenu(GUI.mainMenu7, 'Label', 'Processing options',   'Callback', @(src,event)resetSettings(obj,src,event, 'Processing Options'));
+                   uimenu(GUI.mainMenu7, 'Label', 'All settings',                   'Callback', @(src,event)resetSettings(obj,src,event, 'All'));
+                   uimenu(GUI.mainMenu7, 'Label', 'OLED & LCD display properties',  'Callback', @(src,event)resetSettings(obj,src,event, 'Displays'));
+                   uimenu(GUI.mainMenu7, 'Label', 'OLED & LCD tone mapping methods','Callback', @(src,event)resetSettings(obj,src,event, 'Tone Mapping'));
+                   uimenu(GUI.mainMenu7, 'Label', 'Processing options',             'Callback', @(src,event)resetSettings(obj,src,event, 'Processing Options'));
+                   uimenu(GUI.mainMenu7, 'Label', 'Windows & GUI',                  'Callback', @(src,event)resetSettings(obj,src,event, 'GUI'));
                    
    % Create SPD plot axes
    GUI.spdOLEDPlotHandle = axes('Units','pixels','Position',[70  50 300  680]);

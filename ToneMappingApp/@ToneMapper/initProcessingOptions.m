@@ -1,6 +1,6 @@
 function initProcessingOptions(obj)
 
-    obj.processingOptions.imageSubsamplingFactor = 5;
+    obj.processingOptions.imageSubsamplingFactor = 4;
     obj.processingOptions.sRGBXYZconversionAlgorithm = 'PTB3-based';
     obj.processingOptions.aboveGamutOperation = 'Clip Individual Primaries';
     

@@ -5,6 +5,10 @@ function resetSettings(obj, ~,~, varargin)
    switch (resetMode)
        case 'All'
            fprintf('Resetting all settings');
+           
+           % redo the GUI
+           obj.generateGUI();
+           
            % Initialize the displays
            obj.initDisplays();
            
@@ -30,19 +34,31 @@ function resetSettings(obj, ~,~, varargin)
            % init the processing options
            obj.initProcessingOptions();
            
+       case 'GUI'
+           % redo the GUI
+           obj.generateGUI();
+           
        otherwise
            error('Unknown reset mode (''%s'')', resetMode);
    end
    
+   
     % Subsample image
     obj.subSampleInputImage();
-    
+
     % Render the image
     obj.drawInputImage();
-    
+
     % Do the work
     % force-recomputation of the inputLuminanceHistogram
     obj.data = rmfield(obj.data, 'inputLuminanceHistogram');
     obj.redoToneMapAndUpdateGUI(); 
+   
+    if (strcmp(resetMode, 'GUI'))
+       obj.plotSPDs('OLED');
+       obj.plotSPDs('LCD');
+   end
+   
+   
 end
 
