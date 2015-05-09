@@ -7,16 +7,16 @@ function resetSettings(obj, ~,~, varargin)
            fprintf('Resetting all settings');
            % Initialize the displays
            obj.initDisplays();
-            
+           
+           % init the visualization options
+           obj.initVisualizationOptions();
+           
            % Initialize the tone mapping params
            obj.initToneMapping();
             
            % init the processing options
            obj.initProcessingOptions();
-            
-           % init the visualization options
-           obj.initVisualizationOptions();
-       
+
        case 'Displays'
            fprintf('Resetting display properties');
            % Initialize the displays
@@ -34,8 +34,15 @@ function resetSettings(obj, ~,~, varargin)
            error('Unknown reset mode (''%s'')', resetMode);
    end
    
-   % Do the work
-   obj.redoToneMapAndUpdateGUI();
+    % Subsample image
+    obj.subSampleInputImage();
     
+    % Render the image
+    obj.drawInputImage();
+    
+    % Do the work
+    % force-recomputation of the inputLuminanceHistogram
+    obj.data = rmfield(obj.data, 'inputLuminanceHistogram');
+    obj.redoToneMapAndUpdateGUI(); 
 end
 
