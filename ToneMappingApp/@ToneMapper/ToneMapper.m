@@ -114,6 +114,7 @@ classdef ToneMapper < handle
         setImageSubSamplingFactor(obj,srcHandle,eventData, varargin);
         setSRGBconversionAlgorithm(obj,srcHandle,eventData, varargin)
         setAboveGamutPrimaryOperation(obj, srcHandle,eventData, varargin);
+        setOLEDandLCDToneMappingParamsUpdateMode(obj, srcHandle,eventData, varargin);
         
         % GUI callback
         resetSettings(obj, srcHandle,eventData, varargin);
@@ -123,6 +124,9 @@ classdef ToneMapper < handle
         updateGUIWithCurrentToneMappingMethod(obj, displayName);
         updateGUIWithCurrentProcessingOptions(obj);
 
+        % Method to synchronize tonemaping params
+        synchronizeTonemappingParams(obj, sourceLabel, source, destinationLabel, destination)
+        
         % Method to draw the input (SRGB) image
         drawInputImage(obj);
         

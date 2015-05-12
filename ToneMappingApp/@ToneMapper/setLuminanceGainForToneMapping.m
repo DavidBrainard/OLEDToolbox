@@ -16,6 +16,18 @@ function setLuminanceGainForToneMapping(obj, ~,~, varargin)
     % save toneMpping
     obj.toneMappingMethods(displayName) = toneMapping;
     
+    if (strcmp(obj.processingOptions.OLEDandLCDToneMappingParamsUpdate, 'Synchronized'))
+        if (strcmp(displayName, 'OLED'))
+            % Copy LCD tonemapping params <- OLED tonemapping params
+            obj.synchronizeTonemappingParams('source', 'OLED', 'destination', 'LCD');
+            obj.updateGUIWithCurrentToneMappingMethod('LCD');
+        else
+            % Copy OLED tonemapping params <- LCDtonemapping params
+            obj.synchronizeTonemappingParams('source', 'LCD', 'destination', 'OLED');
+            obj.updateGUIWithCurrentToneMappingMethod('OLED');
+        end
+    end
+
     % update GUI
     obj.updateGUIWithCurrentToneMappingMethod(displayName);
     

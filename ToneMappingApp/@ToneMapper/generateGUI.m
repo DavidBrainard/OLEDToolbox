@@ -148,7 +148,11 @@ function obj = generateGUI(obj)
    GUI.subMenu63 = uimenu(GUI.mainMenu6, 'Label', 'Above-gamut operation (currently: ??) ...');                
                    uimenu(GUI.subMenu63, 'Label', ' Clip individual primaries',  'Callback', @(src,event)setAboveGamutPrimaryOperation(obj,src,event, 'Clip Individual Primaries'));
                    uimenu(GUI.subMenu63, 'Label', ' Scale RGBprimary triplet',   'Callback', @(src,event)setAboveGamutPrimaryOperation(obj,src,event, 'Scale RGBPrimary Triplet'));
-    
+   GUI.subMenu64 = uimenu(GUI.mainMenu6, 'Label', 'OLED and LCD tone mapping params (currently: ??) ...');                
+                   uimenu(GUI.subMenu64, 'Label', ' Synchronized',  'Callback', @(src,event)setOLEDandLCDToneMappingParamsUpdateMode(obj,src,event, 'Synchronized'));
+                   uimenu(GUI.subMenu64, 'Label', ' Independent',   'Callback', @(src,event)setOLEDandLCDToneMappingParamsUpdateMode(obj,src,event, 'Independent'));
+                   
+                   
    GUI.mainMenu7 = uimenu(GUI.figHandle, 'Label', 'Reset to default ...'); 
                    uimenu(GUI.mainMenu7, 'Label', 'All settings',                   'Callback', @(src,event)resetSettings(obj,src,event, 'All'));
                    uimenu(GUI.mainMenu7, 'Label', 'OLED & LCD display properties',  'Callback', @(src,event)resetSettings(obj,src,event, 'Displays'));
