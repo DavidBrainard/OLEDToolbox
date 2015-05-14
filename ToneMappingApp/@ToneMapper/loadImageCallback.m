@@ -20,6 +20,8 @@ function loadImageCallback(obj,~,~)
         [obj.data.inputSRGBimageFullResolution, mask] = exrread(fullfile(imageDirectory, imageFileName));
     end
     
+    set(obj.GUI.figHandle, 'Name', sprintf('ToneMappingSimulator: %s', imageFileName));
+    
     % Subsample image
     obj.subSampleInputImage();
     

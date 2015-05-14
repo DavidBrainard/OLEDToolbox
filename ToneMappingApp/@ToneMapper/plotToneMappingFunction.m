@@ -11,8 +11,8 @@ function plotToneMappingFunction(obj, displayName)
     end
     
     % compute output luminance according to tone mapping method for the display
-    inputLuminance  = obj.data.inputLuminanceHistogram.centers;
-    outputLuminance = obj.tonemapInputLuminance(displayName, inputLuminance);
+    inputLuminance  = obj.data.inputSRGBluminanceMap; % obj.data.inputLuminanceHistogram.centers;
+    outputLuminance = obj.data.toneMappedRGBluminanceMap(displayName); % obj.tonemapInputLuminance(displayName, inputLuminance);
     
     % Enable the right axes
     figure(obj.GUI.figHandle);

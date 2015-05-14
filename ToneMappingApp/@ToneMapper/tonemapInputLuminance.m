@@ -12,12 +12,20 @@ function outputLuminance = tonemapInputLuminance(obj, displayName, inputLuminanc
     % Get the display's tonemapping method
     toneMapping = obj.toneMappingMethods(displayName);
     
-    % Apply max luminance limiting factor
-    maxLuminanceAvailableForToneMapping = toneMapping.luminanceGain/100.0 * display.maxLuminance;
+    if (toneMapping.nominalMaxLuminance < 0)
+        maxLuminanceAvailableForToneMapping = abs(toneMapping.nominalMaxLuminance);
+    else
+        maxLuminanceAvailableForToneMapping = toneMapping.nominalMaxLuminance/100.0 * display.maxLuminance;
+    end
     
     if (strcmp(toneMapping.name, 'LINEAR_SCALING'))
-        normInputLuminance = (inputLuminance - minInputLuminance)/(maxInputLuminance-minInputLuminance);
-        outputLuminance = normInputLuminance * maxLuminanceAvailableForToneMapping;
+        if (isnan(toneMapping.nominalMaxLuminance))
+            error('nominalMaxLuminance is nan');
+            outputLuminance = inputLuminance;
+        else
+            normInputLuminance = (inputLuminance - minInputLuminance)/(maxInputLuminance-minInputLuminance);
+            outputLuminance = normInputLuminance * maxLuminanceAvailableForToneMapping;
+        end
         
     elseif (strcmp(toneMapping.name, 'REINHARDT_GLOBAL'))
         % compute scene key
@@ -27,10 +35,15 @@ function outputLuminance = tonemapInputLuminance(obj, displayName, inputLuminanc
         scaledInputLuminance = toneMapping.alpha / sceneKey * inputLuminance;
         % Compress high luminances
         outputLuminance = scaledInputLuminance ./ (1.0+scaledInputLuminance);
-        minToneMappedSceneLum = min(outputLuminance(:));
-        maxToneMappedSceneLum = max(outputLuminance(:));
-        normalizedOutputLuminance = (outputLuminance-minToneMappedSceneLum)/(maxToneMappedSceneLum-minToneMappedSceneLum);
-        outputLuminance = normalizedOutputLuminance * maxLuminanceAvailableForToneMapping;
+        
+        if (isnan(toneMapping.nominalMaxLuminance))
+            outputLuminance = outputLuminance * maxLuminanceAvailableForToneMapping;
+        else
+            minToneMappedSceneLum = min(outputLuminance(:));
+            maxToneMappedSceneLum = max(outputLuminance(:));
+            normalizedOutputLuminance = (outputLuminance-minToneMappedSceneLum)/(maxToneMappedSceneLum-minToneMappedSceneLum);
+            outputLuminance = normalizedOutputLuminance * maxLuminanceAvailableForToneMapping;
+        end
     else
         error('Tonemapping ''%s'' not implemented yet', toneMapping.name);
     end

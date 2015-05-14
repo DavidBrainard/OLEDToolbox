@@ -11,7 +11,7 @@ function setLuminanceGainForToneMapping(obj, ~,~, varargin)
     toneMapping = obj.toneMappingMethods(displayName);
     
     % update toneMapping
-    toneMapping.luminanceGain = varargin{2};
+    toneMapping.nominalMaxLuminance = varargin{2};
     
     % save toneMpping
     obj.toneMappingMethods(displayName) = toneMapping;
