@@ -4,7 +4,7 @@ function initVisualizationOptions(obj)
     obj.visualizationOptions.histogramCountHeight = 700*40/4;
     obj.visualizationOptions.maxHistogramModifier = 'DEFAULT';
     
-    obj.visualizationOptions.maxSRGBimage = 'ADAPTIVE'; 
+    obj.visualizationOptions.maxSRGBimage = 'MAX_SRGB_OLED_PANEL';   % 'ADAPTIVE', MAX_SRGB_OLED_PANEL, MAX_SRGB_LCD_PANEL
     
     % Update GUI
     obj.updateGUIWithCurrentVisualizationOptions()
