@@ -15,13 +15,13 @@ function ConvertRT3scene
 
     % Grade image according to factors extracted by the script
     % /Users/Shared/Matlab/Toolboxes/OLEDToolbox/ToneMappingApp/RT3sceneConversion/GradeBlobbies.m
-    % with colorCheckerOrientation = 'HORIZONTAL'; 
+    % with colorCheckerOrientation = 'VERTICAL'; 
     % targetPatch = the white color check and 
     % targetPatchLuminance = 172 cd/m2
     if (strfind(blobbieSceneFileName, 'area1_front0_ceiling0'))
-        scalingFactor = 0.0397045;
+        scalingFactor = 0.4138004;
     elseif (strfind(blobbieSceneFileName, 'area0_front0_ceiling1'))
-        scalingFactor = 0.0016477;
+        scalingFactor = 0.0124014;
     else
         error('No scaling factor for image %s', blobbieSceneFileName);
     end

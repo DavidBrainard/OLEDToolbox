@@ -1,4 +1,4 @@
-function GradeBlobbies
+function GradeBlobbiesBySettingDesiredPatchMeanLuminance
 
     % Set the desired patchluminance
     targetPatchDesiredMeanLuminance = 172;  % Same as the LCD in the lab
