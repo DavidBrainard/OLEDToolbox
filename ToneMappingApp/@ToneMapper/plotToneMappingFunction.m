@@ -9,26 +9,23 @@ function plotToneMappingFunction(obj, displayName)
         % we have not computed a histogram yet
         return;
     end
-    
-    % compute output luminance according to tone mapping method for the display
-    inputLuminance  = obj.data.inputSRGBluminanceMap; % obj.data.inputLuminanceHistogram.centers;
-    outputLuminance = obj.data.toneMappedRGBluminanceMap(displayName); % obj.tonemapInputLuminance(displayName, inputLuminance);
-    
+
     % Enable the right axes
     figure(obj.GUI.figHandle);
     set(obj.GUI.figHandle,'CurrentAxes',obj.GUI.sceneHistogramPlotHandle);
-    
-    hold(obj.GUI.sceneHistogramPlotHandle, 'on');
-    
+
     switch displayName
         case 'OLED'
-            plot(inputLuminance, outputLuminance, 'r-');
+            plot(obj.GUI.sceneHistogramPlotHandle, obj.data.inputSRGBluminanceMap, obj.data.toneMappedRGBluminanceMap(displayName), '.', 'Color', [0.9 0.2 0.4]);
         case 'LCD' 
-            plot(inputLuminance, outputLuminance, 'b-');
-            h = legend({'input image luminance','OLED tone mapping', 'LCD tone mapping'});
+            plot(obj.GUI.sceneHistogramPlotHandle, obj.data.inputSRGBluminanceMap, obj.data.toneMappedRGBluminanceMap(displayName), '.', 'Color', [0.2 0.5 0.9]);
+            %h = legend({'input luminance', 'OLED mapping', 'LCD mapping'});
+            h = legend({'input luminance'});
             set(h, 'FontName', 'Helvetica', 'FontSize', 12, 'Location', 'North', 'FontWeight', 'bold');
-           
+            % no legend box/background
+            legend boxoff
+            hold(obj.GUI.sceneHistogramPlotHandle, 'off');
     end
-    box(obj.GUI.sceneHistogramPlotHandle, 'on');
+
 end
 
