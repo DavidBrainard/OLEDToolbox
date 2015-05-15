@@ -15,8 +15,14 @@ function updateGUIWithCurrentToneMappingMethod(obj, displayName)
             else
                 set(obj.GUI.subMenu41, 'Label', sprintf('Current method: ''%s'' ...', toneMapping.name));
             end
-            if (toneMapping.nominalMaxLuminance < 0)
-                set(obj.GUI.subMenu42, 'Label', sprintf('Nominal max luminance (currently: %2.1f%% cd/m2)', abs(toneMapping.nominalMaxLuminance)));
+            if (strcmp(toneMapping.nominalMaxLuminance, 'OLED_MAX'))
+                display = obj.displays('OLED');
+                set(obj.GUI.subMenu42, 'Label', sprintf('Nominal max luminance (currently: %2.1f cd/m2)', display.maxLuminance));
+            elseif (strcmp(toneMapping.nominalMaxLuminance, 'LCD_MAX'))
+                display = obj.displays('LCD');
+                set(obj.GUI.subMenu42, 'Label', sprintf('Nominal max luminance (currently: %2.1f cd/m2)', display.maxLuminance));
+            elseif (toneMapping.nominalMaxLuminance < 0)
+                set(obj.GUI.subMenu42, 'Label', sprintf('Nominal max luminance (currently: %2.1f cd/m2)', abs(toneMapping.nominalMaxLuminance)));
             else
                 set(obj.GUI.subMenu42, 'Label', sprintf('Nominal max luminance (currently: %2.1f%% of indiv. display''s max luminance)', toneMapping.nominalMaxLuminance));
             end

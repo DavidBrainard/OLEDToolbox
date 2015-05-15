@@ -2,8 +2,17 @@ function drawToneMappedImages(obj, displayName)
 
     im1 = obj.data.toneMappedInGamutSRGBimage('OLED');
     im2 = obj.data.toneMappedInGamutSRGBimage('LCD');
-    maxSRGBimage = max([max(im1(:)) max(im2(:))]);
-
+    
+    if (strcmp(obj.visualizationOptions.maxSRGBimage, 'ADAPTIVE'))
+        maxSRGBimage = max([max(im1(:)) max(im2(:))]);
+    elseif (strcmp(obj.visualizationOptions.maxSRGBimage, 'MAX_SRGB_OLED_PANEL'))
+        display = obj.displays('OLED');
+        maxSRGBimage = display.maxSRGB;
+    elseif (strcmp(obj.visualizationOptions.maxSRGBimage, 'MAX_SRGB_LCD_PANEL'))
+        display = obj.displays('LCD');
+        maxSRGBimage = display.maxSRGB;
+    end
+    
     figure(obj.GUI.imageHandle);
     
     % The tonemapped, not-in-gamut image
@@ -22,7 +31,7 @@ function drawToneMappedImages(obj, displayName)
         minSRBstim = minSRGBLCD;
         maxSRBstim = maxSRGBLCD;
     end
-    plotTitle = sprintf('%s sRGB image (luminance tonemapped)\nSRGBrange = [%2.2f - %2.2f]; displayed SRGB range: [0.00 - %2.2f]', displayName, minSRBstim, maxSRBstim, maxSRGBimage);
+    plotTitle = sprintf('%s sRGB image (luminance tonemapped)\nSRGBrange = [%2.2f ... %2.2f]; displayed SRGB range: [0.0 ... %2.2f]', displayName, minSRBstim, maxSRBstim, maxSRGBimage);
     obj.plotSRGBImage(obj.data.toneMappedSRGBimage(displayName), plotTitle, maxSRGBimage);
  
     
@@ -42,7 +51,7 @@ function drawToneMappedImages(obj, displayName)
         maxSRBstim = maxSRGBLCD;
     end
     
-    plotTitle = sprintf('%s sRGB image (luminance tonemapped, with RGB in gamut)\nSRGBrange = [%2.2f - %2.2f]; displayed SRGB range: [0.00 - %2.2f]', displayName, minSRBstim, maxSRBstim, maxSRGBimage);
+    plotTitle = sprintf('%s sRGB image (luminance tonemapped, with RGB in gamut)\nSRGBrange = [%2.2f ... %2.2f]; displayed SRGB range: [0.00 ... %2.2f]', displayName, minSRBstim, maxSRBstim, maxSRGBimage);
     obj.plotSRGBImage(obj.data.toneMappedInGamutSRGBimage(displayName), plotTitle, maxSRGBimage);
     
     

@@ -89,11 +89,22 @@ function obj = generateGUI(obj)
                    uimenu(GUI.subMenu42, 'Label', ' 2000 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', -2000));
                    uimenu(GUI.subMenu42, 'Label', ' 1000 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', -1000));
                    uimenu(GUI.subMenu42, 'Label', '  750 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', -750));
+                   uimenu(GUI.subMenu42, 'Label', '  600 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', -600));
                    uimenu(GUI.subMenu42, 'Label', '  500 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', -500));
+                   uimenu(GUI.subMenu42, 'Label', '  400 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', -400));
                    uimenu(GUI.subMenu42, 'Label', '  300 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', -300));
+                   uimenu(GUI.subMenu42, 'Label', '  250 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', -250));
                    uimenu(GUI.subMenu42, 'Label', '  200 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', -200));
                    uimenu(GUI.subMenu42, 'Label', '  150 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', -150));
                    uimenu(GUI.subMenu42, 'Label', '  100 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', -100));
+                   uimenu(GUI.subMenu42, 'Label', '   75 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', -75));
+                   uimenu(GUI.subMenu42, 'Label', '   50 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', -50));
+                   uimenu(GUI.subMenu42, 'Label', '   40 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', -40));
+                   uimenu(GUI.subMenu42, 'Label', '   30 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', -30));
+                   uimenu(GUI.subMenu42, 'Label', '   20 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', -20));
+                   uimenu(GUI.subMenu42, 'Label', '   10 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', -10));
+                   uimenu(GUI.subMenu42, 'Label', 'OLED display max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', 'OLED_MAX'));
+                   uimenu(GUI.subMenu42, 'Label', 'LCD  display max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', 'LCD_MAX'));
                    uimenu(GUI.subMenu42, 'Label', '2000% of indiv. display''s max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', 2000.0));
                    uimenu(GUI.subMenu42, 'Label', '1000% of indiv. display''s max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', 1000.0));
                    uimenu(GUI.subMenu42, 'Label', ' 500% of indiv. display''s max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', 500.0));
@@ -140,11 +151,22 @@ function obj = generateGUI(obj)
                    uimenu(GUI.subMenu52, 'Label', ' 2000 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', -2000));
                    uimenu(GUI.subMenu52, 'Label', ' 1000 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', -1000));
                    uimenu(GUI.subMenu52, 'Label', '  750 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', -750));
+                   uimenu(GUI.subMenu52, 'Label', '  600 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', -600));
                    uimenu(GUI.subMenu52, 'Label', '  500 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', -500));
+                   uimenu(GUI.subMenu52, 'Label', '  400 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', -400));
                    uimenu(GUI.subMenu52, 'Label', '  300 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', -300));
+                   uimenu(GUI.subMenu52, 'Label', '  250 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', -250));
                    uimenu(GUI.subMenu52, 'Label', '  200 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', -200));
                    uimenu(GUI.subMenu52, 'Label', '  150 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', -150));
                    uimenu(GUI.subMenu52, 'Label', '  100 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', -100));
+                   uimenu(GUI.subMenu52, 'Label', '   75 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', -75));
+                   uimenu(GUI.subMenu52, 'Label', '   50 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', -50));
+                   uimenu(GUI.subMenu52, 'Label', '   40 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', -40));
+                   uimenu(GUI.subMenu52, 'Label', '   30 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', -30));
+                   uimenu(GUI.subMenu52, 'Label', '   20 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', -20));
+                   uimenu(GUI.subMenu52, 'Label', '   10 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', -10));
+                   uimenu(GUI.subMenu52, 'Label', 'OLED display max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', 'OLED_MAX'));
+                   uimenu(GUI.subMenu52, 'Label', 'LCD  display max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', 'LCD_MAX'));
                    uimenu(GUI.subMenu52, 'Label', '2000% of indiv. display''s max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', 2000.0));
                    uimenu(GUI.subMenu52, 'Label', '1000% of indiv. display''s max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', 1000.0));
                    uimenu(GUI.subMenu52, 'Label', ' 500% of indiv. display''s max luminance',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', 500.0));
@@ -186,13 +208,30 @@ function obj = generateGUI(obj)
                    uimenu(GUI.subMenu64, 'Label', ' Synchronized',  'Callback', @(src,event)setOLEDandLCDToneMappingParamsUpdateMode(obj,src,event, 'Synchronized'));
                    uimenu(GUI.subMenu64, 'Label', ' Independent',   'Callback', @(src,event)setOLEDandLCDToneMappingParamsUpdateMode(obj,src,event, 'Independent'));
                    
-                   
-   GUI.mainMenu7 = uimenu(GUI.figHandle, 'Label', 'Reset to default ...'); 
-                   uimenu(GUI.mainMenu7, 'Label', 'All settings',                   'Callback', @(src,event)resetSettings(obj,src,event, 'All'));
-                   uimenu(GUI.mainMenu7, 'Label', 'OLED & LCD display properties',  'Callback', @(src,event)resetSettings(obj,src,event, 'Displays'));
-                   uimenu(GUI.mainMenu7, 'Label', 'OLED & LCD tone mapping methods','Callback', @(src,event)resetSettings(obj,src,event, 'Tone Mapping'));
-                   uimenu(GUI.mainMenu7, 'Label', 'Processing options',             'Callback', @(src,event)resetSettings(obj,src,event, 'Processing Options'));
-                   uimenu(GUI.mainMenu7, 'Label', 'Windows & GUI',                  'Callback', @(src,event)resetSettings(obj,src,event, 'GUI'));
+           
+   GUI.mainMenu7 = uimenu(GUI.figHandle,   'Label', 'Visualization options ...');  
+   GUI.subMenu71 = uimenu(GUI.mainMenu7,  'Label', 'maxSRGB for image plots (Currently: ??) ...');
+                    uimenu(GUI.subMenu71, 'Label', 'Adaptive',                           'Callback', @(src,event)setMaxSRGBForImagePlottings(obj,src,event, 'ADAPTIVE'));
+                    uimenu(GUI.subMenu71, 'Label', 'sRGB for OLED primaries = [1 1 1]',  'Callback', @(src,event)setMaxSRGBForImagePlottings(obj,src,event, 'MAX_SRGB_OLED_PANEL'));
+                    uimenu(GUI.subMenu71, 'Label', 'sRGB for LCD  primaries = [1 1 1]',  'Callback', @(src,event)setMaxSRGBForImagePlottings(obj,src,event, 'MAX_SRGB_LCD_PANEL'));
+   GUI.subMenu72 = uimenu(GUI.mainMenu7,  'Label', 'Histogram max count (Currently: ??) ...');                 
+                    uimenu(GUI.subMenu72, 'Label', 'x 1/16',         'Callback', @(src,event)setHistogramMaxCount(obj,src,event, 'x 1/16'));
+                    uimenu(GUI.subMenu72, 'Label', 'x 1/8',          'Callback', @(src,event)setHistogramMaxCount(obj,src,event, 'x 1/8'));
+                    uimenu(GUI.subMenu72, 'Label', 'x 1/4',          'Callback', @(src,event)setHistogramMaxCount(obj,src,event, 'x 1/4'));
+                    uimenu(GUI.subMenu72, 'Label', 'x 1/2',          'Callback', @(src,event)setHistogramMaxCount(obj,src,event, 'x 1/2'));
+                    uimenu(GUI.subMenu72, 'Label', 'Default',        'Callback', @(src,event)setHistogramMaxCount(obj,src,event, 'DEFAULT'));
+                    uimenu(GUI.subMenu72, 'Label', 'x 2',            'Callback', @(src,event)setHistogramMaxCount(obj,src,event, 'x 2'));
+                    uimenu(GUI.subMenu72, 'Label', 'x 4',            'Callback', @(src,event)setHistogramMaxCount(obj,src,event, 'x 4'));
+                    uimenu(GUI.subMenu72, 'Label', 'x 8',            'Callback', @(src,event)setHistogramMaxCount(obj,src,event, 'x 8'));
+                    uimenu(GUI.subMenu72, 'Label', 'x16',            'Callback', @(src,event)setHistogramMaxCount(obj,src,event, 'x16'));
+                    
+   
+   GUI.mainMenu8 = uimenu(GUI.figHandle, 'Label', 'Reset to default ...'); 
+                   uimenu(GUI.mainMenu8, 'Label', 'All settings',                   'Callback', @(src,event)resetSettings(obj,src,event, 'All'));
+                   uimenu(GUI.mainMenu8, 'Label', 'OLED & LCD display properties',  'Callback', @(src,event)resetSettings(obj,src,event, 'Displays'));
+                   uimenu(GUI.mainMenu8, 'Label', 'OLED & LCD tone mapping methods','Callback', @(src,event)resetSettings(obj,src,event, 'Tone Mapping'));
+                   uimenu(GUI.mainMenu8, 'Label', 'Processing options',             'Callback', @(src,event)resetSettings(obj,src,event, 'Processing Options'));
+                   uimenu(GUI.mainMenu8, 'Label', 'Windows & GUI',                  'Callback', @(src,event)resetSettings(obj,src,event, 'GUI'));
                    
    % Create SPD plot axes
    GUI.spdOLEDPlotHandle = axes('Units','pixels','Position',[70  50 300  680]);

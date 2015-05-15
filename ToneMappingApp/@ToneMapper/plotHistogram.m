@@ -25,7 +25,31 @@ function plotHistogram(obj, sceneOrToneMappedImage, displayName, holdPreviousPlo
             luminanceBins   = obj.data.inputLuminanceHistogram.centers;
             luminanceCounts = obj.data.inputLuminanceHistogram.counts;
             histogramColor = [0.6 0.6 0.1];
-            maxHistogramCount = min(luminanceCounts(luminanceCounts>0))*obj.visualizationOptions.histogramCountHeight / (obj.processingOptions.imageSubsamplingFactor)^2;
+            histogramCountHeight = obj.visualizationOptions.histogramCountHeight;
+            switch (obj.visualizationOptions.maxHistogramModifier)
+                case 'DEFAULT'
+                    histogramCountHeight = 1 * histogramCountHeight;
+                case 'x 2'
+                    histogramCountHeight = 2 * histogramCountHeight;
+                case 'x 4'
+                    histogramCountHeight = 4 * histogramCountHeight;
+                case 'x 8'
+                    histogramCountHeight = 8 * histogramCountHeight;
+                case 'x16'
+                    histogramCountHeight = 16 * histogramCountHeight;
+                case 'x 1/2'
+                    histogramCountHeight = 1/2 * histogramCountHeight;
+                case 'x 1/4'
+                    histogramCountHeight = 1/4 * histogramCountHeight;
+                case 'x 1/8'
+                    histogramCountHeight = 1/8 * histogramCountHeight;
+                case 'x 1/16'
+                    histogramCountHeight = 1/16 * histogramCountHeight;
+                otherwise
+                    error('unknown maxHistogramModifier (%s)', obj.visualizationOptions.maxHistogramModifier);
+            end
+            
+            maxHistogramCount = min(luminanceCounts(luminanceCounts>0))*histogramCountHeight / (obj.processingOptions.imageSubsamplingFactor)^2;
             % normalize, then scale to max luminance so we can plot histogram and
             % luminance tone mapping function on same y-axis
             luminanceCounts = luminanceCounts / maxHistogramCount * max([obj.displays('OLED').maxLuminance obj.displays('LCD').maxLuminance]);

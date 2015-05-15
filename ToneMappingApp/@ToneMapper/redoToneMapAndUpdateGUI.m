@@ -30,7 +30,32 @@ function redoToneMapAndUpdateGUI(obj)
         luminanceCounts1 = obj.data.toneMappedImageLuminanceHistogram('OLED').counts;
         luminanceCounts2 = obj.data.toneMappedImageLuminanceHistogram('LCD').counts;
         luminanceCounts  = [luminanceCounts1(:); luminanceCounts2(:)];
-        maxHistogramCount = min(luminanceCounts(luminanceCounts>0))*obj.visualizationOptions.histogramCountHeight / (obj.processingOptions.imageSubsamplingFactor)^2;
+        
+        histogramCountHeight = obj.visualizationOptions.histogramCountHeight;
+        switch (obj.visualizationOptions.maxHistogramModifier)
+            case 'DEFAULT'
+                histogramCountHeight = 1 * histogramCountHeight;
+            case 'x 2'
+                histogramCountHeight = 2 * histogramCountHeight;
+            case 'x 4'
+                histogramCountHeight = 4 * histogramCountHeight;
+            case 'x 8'
+                histogramCountHeight = 8 * histogramCountHeight;
+            case 'x16'
+                histogramCountHeight = 16 * histogramCountHeight;
+            case 'x 1/2'
+                histogramCountHeight = 1/2 * histogramCountHeight;
+            case 'x 1/4'
+                histogramCountHeight = 1/4 * histogramCountHeight;
+            case 'x 1/8'
+                histogramCountHeight = 1/8 * histogramCountHeight;
+            case 'x 1/16'
+                histogramCountHeight = 1/16 * histogramCountHeight;
+            otherwise
+                error('unknown maxHistogramModifier (%s)', obj.visualizationOptions.maxHistogramModifier);
+        end
+            
+        maxHistogramCount = min(luminanceCounts(luminanceCounts>0))*histogramCountHeight / (obj.processingOptions.imageSubsamplingFactor)^2;
 
         % Plot the tonemapping functions for the OLD and the LCD
         obj.plotHistogram('toneMappedImage', 'OLED', 'off', maxHistogramCount);

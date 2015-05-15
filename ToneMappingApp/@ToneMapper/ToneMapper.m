@@ -105,6 +105,7 @@ classdef ToneMapper < handle
         % GUI callback methods: display luminance
         setMaxDisplayLuminance(obj,srcHandle,eventData, varargin);
         setMinDisplayLuminance(obj,srcHandle,eventData, varargin);
+        display = updateDisplayComputedProperties(obj, oldDisplay);
         
         % GUI callback methods: tonemapping
         setToneMappingMethodAndParams(obj,srcHandle,eventData, varargin);
@@ -116,14 +117,19 @@ classdef ToneMapper < handle
         setAboveGamutPrimaryOperation(obj, srcHandle,eventData, varargin);
         setOLEDandLCDToneMappingParamsUpdateMode(obj, srcHandle,eventData, varargin);
         
-        % GUI callback
+        % GUI callback methods: visualization
+        setMaxSRGBForImagePlottings(obj,srcHandle,eventData, varargin);
+        setHistogramMaxCount(obj,srcHandle,eventData, varargin);
+        
+        % GUI callback: reset settings
         resetSettings(obj, srcHandle,eventData, varargin);
          
         % GUI menu updating methods
         updateGUIWithCurrentLuminances(obj, displayName);
         updateGUIWithCurrentToneMappingMethod(obj, displayName);
         updateGUIWithCurrentProcessingOptions(obj);
-
+        updateGUIWithCurrentVisualizationOptions(obj);
+        
         % Method to synchronize tonemaping params
         synchronizeTonemappingParams(obj, sourceLabel, source, destinationLabel, destination)
         

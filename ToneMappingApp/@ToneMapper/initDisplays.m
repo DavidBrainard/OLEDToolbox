@@ -22,30 +22,18 @@ function initDisplays(obj)
     % gammaMode == 1 - search table using linear interpolation
     calOLED = SetGammaMethod(calOLED, 0);
     calLCD = SetGammaMethod(calLCD, 0);
-        
-    % Compute min and max luminances for displays
-    XYZ = SettingsToSensor(calLCD, [1 1 1]');
-    maxLuminanceLCD = XYZ(2) * obj.wattsToLumens;
-    XYZ = SettingsToSensor(calLCD, [0 0 0]');
-    minLuminanceLCD = XYZ(2) * obj.wattsToLumens;
-    
-    XYZ = SettingsToSensor(calOLED, [1 1 1]');
-    maxLuminanceOLED = XYZ(2) * obj.wattsToLumens;
-    XYZ = SettingsToSensor(calOLED, [0 0 0]');
-    minLuminanceOLED = XYZ(2) * obj.wattsToLumens;
     
     genericOLED = struct(...
-        'calStruct', calOLED, ...
-        'minLuminance', minLuminanceOLED, ...
-        'maxLuminance', maxLuminanceOLED ...
+        'calStruct', calOLED ...
         );
-    
-    
+
     genericLCD = struct(...
-        'calStruct', calLCD, ...
-        'minLuminance', minLuminanceLCD, ...
-        'maxLuminance', maxLuminanceLCD ...
+        'calStruct', calLCD ...
         );
+    
+    % Update computed properties
+    genericOLED = obj.updateDisplayComputedProperties(genericOLED);
+    genericLCD  = obj.updateDisplayComputedProperties(genericLCD);
     
     % Save cal structs
     obj.displays = containers.Map({'OLED', 'LCD'}, {genericOLED, genericLCD});

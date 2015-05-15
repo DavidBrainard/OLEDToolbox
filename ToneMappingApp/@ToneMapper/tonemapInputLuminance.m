@@ -12,7 +12,15 @@ function outputLuminance = tonemapInputLuminance(obj, displayName, inputLuminanc
     % Get the display's tonemapping method
     toneMapping = obj.toneMappingMethods(displayName);
     
-    if (toneMapping.nominalMaxLuminance < 0)
+    if (strcmp(toneMapping.nominalMaxLuminance, 'OLED_MAX'))
+        display = obj.displays('OLED');
+        toneMapping.nominalMaxLuminance = -display.maxLuminance;
+        maxLuminanceAvailableForToneMapping = abs(toneMapping.nominalMaxLuminance);
+    elseif (strcmp(toneMapping.nominalMaxLuminance, 'LCD_MAX'))
+        display = obj.displays('LCD');
+        toneMapping.nominalMaxLuminance = -display.maxLuminance;
+        maxLuminanceAvailableForToneMapping = abs(toneMapping.nominalMaxLuminance);
+    elseif (toneMapping.nominalMaxLuminance < 0)
         maxLuminanceAvailableForToneMapping = abs(toneMapping.nominalMaxLuminance);
     else
         maxLuminanceAvailableForToneMapping = toneMapping.nominalMaxLuminance/100.0 * display.maxLuminance;

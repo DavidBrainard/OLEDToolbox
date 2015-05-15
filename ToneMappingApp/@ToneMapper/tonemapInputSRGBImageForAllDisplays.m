@@ -85,10 +85,15 @@ function [SRGBcalFormatToneMapped, SRGBcalFormatToneMappedInGamut, inputLuminanc
         
     elseif (strcmp(operatingSpace, 'sRGB'))
 
-        
         toneMapping = obj.toneMappingMethods(displayName);
         
-        if (toneMapping.nominalMaxLuminance < 0)
+        if (strcmp(toneMapping.nominalMaxLuminance, 'OLED_MAX'))
+            display = obj.displays('OLED');
+            maxLuminance = display.maxLuminance;
+        elseif (strcmp(toneMapping.nominalMaxLuminance, 'LCD_MAX'))
+            display = obj.displays('LCD');
+            maxLuminance = display.maxLuminance;
+        elseif (toneMapping.nominalMaxLuminance < 0)
             maxLuminance = abs(toneMapping.nominalMaxLuminance);
         else
             maxLuminance = toneMapping.nominalMaxLuminance/100.0 * display.maxLuminance;

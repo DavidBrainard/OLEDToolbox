@@ -6,5 +6,6 @@ function setMaxDisplayLuminance(obj,~,~, varargin)
     
     %adjust calStruct
     obj.adjustDisplaySpecs(displayName, 'maxLuminance', varargin{2});
+    
 end
 

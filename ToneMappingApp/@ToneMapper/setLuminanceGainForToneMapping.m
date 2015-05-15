@@ -13,6 +13,16 @@ function setLuminanceGainForToneMapping(obj, ~,~, varargin)
     % update toneMapping
     toneMapping.nominalMaxLuminance = varargin{2};
     
+%     if (strcmp(toneMapping.nominalMaxLuminance, 'OLED_MAX'))
+%         display = obj.displays('OLED');
+%         toneMapping.nominalMaxLuminance = -display.maxLuminance;
+%     end
+%     
+%     if (strcmp(toneMapping.nominalMaxLuminance, 'LCD_MAX'))
+%         display = obj.displays('LCD');
+%         toneMapping.nominalMaxLuminance = -display.maxLuminance;
+%     end
+    
     % save toneMpping
     obj.toneMappingMethods(displayName) = toneMapping;
     
