@@ -20,6 +20,16 @@ function loadImageCallback(obj,~,~)
         [obj.data.inputSRGBimageFullResolution, mask] = exrread(fullfile(imageDirectory, imageFileName));
     end
     
+    minVal = min(min(min(obj.data.inputSRGBimageFullResolution)));
+    if (minVal < 0)
+        h = warndlg(sprintf('INPUT sRGB IMAGE CONTAINS NEGATIVE VALUES (smallest value = %f).', minVal),'Warning. Clamping input to 0. !!');
+        uiwait(h);
+        obj.data.inputSRGBimageFullResolution(obj.data.inputSRGBimageFullResolution<0) = 0;
+    end
+    
+    
+    
+    
     set(obj.GUI.figHandle, 'Name', sprintf('ToneMappingSimulator: %s', imageFileName));
     
     % Subsample image
