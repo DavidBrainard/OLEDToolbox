@@ -5,27 +5,30 @@ function ConvertRT3scene
     if (blobbieMultiSpectralDataDir==0)
        return;
     end
-    load(fullfile(blobbieMultiSpectralDataDir, blobbieSceneFileName), 'S', 'multispectralImage');
-
-    % load XYZ CMFs
-    sensorXYZ = loadXYZCMFs();
-
-    % multispectral to XYZ
-    XYZimage = MultispectralToSensorImage(multispectralImage, S, sensorXYZ.T, sensorXYZ.S);
-
+    
     % Grade image according to factors extracted by the script
-    % /Users/Shared/Matlab/Toolboxes/OLEDToolbox/ToneMappingApp/RT3sceneConversion/GradeBlobbies.m
-    % with colorCheckerOrientation = 'VERTICAL'; 
+    % /Users/Shared/Matlab/Toolboxes/OLEDToolbox/ToneMappingApp/RT3sceneConversion/GradeBlobbiesBySettingsDesiredPatchMeanSRGB.m
+    % with colorCheckerOrientation = 'TILTED'; 
     % targetPatch = the white color check and 
-    % targetPatchLuminance = 172 cd/m2
+    % targetSRGB = 0.5
     if (strfind(blobbieSceneFileName, 'area1_front0_ceiling0'))
-        scalingFactor = 0.4138004;
+        scalingFactor = 0.1055343;
     elseif (strfind(blobbieSceneFileName, 'area0_front0_ceiling1'))
-        scalingFactor = 0.0124014;
+        scalingFactor = 0.0038509;
     else
         error('No scaling factor for image %s', blobbieSceneFileName);
     end
     
+    
+    % load XYZ CMFs
+    sensorXYZ = loadXYZCMFs();
+
+    % load multispectral image data
+    load(fullfile(blobbieMultiSpectralDataDir, blobbieSceneFileName), 'S', 'multispectralImage');
+    
+    % compute XYZimage
+    XYZimage = MultispectralToSensorImage(multispectralImage, S, sensorXYZ.T, sensorXYZ.S);
+
     XYZimage = XYZimage * scalingFactor;
     
     % to cal format
@@ -54,4 +57,7 @@ function ConvertRT3scene
     filename = fullfile(SRGBImageDestinationDir, blobbieSceneFileName);
     save(filename, 'linearSRGBimage');
     fprintf('Linear SRGB image saved in ''%ss''.', filename);
+    
+    PlotSRGBImages(1, 'Original and Graded images', linearSRGBimage, linearSRGBimage/scalingFactor, 'Graded image', 'Original image', []);
+    
 end
