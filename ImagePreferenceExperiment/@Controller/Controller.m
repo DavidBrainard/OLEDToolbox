@@ -6,6 +6,10 @@ classdef Controller < handle
         model;
     end
     
+    properties (SetAccess = private, Dependent)
+        numberOfCachedStimuli;
+    end
+    
     properties (Access = private)
         initParams = struct('debugMode', true);
         stimulusSize;
@@ -37,25 +41,32 @@ classdef Controller < handle
             obj.model = Model();
         end
         
-        % Method to load the stimuli onto the view
-        loadStimuliToView(obj);
+        % Method to load the stimulus cache
+        loadStimulusCache(obj, cacheFileName);
         
-        % Method to load multispectral scene files
-        loadMultiSpectralSceneFiles(obj);
-        
-        % Method to present a stimulus and obtain a response
-        response = presentStimulusAndGetResponse(obj, stimIndex, HDRposition);
-        
-        % Method to configure the target locations
-        configureTargets(obj);
         
         % Method to shutdown
         shutDown(obj);
+        
+        % getters of dependent properties
+        function val = get.numberOfCachedStimuli(obj)
+            val = obj.viewOutlet.numberOfCachedStimuli;
+        end
+        
     end
     
     
     methods (Access = private)
+        
+        % Method to initialize the controller
         initController(obj);
+        
+        % Method to configure the target locations
+        configureTargets(obj);
+        
+        % Method to present a stimulus and obtain a response
+        response = presentStimulusAndGetResponse(obj, stimIndex, HDRposition);
+        
     end
     
 end

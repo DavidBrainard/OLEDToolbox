@@ -22,5 +22,7 @@ function loadStimuliToView(obj)
     ldrStimRGBdata = ones(obj.stimulusSize.rows, obj.stimulusSize.cols, 3);
     obj.viewOutlet.addToCache(stimIndex, hdrStimRGBdata, ldrStimRGBdata);
     
+    
+    
 end
 

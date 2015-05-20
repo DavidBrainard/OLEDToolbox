@@ -1,6 +1,4 @@
 function configureTargets(obj)
-
-    obj.stimulusSize.scaleFactor = 0.3;
     
     stimRect = [0 0 obj.stimulusSize.cols*obj.stimulusSize.scaleFactor obj.stimulusSize.rows*obj.stimulusSize.scaleFactor];
     
