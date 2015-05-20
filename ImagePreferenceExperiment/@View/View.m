@@ -2,7 +2,11 @@ classdef View < handle
     %VIEW Class controlling presentation of two side-by-side stimuli using PsychImaging.
     
     properties (SetAccess = private)
-        screenSize = struct('width', [], 'height', []);
+        screenSize = struct('width', [], 'height', []); 
+    end
+    
+    properties (SetAccess = private, Dependent)
+        numberOfCachedStimuli;
     end
     
     properties (Access = private)
@@ -82,6 +86,11 @@ classdef View < handle
         
         % Method to shutdown the view
         shutDown(obj);
+        
+        % getters of dependent properties
+        function val = get.numberOfCachedStimuli(obj)
+            val = numel(obj.stimCache.textures);
+        end
         
     end  % Public methods
     
