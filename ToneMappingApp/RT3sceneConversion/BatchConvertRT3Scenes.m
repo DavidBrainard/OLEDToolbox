@@ -1,4 +1,4 @@
-function ConvertAllRT3Blobbies
+function BatchConvertRT3Scenes
     
     % Select blobbie scenes to put in the cache
     multiSpectralBlobbieFolder = '/Users/Shared/Matlab/Toolboxes/OLEDToolbox/HDRstuff/BlobbieAnalysis/MultispectralData_0deg';
