@@ -1,24 +1,19 @@
 function RunImagePreferenceExperiment
 
+    [rootDir,~] = fileparts(which(mfilename))
+    cd(rootDir);
+    
+    
+    % use debugMode = false, when running on the Samsung
     experimentController = Controller('debugMode', true);
     
-    experimentController.loadStimuliToView();
-    experimentController.configureTargets();
+    % Select acache file
+    cacheFileName = 'HighSpecularReflectance_ReinhardtToneMapSRGB1To500CdPerM2';
     
-    % Basic experimental loop
-    for k = 0:9
-        stimIndex = mod(k,2) + 1;
-        if (rand < 0.5)
-            HDRposition = 'LEFT';
-        else
-            HDRposition = 'RIGHT';
-        end
-        response = experimentController.presentStimulusAndGetResponse(stimIndex, HDRposition)
-        if (response.terminateExperiment)
-            fprintf('\nExperiment terminated by ESC.\n');
-            return;
-        end
-    end
-   
+    % Run the experiment
+    experimentController.loadStimulusCache(cacheFileName);
+    experimentController.runExperiment();
+    
+
     experimentController.shutDown();
 end
