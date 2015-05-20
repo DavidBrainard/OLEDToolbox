@@ -6,7 +6,8 @@ function TestCalBases
     obj.sensorXYZ.T = colorMatchingData.T_xyz1931;
     clear 'colorMatchingData';
     
-    load('calLCD.mat');   calLCD = cleanupCal(calLCD);
+    load('calLCD.mat');   
+    calLCD = cleanupCal(calLCD);
    
     calLCD.nPrimaryBases = 3;
     calLCD = CalibrateFitLinMod(calLCD);
@@ -25,23 +26,24 @@ function TestCalBases
     
     XYZ = SettingsToSensor(calLCD, [0 0 0]');
     ambientxyY = XYZToxyY(XYZ);
-    fprintf('Ambient luminance: %2.2f cd/m2\n', ambientxyY(3)*683);
-
-    % Set the target RGB settings
+    
+    % Choose random target RGB settings
     targetSettings = rand(3,1);
     targetSettings = targetSettings/max(targetSettings);
-    
-    
+   
     targetXYZ = SettingsToSensor(calLCD, targetSettings);
     targetxyY = XYZToxyY(targetXYZ);
+    
+    fprintf('Ambient luminance: %2.2f cd/m2\n', ambientxyY(3)*683);
     fprintf('Target luminance: %2.2f cd/m2\n', targetxyY(3)*683);
     fprintf('Target (x,y): (%2.3f, %2.3f)\n', targetxyY(1), targetxyY(2));
     
+    % Examine the lowest 32 points of the 256 LUT entries
     q = 0.125;
-    N = round(256*q)-1
+    N = round(256*q)-1;
     luminanceVariations = q*linspace(0,N,N+1)/N * targetxyY(3);
     
-    % desired xyY
+    % desired xyY: fixed xy at progressively lower luminances (Y)
     desiredxyYcalFormat = repmat(targetxyY, [1 numel(luminanceVariations)]);
     desiredxyYcalFormat(3,:) = luminanceVariations;
     
@@ -67,27 +69,31 @@ function TestCalBases
     linearSRGBCalFormat = XYZToSRGBPrimary(realizableXYZcalFormat);
     linearSRGBCalFormat(linearSRGBCalFormat<0) = 0;
 
- 
+    % plot the deviation in target luminance and xy
     figure(1);
     clf;
     subplot(1,2,1);
-    plot(luminanceVariations*683, (luminanceVariations-squeeze(realizablexyYCalFormat(3,:)))*683, 'rs-', 'MarkerFaceColor', [1 0.8 0.8]);
+    luminanceDeviation = (luminanceVariations-squeeze(realizablexyYCalFormat(3,:)))*683;
+    nominalLuminance = luminanceVariations*683;
+    plot(nominalLuminance, luminanceDeviation, 'rs-', 'MarkerFaceColor', [1 0.8 0.8]);
     hold on;
-    plot(luminanceVariations*683, luminanceVariations*0, 'k-');
+    % the zero error line
+    plot(nominalLuminance, nominalLuminance*0, 'k-');
     
-    xlabel('target lum'); ylabel('target-realizable luminance');
+    xlabel('nominal luminance (cd/m2)'); ylabel('nominal-realizable luminance (cd/m2)');
     set(gca, 'YLim', [-.6 .6]);
     
     subplot(1,2,2);
     hold on
-    plot(luminanceVariations*683, ones(numel(luminanceVariations),1)*targetxyY(1), 'k-');
-    plot(luminanceVariations*683, realizablexyYCalFormat(1,:), 'rs-', 'MarkerFaceColor', [1 0.8 0.8]);
-
-    plot(luminanceVariations*683, ones(numel(luminanceVariations),1)*targetxyY(2), 'k-');
-    plot(luminanceVariations*683, realizablexyYCalFormat(2,:), 'bs-', 'MarkerFaceColor', [0.8 0.8 1.0]);
-    xlabel('desired lum');
+    plot(nominalLuminance, realizablexyYCalFormat(1,:), 'rs-', 'MarkerFaceColor', [1 0.8 0.8]);
+    plot(nominalLuminance, realizablexyYCalFormat(2,:), 'bs-', 'MarkerFaceColor', [0.8 0.8 1.0]);
+    plot(nominalLuminance, ones(numel(nominalLuminance),1)*targetxyY(1), 'k-');
+    plot(nominalLuminance, ones(numel(nominalLuminance),1)*targetxyY(2), 'k-');
+    xlabel('nominal luminance (cd/m2)'); ylabel('deviation in chromaticity');
+    legend('x chroma', 'y chroma');
     
-    figure();
+    h = figure();
+    set(h, 'Color', [ 0 0 0]);
     clf;
     
     colsNum = 8;
@@ -103,6 +109,7 @@ function TestCalBases
     
     
     targetsRGBnorm = squeeze(linearSRGBCalFormat(:,numel(luminanceVariations)))/max(linearSRGBCalFormat(:));
+    % gamma correct for display
     targetsRGBnorm = sRGB.gammaCorrect(targetsRGBnorm);
 
         
@@ -113,13 +120,21 @@ function TestCalBases
         
         sRGBval = squeeze(linearSRGBCalFormat(:,k));
         sRGBnorm = sRGBval / max(sRGBval);
-        sRGBnorm = sRGB.gammaCorrect(sRGBnorm);
         
-        imageSRGB(1:5,:,:) = repmat(reshape(targetsRGBnorm, [1 1 3]), [5 10 1]);
-        imageSRGB(6:10,:,:) = repmat(reshape(sRGBnorm, [1 1 3]), [5 10 1]);
+        % gamma-correct for display
+        sRGBnorm = sRGB.gammaCorrect(sRGBnorm);
+        sRGBval  = sRGB.gammaCorrect(sRGBval);
+        
+        imageSRGB(1:10,:,:) = repmat(reshape(targetsRGBnorm, [1 1 3]), [10 30 1]);
+        imageSRGB(11:20,:,:) = repmat(reshape(sRGBnorm, [1 1 3]), [10 30 1]);
+        imageSRGB(21:30,:,:) = repmat(reshape(sRGBval, [1 1 3]), [10 30 1]);
+        imageSRGB(1:30,1,:) = 1;
+        imageSRGB(1:30,30,:) = 1;
+        imageSRGB(1,1:30,:) = 1;
+        imageSRGB(30,1:30,:) = 1;
         
         imshow(imageSRGB);
-        title(sprintf('%2.2f cd/m2', realizablexyYCalFormat(3,k)*683));
+        title(sprintf('%2.2f cd/m2', nominalLuminance(k)), 'Color', [1 1 0]);
     end
     
     
