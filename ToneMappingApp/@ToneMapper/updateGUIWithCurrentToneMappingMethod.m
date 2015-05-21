@@ -8,6 +8,8 @@ function updateGUIWithCurrentToneMappingMethod(obj, displayName)
         case 'OLED'
             if (strcmp(toneMapping.name, 'REINHARDT_GLOBAL'))
                 set(obj.GUI.subMenu41, 'Label', sprintf('Current method: ''%s'' with alpha:%2.3f ...', 'Reinhardt global', toneMapping.alpha));
+            elseif (strcmp(toneMapping.name, 'CUMULATIVE_HISTOGRAM'))
+                set(obj.GUI.subMenu41, 'Label', sprintf('Current method: ''%s'' ...', 'Cumulative histogram'));
             elseif (strcmp(toneMapping.name, 'SRGB_1_MAPPED_TO_NOMINAL_LUMINANCE'))
                 set(obj.GUI.subMenu41, 'Label', sprintf('Current method: ''%s'' ...', 'sRGB 1.0 mapped to max nominal luminance'));
             elseif (strcmp(toneMapping.name, 'LINEAR_SCALING'))
@@ -29,6 +31,8 @@ function updateGUIWithCurrentToneMappingMethod(obj, displayName)
         case 'LCD'
             if (strcmp(toneMapping.name, 'REINHARDT_GLOBAL'))
                 set(obj.GUI.subMenu51, 'Label', sprintf('Current method: ''%s'' with alpha:%2.3f ...', toneMapping.name, toneMapping.alpha));
+            elseif (strcmp(toneMapping.name, 'CUMULATIVE_HISTOGRAM'))
+                set(obj.GUI.subMenu51, 'Label', sprintf('Current method: ''%s'' ...', 'Cumulative histogram'));
             elseif (strcmp(toneMapping.name, 'SRGB_1_MAPPED_TO_NOMINAL_LUMINANCE'))
                 set(obj.GUI.subMenu51, 'Label', sprintf('Current method: ''%s'' ...', 'sRGB 1.0 mapped to max nominal luminance'));
             elseif (strcmp(toneMapping.name, 'LINEAR_SCALING'))

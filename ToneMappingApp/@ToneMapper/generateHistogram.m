@@ -15,12 +15,13 @@ function generateHistogram(obj, sceneOrToneMappedImage, displayName)
     luminanceCenters = linspace(minLum, maxLum, 1000);
     
     % compute the histogram
-    [counts, centers] = hist(luminances, luminanceCenters);
-    s = struct('counts', counts, 'centers', centers);
+    [counts, centers] = hist(luminances, luminanceCenters);       
+    s = struct('centers', centers, 'counts', counts);
     
     switch (sceneOrToneMappedImage)
         case 'scene'
             obj.data.inputLuminanceHistogram = s;
+            
         case 'toneMappedImage'
             obj.data.toneMappedImageLuminanceHistogram(displayName) = s;
     end

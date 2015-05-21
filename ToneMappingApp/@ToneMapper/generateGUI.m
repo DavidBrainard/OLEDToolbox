@@ -78,8 +78,9 @@ function obj = generateGUI(obj)
                         uimenu(GUI.subMenu41b, 'Label', 'alpha:  6.00', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'REINHARDT_GLOBAL',  6.00));
                         uimenu(GUI.subMenu41b, 'Label', 'alpha: 10.00', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'REINHARDT_GLOBAL', 10.00));
                         uimenu(GUI.subMenu41b, 'Label', 'alpha: 50.00', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'REINHARDT_GLOBAL', 50.00));          
-    GUI.subMenu41c = uimenu(GUI.subMenu41, 'Label', 'sRGB 1.0 mapped to max nominal luminance', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'SRGB_1_MAPPED_TO_NOMINAL_LUMINANCE'));
-     
+    GUI.subMenu41c = uimenu(GUI.subMenu41, 'Label', 'Cumulative histogram', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'CUMULATIVE_HISTOGRAM'));
+    GUI.subMenu41d = uimenu(GUI.subMenu41, 'Label', 'sRGB 1.0 mapped to max nominal luminance', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'OLED', 'SRGB_1_MAPPED_TO_NOMINAL_LUMINANCE'));
+    
                         
     GUI.subMenu42 = uimenu(GUI.mainMenu4, 'Label', 'Nominal max luminance (currently: ??)');
                    uimenu(GUI.subMenu42, 'Label', '20000 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'OLED', -20000));
@@ -141,7 +142,8 @@ function obj = generateGUI(obj)
                         uimenu(GUI.subMenu51b, 'Label', 'alpha:  6.00', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'REINHARDT_GLOBAL',  6.00));
                         uimenu(GUI.subMenu51b, 'Label', 'alpha: 10.00', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'REINHARDT_GLOBAL', 10.00));
                         uimenu(GUI.subMenu51b, 'Label', 'alpha: 50.00', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'REINHARDT_GLOBAL', 50.00));
-     GUI.subMenu51c = uimenu(GUI.subMenu51, 'Label', 'sRGB 1.0 mapped to max nominal luminance', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'SRGB_1_MAPPED_TO_NOMINAL_LUMINANCE'));
+     GUI.subMenu51c = uimenu(GUI.subMenu51, 'Label', 'Cumulative histogram', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'CUMULATIVE_HISTOGRAM'));
+     GUI.subMenu51d = uimenu(GUI.subMenu51, 'Label', 'sRGB 1.0 mapped to max nominal luminance', 'Callback', @(src,event)setToneMappingMethodAndParams(obj,src,event, 'LCD', 'SRGB_1_MAPPED_TO_NOMINAL_LUMINANCE'));
                         
      GUI.subMenu52 = uimenu(GUI.mainMenu5, 'Label', 'Luminance gain (currently: ??)');
                    uimenu(GUI.subMenu52, 'Label', '20000 cd/m2',  'Callback', @(src,event)setLuminanceGainForToneMapping(obj,src,event, 'LCD', -20000));

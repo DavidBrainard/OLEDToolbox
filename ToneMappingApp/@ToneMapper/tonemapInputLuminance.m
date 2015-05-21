@@ -45,6 +45,7 @@ function outputLuminance = tonemapInputLuminance(obj, displayName, inputLuminanc
         outputLuminance = scaledInputLuminance ./ (1.0+scaledInputLuminance);
         
         if (isnan(toneMapping.nominalMaxLuminance))
+            error('nominalMaxLuminance is nan');
             outputLuminance = outputLuminance * maxLuminanceAvailableForToneMapping;
         else
             minToneMappedSceneLum = min(outputLuminance(:));
@@ -52,6 +53,34 @@ function outputLuminance = tonemapInputLuminance(obj, displayName, inputLuminanc
             normalizedOutputLuminance = (outputLuminance-minToneMappedSceneLum)/(maxToneMappedSceneLum-minToneMappedSceneLum);
             outputLuminance = normalizedOutputLuminance * maxLuminanceAvailableForToneMapping;
         end
+    elseif (strcmp(toneMapping.name, 'CUMULATIVE_HISTOGRAM'))
+        
+        % Compute cumulative luminance histogram
+        minLum = min(inputLuminance(:));
+        maxLum = max(inputLuminance(:));
+        Nbins = 10000;
+        luminanceCenters = linspace(minLum, maxLum, Nbins);
+        [counts, centers] = hist(inputLuminance(:), luminanceCenters);
+        
+        cumulativeHistogram = zeros(1,numel(counts));
+        threshold = 25;
+        for k = 1:numel(counts)
+            nextVal = sum(counts(1:k));
+            if (k > 1)
+                delta = nextVal - cumulativeHistogram(k-1);
+                if (delta > threshold)
+                    nextVal = cumulativeHistogram(k-1) + threshold;
+                end
+            end
+            cumulativeHistogram(k) = nextVal;
+        end
+        cumulativeHistogram = cumulativeHistogram / max(cumulativeHistogram);
+        
+        deltaLum = centers(2)-centers(1);
+        indices = round(inputLuminance/deltaLum);
+        indices(indices == 0) = 1;
+        indices(indices > Nbins) = Nbins;
+        outputLuminance = cumulativeHistogram(indices) * maxLuminanceAvailableForToneMapping;
     else
         error('Tonemapping ''%s'' not implemented yet', toneMapping.name);
     end
