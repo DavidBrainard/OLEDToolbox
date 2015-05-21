@@ -38,12 +38,17 @@ function GenerateStimulusCache
     % Generate an ensemble of blobbie scenes to determine the best tone mapping function
     % based on the cumulative histogram of the ensemble
     multiSpectralBlobbieFolder = '/Users/Shared/Matlab/Toolboxes/OLEDToolbox/HDRstuff/BlobbieAnalysis/MultispectralData_0deg';
+    
+    
+    % Compute tone mapping function based on limited set (excude very high
+    % and flat reflectances, i.e. low alpha images)
     alphasExamined = {'0.080', '0.160', '0.320'}; % {'0.005', '0.010', '0.020', '0.040', '0.080', '0.160', '0.320'};
     specularStrengthsExamined = {'0.60', '0.30'};   
     lightingConditionsExamined = {'area1_front0_ceiling0', 'area0_front0_ceiling1'}
     
-    wattsToLumens = 683;
-    
+   
+     wattsToLumens = 683;
+     
     % Compute ensemble luminance statistics (Histogram, cumulative histogram)
     imageNum = 0;
     for lightingIndex = 1:numel(lightingConditionsExamined)
@@ -51,9 +56,8 @@ function GenerateStimulusCache
             for alphaIndex = 1:numel(alphasExamined)
             
                 blobbieFileName = sprintf('Blobbie9SubsHighFreq_Samsung_FlatSpecularReflectance_%s.spd___Samsung_NeutralDay_BlueGreen_0.60.spd___alpha_%s___Lights_%s_rotationAngle_0.mat',specularStrengthsExamined{specularReflectionIndex}, alphasExamined{alphaIndex}, lightingConditionsExamined{lightingIndex});
-                fprintf('Preparing and caching %s\n', blobbieFileName);
+                fprintf('Loading %s\n', blobbieFileName);
                 linearSRGBimage = ConvertRT3scene(multiSpectralBlobbieFolder,blobbieFileName);
-                linearSRGBimage = linearSRGBimage(1:2:end, 1:2:end,:);
                 % To calFormat
                 [linearSRGBcalFormat, nCols, mRows] = ImageToCalFormat(linearSRGBimage);
     
@@ -74,68 +78,27 @@ function GenerateStimulusCache
         end
     end
     
+    % Compute histogram - based tone mapping function
+    cumulativeHistogram = ComputeCumulativeHistogramBasedToneMappingFunction(luminanceEnsembleCalFormat);
     
-    ensembleLuminances = luminanceEnsembleCalFormat(:);
-    minEnsembleLum = min(ensembleLuminances);
-    maxEnsembleLum = max(ensembleLuminances);
-    Nbins = 30000;
-    luminanceCenters = linspace(minEnsembleLum, maxEnsembleLum, Nbins);
-    [ensembleCounts, ensembleCenters] = hist(ensembleLuminances, luminanceCenters);
-    
-    
-    %for attempt = 1:10
 
-        % multiply counts by centers.^exponent. This seems key to get good
-        % resolution at the smoothly varying highlights.
-        % The lower the exponent the more resolution in the highlights
-        exponent = input('Enter the exponent, [e.g. 0.2, 0.5] : ');
-        ensembleCountsExp = ensembleCounts/max(ensembleCounts) .* ensembleCenters/max(ensembleCenters);
-        ensembleCountsExp = ensembleCountsExp .^ exponent;
-
-        % determine threshold for cumulative histogram jumps
-        % The smaller the beta, the less spiky the histogram, and the less
-        % exagerrated some contrast levels are
-
-        cumHistogram = zeros(1,numel(ensembleCountsExp));
-        for k = 1:numel(ensembleCountsExp)
-            cumHistogram(k) = sum(ensembleCountsExp(1:k));
-        end
-        deltasInOriginalCumulativeHistogram = diff(cumHistogram);
-    
-        k = input('Enter threshold as percentile of diffs(cum histogram), [e.g. 96, 99] : ');
-        betaThreshold = prctile(deltasInOriginalCumulativeHistogram, k);
-        
-        cumHistogram = zeros(1,numel(ensembleCountsExp));
-        for k = 1:numel(cumHistogram)
-            nextVal = sum(ensembleCountsExp(1:k));
-            if (k > 1)
-                delta = nextVal - cumHistogram(k-1);
-                if (delta < 0)
-                    error('delta < 0')
-                end
-                if (delta > betaThreshold)
-                      delta = betaThreshold;
-                end
-                cumHistogram(k) = cumHistogram(k-1)+delta;
-            else
-                cumHistogram(1) = nextVal;
-            end
-        end
-    
-        cumulativeHistogram.amplitudes = cumHistogram / max(cumHistogram);
-        cumulativeHistogram.centers    = ensembleCenters;    
-    
-        
-        
-        
     h = figure(1);
     set(h, 'Position', [10 449 2497 893], 'Color', [0 0 0]);
     clf;
-    imIndex = 0;
     histogramCountHeight = 100;
     
+    
+    
+    
+    maxLuminanceAvailableForToneMapping = renderingDisplayProperties.maxLuminance;
+    
+    % Now tone map the full set
+    alphasExamined = {'0.005', '0.010', '0.020', '0.040', '0.080', '0.160', '0.320'};
+    specularStrengthsExamined = {'0.60', '0.15', '0.30'};   
+    lightingConditionsExamined = {'area1_front0_ceiling0', 'area0_front0_ceiling1'};
+    
     rowsNum = 3;
-    colsNum = imageNum;
+    colsNum = numel(alphasExamined) * numel(specularStrengthsExamined) * numel(lightingConditionsExamined);
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
         'rowsNum',      rowsNum, ...
         'colsNum',      colsNum, ...
@@ -144,17 +107,27 @@ function GenerateStimulusCache
         'bottomMargin', 0.01, ...
         'topMargin',    0.01);
     
-    
-    maxLuminanceAvailableForToneMapping = 700; % renderingDisplayProperties.maxLuminance;
-    
+    imIndex = 0;
     for lightingIndex = 1:numel(lightingConditionsExamined)
         for specularReflectionIndex = 1:numel(specularStrengthsExamined)
             for alphaIndex = 1:numel(alphasExamined)
                 
+                if (imIndex == 0)
+                    linearSRGBEnsembleCalFormatToneMapped = zeros(numel(specularStrengthsExamined), numel(alphasExamined), numel(lightingConditionsExamined), 3, size(luminanceEnsembleCalFormat,4));
+                    luminanceToneMappedEnsembleCalFormat  = zeros(numel(specularStrengthsExamined), numel(alphasExamined), numel(lightingConditionsExamined),  size(luminanceEnsembleCalFormat,4));
+                end
                 
-                linearSRGBCalFormat = squeeze(linearSRGBEnsembleCalFormat(specularReflectionIndex, alphaIndex, lightingIndex,:,:));
-                linearSRGBCalFormatToneMapped = ToneMap(linearSRGBCalFormat, cumulativeHistogram, maxLuminanceAvailableForToneMapping);
+                blobbieFileName = sprintf('Blobbie9SubsHighFreq_Samsung_FlatSpecularReflectance_%s.spd___Samsung_NeutralDay_BlueGreen_0.60.spd___alpha_%s___Lights_%s_rotationAngle_0.mat',specularStrengthsExamined{specularReflectionIndex}, alphasExamined{alphaIndex}, lightingConditionsExamined{lightingIndex});
+                fprintf('Preparing and caching %s\n', blobbieFileName);
+                linearSRGBimage = ConvertRT3scene(multiSpectralBlobbieFolder,blobbieFileName);
+                % To calFormat
+                [linearSRGBCalFormat, nCols, mRows] = ImageToCalFormat(linearSRGBimage);
+                
+                
+                [linearSRGBCalFormatToneMapped, luminanceCalFormatToneMapped] = ToneMap(linearSRGBCalFormat, cumulativeHistogram, maxLuminanceAvailableForToneMapping);
+                
                 linearSRGBEnsembleCalFormatToneMapped(specularReflectionIndex, alphaIndex, lightingIndex, :,:) = linearSRGBCalFormatToneMapped;
+                luminanceToneMappedEnsembleCalFormat(specularReflectionIndex, alphaIndex, lightingIndex, :) = luminanceCalFormatToneMapped;
                 
                 imIndex = imIndex + 1;
                 subplot('Position', subplotPosVectors(1,imIndex).v);
@@ -162,8 +135,7 @@ function GenerateStimulusCache
                 
                 
                 subplot('Position', subplotPosVectors(2,imIndex).v);
-                luminances = squeeze(luminanceEnsembleCalFormat(specularReflectionIndex, alphaIndex, lightingIndex, :));
-                [s.counts, s.centers] = hist(luminances, luminanceCenters); 
+                [s.counts, s.centers] = hist(luminanceCalFormatToneMapped, cumulativeHistogram.centers); 
                 bar(s.centers, s.counts, 'FaceColor', [1.0 0.1 0.5], 'EdgeColor', 'none');
                 hold on;
                 maxHistogramCount = min(s.counts(s.counts>0))*histogramCountHeight;
@@ -176,33 +148,30 @@ function GenerateStimulusCache
                 subplot('Position', subplotPosVectors(3,imIndex).v);
                 imshow(CalFormatToImage(sRGB.gammaCorrect(linearSRGBCalFormatToneMapped), nCols, mRows));
                 
-                % To XYZ
-                XYZcalFormat = SRGBPrimaryToXYZ(linearSRGBCalFormatToneMapped);
-                luminanceToneMappedEnsembleCalFormat(specularReflectionIndex, alphaIndex, lightingIndex, :) = squeeze(XYZcalFormat(2,:))*wattsToLumens;
-                
-                
+                drawnow;
             end
         end
     end
     
-    maxInputLuminance = max(luminanceEnsembleCalFormat(:));
-    maxOutputLuminance = max(luminanceToneMappedEnsembleCalFormat(:));
+    maxInputLuminance = max(luminanceEnsembleCalFormat(:))
+    maxOutputLuminance = max(luminanceToneMappedEnsembleCalFormat(:))
     maxToneMappedSRGB = max(linearSRGBEnsembleCalFormatToneMapped(:));
     maxInputSRGB = max(linearSRGBEnsembleCalFormat(:));
-
+    totalScenes = imIndex;
 
     
     
     cacheFileName = 'FullSetHistogramBasedToneMapping';
 
-    
+    imIndex = 0;
     for lightingIndex = 1:numel(lightingConditionsExamined)
         for specularReflectionIndex = 1:numel(specularStrengthsExamined)
             for alphaIndex = 1:numel(alphasExamined)
 
+                imIndex = imIndex + 1;
                 linearSRGBCalFormatToneMapped  = squeeze(linearSRGBEnsembleCalFormatToneMapped(specularReflectionIndex, alphaIndex, lightingIndex, :,:));
                 linearSRGBImageToneMapped = CalFormatToImage(linearSRGBCalFormatToneMapped, nCols, mRows);
-                
+                fprintf('Generating settings image for scene %d/%d\n', imIndex, totalScenes);
                 for emulatedDisplayName = emulatedDisplayNames
                     emulatedDisplayCal = displayCal(char(emulatedDisplayName));
                     [settingsImage, realizableLinearSRGBimage] = GenerateSettingsImageForDisplay(linearSRGBImageToneMapped, renderingDisplayCal, emulatedDisplayCal);
@@ -230,8 +199,62 @@ function GenerateStimulusCache
 end
 
 
+function cumulativeHistogram = ComputeCumulativeHistogramBasedToneMappingFunction(ensembleLuminances)
+    
+    fprintf('Computing histogram - based tone mapping function\n');
+    
+    ensembleLuminances = ensembleLuminances(:);
+    minEnsembleLum = min(ensembleLuminances);
+    maxEnsembleLum = max(ensembleLuminances);
+    Nbins = 30000;
+    ensembleCenters = linspace(minEnsembleLum, maxEnsembleLum, Nbins);
+    [ensembleCounts, ensembleCenters] = hist(ensembleLuminances, ensembleCenters);
+    
+    % multiply counts by centers.^exponent. This seems key to get good
+    % resolution at the smoothly varying highlights.
+    % The lower the exponent the more resolution in the highlights
+    exponent = input('Enter the exponent, [e.g. 0.2, 0.5] : ');
+    ensembleCountsExp = ensembleCounts/max(ensembleCounts) .* ensembleCenters/max(ensembleCenters);
+    ensembleCountsExp = ensembleCountsExp .^ exponent;
 
-function linearSRGBCalFormatToneMapped = ToneMap(linearSRGBCalFormat, cumulativeHistogram, maxLuminanceAvailableForToneMapping)
+    % determine threshold for cumulative histogram jumps
+    % The smaller the beta, the less spiky the histogram, and the less
+    % exagerrated some contrast levels are
+
+    cumHistogram = zeros(1,numel(ensembleCountsExp));
+    for k = 1:numel(ensembleCountsExp)
+        cumHistogram(k) = sum(ensembleCountsExp(1:k));
+    end
+    deltasInOriginalCumulativeHistogram = diff(cumHistogram);
+
+    k = input('Enter threshold as percentile of diffs(cum histogram), [e.g. 96, 99] : ');
+    betaThreshold = prctile(deltasInOriginalCumulativeHistogram, k);
+        
+    cumHistogram = zeros(1,numel(ensembleCountsExp));
+    for k = 1:numel(cumHistogram)
+        nextVal = sum(ensembleCountsExp(1:k));
+        if (k > 1)
+            delta = nextVal - cumHistogram(k-1);
+            if (delta < 0)
+                error('delta < 0')
+            end
+            if (delta > betaThreshold)
+                  delta = betaThreshold;
+            end
+            cumHistogram(k) = cumHistogram(k-1)+delta;
+        else
+            cumHistogram(1) = nextVal;
+        end
+    end
+
+    cumulativeHistogram.amplitudes = cumHistogram / max(cumHistogram);
+    cumulativeHistogram.centers    = ensembleCenters;    
+end
+
+
+
+
+function [linearSRGBCalFormatToneMapped, luminanceToneMapped] = ToneMap(linearSRGBCalFormat, cumulativeHistogram, maxLuminanceAvailableForToneMapping)
 
     % To XYZ
     XYZcalFormat = SRGBPrimaryToXYZ(linearSRGBCalFormat);
@@ -258,6 +281,9 @@ function linearSRGBCalFormatToneMapped = ToneMap(linearSRGBCalFormat, cumulative
         
     % Back to XYZ
     XYZcalFormatToneMapped = xyYToXYZ(xyYcalFormatToneMapped);
+    
+    % return tone mapped luminance
+    luminanceToneMapped = squeeze(XYZcalFormatToneMapped(2,:))*wattsToLumens;
     
     % back to linear SRGB
     linearSRGBCalFormatToneMapped= XYZToSRGBPrimary(XYZcalFormatToneMapped);
