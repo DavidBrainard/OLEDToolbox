@@ -58,12 +58,14 @@ function outputLuminance = tonemapInputLuminance(obj, displayName, inputLuminanc
         % Compute cumulative luminance histogram
         minLum = min(inputLuminance(:));
         maxLum = max(inputLuminance(:));
-        Nbins = 10000;
+        Nbins = 5000;
+        beta = 2;
+        threshold = numel(inputLuminance)/Nbins*beta;
+        
         luminanceCenters = linspace(minLum, maxLum, Nbins);
         [counts, centers] = hist(inputLuminance(:), luminanceCenters);
         
         cumulativeHistogram = zeros(1,numel(counts));
-        threshold = 25;
         for k = 1:numel(counts)
             nextVal = sum(counts(1:k));
             if (k > 1)
