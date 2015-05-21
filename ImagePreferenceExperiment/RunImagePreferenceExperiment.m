@@ -8,7 +8,7 @@ function RunImagePreferenceExperiment
     experimentController = Controller('debugMode', true);
     
     % Select acache file
-    cacheFileName = 'HighSpecularReflectance_ReinhardtToneMapSRGB1To500CdPerM2';
+    cacheFileName = 'FullSetHistogramBasedToneMapping';
     
     % Run the experiment
     experimentController.loadStimulusCache(cacheFileName);

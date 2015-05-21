@@ -35,44 +35,177 @@ function GenerateStimulusCache
     renderingDisplayProperties.maxSRGB(3) = max(XYZToSRGBPrimary(XYZ));
     renderingDisplayProperties
     
-    % Select blobbie scenes to put in the cache
+    % Generate an ensemble of blobbie scenes to determine the best tone mapping function
+    % based on the cumulative histogram of the ensemble
     multiSpectralBlobbieFolder = '/Users/Shared/Matlab/Toolboxes/OLEDToolbox/HDRstuff/BlobbieAnalysis/MultispectralData_0deg';
-    alphasExamined = {'0.005', '0.010', '0.020', '0.040', '0.080', '0.160', '0.320'};
-    specularStrengthsExamined = {'0.60'};   
-    lightingConditionsExamined = {'area0_front0_ceiling1', 'area1_front0_ceiling0'};
+    alphasExamined = {'0.080', '0.160', '0.320'}; % {'0.005', '0.010', '0.020', '0.040', '0.080', '0.160', '0.320'};
+    specularStrengthsExamined = {'0.60', '0.30'};   
+    lightingConditionsExamined = {'area1_front0_ceiling0', 'area0_front0_ceiling1'}
     
+    wattsToLumens = 683;
     
-    cacheFileName = 'HighSpecularReflectance_LinearToneMapSRGB1To500CdPerM2';
-    toneMappingParams = struct(...
-        'operatingSpace',   'sRGB', ...
-        'methodName',       'LINEAR MAPPING OF SRGB_1 TO NOMINAL LUMINANCE', ...
-        'nominalLuminance', 500 ...
-        );
-    
-    cacheFileName = 'HighSpecularReflectance_ReinhardtToneMapSRGB1To500CdPerM2';
-    toneMappingParams = struct(...
-        'operatingSpace',   'luminance', ...
-        'methodName',       'REINHARDT MAPPING', ...
-        'alpha',            0.35, ...
-        'nominalLuminance', 500 ...
-        );
-
-    
-    for specularReflectionIndex = 1:numel(specularStrengthsExamined)
-        for alphaIndex = 1:numel(alphasExamined)
-            for lightingIndex = 1:numel(lightingConditionsExamined)
-                
+    % Compute ensemble luminance statistics (Histogram, cumulative histogram)
+    imageNum = 0;
+    for lightingIndex = 1:numel(lightingConditionsExamined)
+        for specularReflectionIndex = 1:numel(specularStrengthsExamined)
+            for alphaIndex = 1:numel(alphasExamined)
+            
                 blobbieFileName = sprintf('Blobbie9SubsHighFreq_Samsung_FlatSpecularReflectance_%s.spd___Samsung_NeutralDay_BlueGreen_0.60.spd___alpha_%s___Lights_%s_rotationAngle_0.mat',specularStrengthsExamined{specularReflectionIndex}, alphasExamined{alphaIndex}, lightingConditionsExamined{lightingIndex});
                 fprintf('Preparing and caching %s\n', blobbieFileName);
                 linearSRGBimage = ConvertRT3scene(multiSpectralBlobbieFolder,blobbieFileName);
-                %PlotSRGBimage(1, linearSRGBimage, 'linear SRGB');
+                linearSRGBimage = linearSRGBimage(1:2:end, 1:2:end,:);
+                % To calFormat
+                [linearSRGBcalFormat, nCols, mRows] = ImageToCalFormat(linearSRGBimage);
+    
+                % To XYZ
+                XYZcalFormat = SRGBPrimaryToXYZ(linearSRGBcalFormat);
                 
-                figure(100);
-                clf;
+                if (imageNum == 0)
+                    linearSRGBEnsembleCalFormat = zeros(numel(specularStrengthsExamined), numel(alphasExamined), numel(lightingConditionsExamined), size(linearSRGBcalFormat,1), size(linearSRGBcalFormat,2));
+                    luminanceEnsembleCalFormat  = zeros(numel(specularStrengthsExamined), numel(alphasExamined), numel(lightingConditionsExamined), size(XYZcalFormat,2));
+                    luminanceToneMappedEnsembleCalFormat = luminanceEnsembleCalFormat;
+                    linearSRGBEnsembleCalFormatToneMapped = linearSRGBEnsembleCalFormat;
+                end
+                linearSRGBEnsembleCalFormat(specularReflectionIndex, alphaIndex, lightingIndex,:,:) = linearSRGBcalFormat;
+                luminanceEnsembleCalFormat(specularReflectionIndex, alphaIndex, lightingIndex, :)   = squeeze(XYZcalFormat(2,:))*wattsToLumens;
+                
+                imageNum = imageNum + 1;
+            end
+        end
+    end
+    
+    
+    ensembleLuminances = luminanceEnsembleCalFormat(:);
+    minEnsembleLum = min(ensembleLuminances);
+    maxEnsembleLum = max(ensembleLuminances);
+    Nbins = 30000;
+    luminanceCenters = linspace(minEnsembleLum, maxEnsembleLum, Nbins);
+    [ensembleCounts, ensembleCenters] = hist(ensembleLuminances, luminanceCenters);
+    
+    
+    %for attempt = 1:10
+
+        % multiply counts by centers.^exponent. This seems key to get good
+        % resolution at the smoothly varying highlights.
+        % The lower the exponent the more resolution in the highlights
+        exponent = input('Enter the exponent, [e.g. 0.2, 0.5] : ');
+        ensembleCountsExp = ensembleCounts/max(ensembleCounts) .* ensembleCenters/max(ensembleCenters);
+        ensembleCountsExp = ensembleCountsExp .^ exponent;
+
+        % determine threshold for cumulative histogram jumps
+        % The smaller the beta, the less spiky the histogram, and the less
+        % exagerrated some contrast levels are
+
+        cumHistogram = zeros(1,numel(ensembleCountsExp));
+        for k = 1:numel(ensembleCountsExp)
+            cumHistogram(k) = sum(ensembleCountsExp(1:k));
+        end
+        deltasInOriginalCumulativeHistogram = diff(cumHistogram);
+    
+        k = input('Enter threshold as percentile of diffs(cum histogram), [e.g. 96, 99] : ');
+        betaThreshold = prctile(deltasInOriginalCumulativeHistogram, k);
+        
+        cumHistogram = zeros(1,numel(ensembleCountsExp));
+        for k = 1:numel(cumHistogram)
+            nextVal = sum(ensembleCountsExp(1:k));
+            if (k > 1)
+                delta = nextVal - cumHistogram(k-1);
+                if (delta < 0)
+                    error('delta < 0')
+                end
+                if (delta > betaThreshold)
+                      delta = betaThreshold;
+                end
+                cumHistogram(k) = cumHistogram(k-1)+delta;
+            else
+                cumHistogram(1) = nextVal;
+            end
+        end
+    
+        cumulativeHistogram.amplitudes = cumHistogram / max(cumHistogram);
+        cumulativeHistogram.centers    = ensembleCenters;    
+    
+        
+        
+        
+    h = figure(1);
+    set(h, 'Position', [10 449 2497 893], 'Color', [0 0 0]);
+    clf;
+    imIndex = 0;
+    histogramCountHeight = 100;
+    
+    rowsNum = 3;
+    colsNum = imageNum;
+    subplotPosVectors = NicePlot.getSubPlotPosVectors(...
+        'rowsNum',      rowsNum, ...
+        'colsNum',      colsNum, ...
+        'widthMargin',  0.005, ...
+        'leftMargin',   0.01, ...
+        'bottomMargin', 0.01, ...
+        'topMargin',    0.01);
+    
+    
+    maxLuminanceAvailableForToneMapping = 700; % renderingDisplayProperties.maxLuminance;
+    
+    for lightingIndex = 1:numel(lightingConditionsExamined)
+        for specularReflectionIndex = 1:numel(specularStrengthsExamined)
+            for alphaIndex = 1:numel(alphasExamined)
+                
+                
+                linearSRGBCalFormat = squeeze(linearSRGBEnsembleCalFormat(specularReflectionIndex, alphaIndex, lightingIndex,:,:));
+                linearSRGBCalFormatToneMapped = ToneMap(linearSRGBCalFormat, cumulativeHistogram, maxLuminanceAvailableForToneMapping);
+                linearSRGBEnsembleCalFormatToneMapped(specularReflectionIndex, alphaIndex, lightingIndex, :,:) = linearSRGBCalFormatToneMapped;
+                
+                imIndex = imIndex + 1;
+                subplot('Position', subplotPosVectors(1,imIndex).v);
+                imshow(CalFormatToImage(sRGB.gammaCorrect(linearSRGBCalFormat), nCols, mRows));
+                
+                
+                subplot('Position', subplotPosVectors(2,imIndex).v);
+                luminances = squeeze(luminanceEnsembleCalFormat(specularReflectionIndex, alphaIndex, lightingIndex, :));
+                [s.counts, s.centers] = hist(luminances, luminanceCenters); 
+                bar(s.centers, s.counts, 'FaceColor', [1.0 0.1 0.5], 'EdgeColor', 'none');
+                hold on;
+                maxHistogramCount = min(s.counts(s.counts>0))*histogramCountHeight;
+                counts = cumulativeHistogram.amplitudes*0.95*maxHistogramCount;
+                plot(cumulativeHistogram.centers, counts, 'b-');
+                set(gca, 'YLim', [0 maxHistogramCount], 'XLim', [0 1.05*max(cumulativeHistogram.centers)], 'YTick', [], 'XColor', [1 1 1], 'YColor', [1 1 1]);
+                xlabel('luminance (cd/m2)', 'Color', [1 1 1]);
+                hold off;
+                
+                subplot('Position', subplotPosVectors(3,imIndex).v);
+                imshow(CalFormatToImage(sRGB.gammaCorrect(linearSRGBCalFormatToneMapped), nCols, mRows));
+                
+                % To XYZ
+                XYZcalFormat = SRGBPrimaryToXYZ(linearSRGBCalFormatToneMapped);
+                luminanceToneMappedEnsembleCalFormat(specularReflectionIndex, alphaIndex, lightingIndex, :) = squeeze(XYZcalFormat(2,:))*wattsToLumens;
+                
+                
+            end
+        end
+    end
+    
+    maxInputLuminance = max(luminanceEnsembleCalFormat(:));
+    maxOutputLuminance = max(luminanceToneMappedEnsembleCalFormat(:));
+    maxToneMappedSRGB = max(linearSRGBEnsembleCalFormatToneMapped(:));
+    maxInputSRGB = max(linearSRGBEnsembleCalFormat(:));
+
+
+    
+    
+    cacheFileName = 'FullSetHistogramBasedToneMapping';
+
+    
+    for lightingIndex = 1:numel(lightingConditionsExamined)
+        for specularReflectionIndex = 1:numel(specularStrengthsExamined)
+            for alphaIndex = 1:numel(alphasExamined)
+
+                linearSRGBCalFormatToneMapped  = squeeze(linearSRGBEnsembleCalFormatToneMapped(specularReflectionIndex, alphaIndex, lightingIndex, :,:));
+                linearSRGBImageToneMapped = CalFormatToImage(linearSRGBCalFormatToneMapped, nCols, mRows);
                 
                 for emulatedDisplayName = emulatedDisplayNames
                     emulatedDisplayCal = displayCal(char(emulatedDisplayName));
-                    [settingsImage, realizableLinearSRGBimage] = GenerateSettingsImageForDisplay(linearSRGBimage, renderingDisplayProperties, renderingDisplayCal, emulatedDisplayCal, toneMappingParams);
+                    [settingsImage, realizableLinearSRGBimage] = GenerateSettingsImageForDisplay(linearSRGBImageToneMapped, renderingDisplayCal, emulatedDisplayCal);
                     if ((any(settingsImage(:) < 0)) || (any(settingsImage(:) > 1)))
                         error('settings image must be between 0 and 1');
                     end
@@ -84,21 +217,8 @@ function GenerateStimulusCache
                     else
                         error('Unknown emulatedDisplayName', char(emulatedDisplayName));
                     end
-                    % Display data
-                    %PlotSRGBimage(2, realizableLinearSRGBimage, sprintf('emulated display: %s', char(emulatedDisplayName)));
-                    if strcmp(char(emulatedDisplayName), 'LCD')
-                        subplot(1,2,1);
-                    else
-                        subplot(1,2,2);
-                    end
-                    %realizableLinearSRGBimage = realizableLinearSRGBimage/max(renderingDisplayProperties.maxSRGB);
-                    realizableLinearSRGBimage(realizableLinearSRGBimage>1) = 1.0;
-                    realizableLinearSRGBimage(realizableLinearSRGBimage<0) = 0.0;
-                    imshow(realizableLinearSRGBimage);
-                    set(gca, 'CLim', [0 1]);
-                    title(char(emulatedDisplayName));
+
                 end
-                drawnow;
 
             end
         end
@@ -109,31 +229,49 @@ function GenerateStimulusCache
     
 end
 
-function [settingsImage, realizableSRGBimage] = GenerateSettingsImageForDisplay(linearSRGBimage, renderingDisplayProperties, renderingDisplayCal, emulatedDisplayCal, toneMappingParams)
+
+
+function linearSRGBCalFormatToneMapped = ToneMap(linearSRGBCalFormat, cumulativeHistogram, maxLuminanceAvailableForToneMapping)
+
+    % To XYZ
+    XYZcalFormat = SRGBPrimaryToXYZ(linearSRGBCalFormat);
+    
+    % To xyY
+    xyYcalFormat = XYZToxyY(XYZcalFormat);
+    
+    % Extract luminance channel
+    wattsToLumens = 683;
+    inputLuminance = squeeze(xyYcalFormat(3,:))*wattsToLumens;
+    
+    % Tone map input luminance
+    deltaLum = cumulativeHistogram.centers(2)-cumulativeHistogram.centers(1);
+    Nbins = numel(cumulativeHistogram.centers);
+    indices = round(inputLuminance/deltaLum);
+    indices(indices == 0) = 1;
+    indices(indices > Nbins) = Nbins;
+    outputLuminance = cumulativeHistogram.amplitudes(indices) * maxLuminanceAvailableForToneMapping;
+        
+    % Replace luminance channel with tone mapped luminance channel
+    
+    xyYcalFormatToneMapped = xyYcalFormat;
+    xyYcalFormatToneMapped(3,:) = outputLuminance/wattsToLumens;
+        
+    % Back to XYZ
+    XYZcalFormatToneMapped = xyYToXYZ(xyYcalFormatToneMapped);
+    
+    % back to linear SRGB
+    linearSRGBCalFormatToneMapped= XYZToSRGBPrimary(XYZcalFormatToneMapped);
+end
+
+
+
+function [settingsImage, realizableSRGBimage] = GenerateSettingsImageForDisplay(linearSRGBimage,  renderingDisplayCal, emulatedDisplayCal)
 
     % To calFormat
     [linearSRGBcalFormat, nCols, mRows] = ImageToCalFormat(linearSRGBimage);
     
-    if (strcmp(toneMappingParams.operatingSpace, 'sRGB'))
-        if strcmp(toneMappingParams.methodName, 'LINEAR MAPPING OF SRGB_1 TO NOMINAL LUMINANCE')
-            nominalLuminance = toneMappingParams.nominalLuminance;
-            XYZcalFormat = XYZFromSRGB_by_LinearMappingOfSRGB1ToNominalLuminance(linearSRGBcalFormat, nominalLuminance, renderingDisplayProperties);
-        else
-            error('Unknown tone mapping method name: %s',  toneMappingParams.methodName);
-        end
-        
-    elseif (strcmp(toneMappingParams.operatingSpace, 'luminance'))
-        if strcmp(toneMappingParams.methodName, 'REINHARDT MAPPING')
-            nominalLuminance = toneMappingParams.nominalLuminance;
-            alpha = toneMappingParams.alpha;
-            XYZcalFormat = XYZFromSRGB_by_ReinhardtLuminanceMapping(linearSRGBcalFormat, nominalLuminance, alpha, renderingDisplayProperties);
-        else
-            error('Unknown tone mapping method name: %s',  toneMappingParams.methodName);
-        end
-
-    else
-        error('Unknown tone mapping operating space:%s', toneMappingParams.operatingSpace);
-    end
+    % To XYZ
+    XYZcalFormat = SRGBPrimaryToXYZ(linearSRGBcalFormat);
     
 
     % to RGB primaries of the emulated display
