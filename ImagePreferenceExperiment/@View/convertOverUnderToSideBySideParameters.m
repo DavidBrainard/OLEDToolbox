@@ -53,19 +53,19 @@ function convertOverUnderToSideBySideParameters(obj, win, leftOffset, leftScale,
     [w, h] = Screen('WindowSize', win);
 
     % Parse other arguments, assign defaults if none passed:
-    if nargin < 2 || isempty(leftOffset)
+    if nargin < 3 || isempty(leftOffset)
         leftOffset = [0, 0];
     end
 
-    if nargin < 3 || isempty(leftScale)
+    if nargin < 4 || isempty(leftScale)
         leftScale = [0.5, 1];
     end
 
-    if nargin < 4 || isempty(rightOffset)
+    if nargin < 5 || isempty(rightOffset)
         rightOffset = [0.5, 0];
     end
 
-    if nargin < 5 || isempty(rightScale)
+    if nargin < 6 || isempty(rightScale)
         rightScale = [0.5, 1];
     end
 

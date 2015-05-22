@@ -10,7 +10,10 @@ classdef View < handle
     end
     
     properties (Access = private)
-       initParams = struct('debugMode', true);
+       initParams = struct(...
+           'debugMode', true, ...
+           'giveVerbalFeedback', true...
+           );
        
        % 10 bit dithering offsets
        ditherOffsets;
@@ -41,6 +44,9 @@ classdef View < handle
         
         % keyboard stuff
         keyboard;
+        
+        % gamepas stuff
+        gamePad = [];
     end
     
     % Public methods
@@ -50,6 +56,7 @@ classdef View < handle
             % parse inputs
             parser = inputParser;
             parser.addParamValue('debugMode', obj.initParams.debugMode, @islogical);
+            parser.addParamValue('giveVerbalFeedback', obj.initParams.giveVerbalFeedback, @islogical);
             % Execute the parser to make sure input is good
             parser.parse(varargin{:});
             % Copy the parse parameters to the ExperimentController object

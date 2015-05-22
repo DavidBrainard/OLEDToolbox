@@ -42,14 +42,16 @@ function addToCache(obj, stimIndex, hdrStimRGBdata, ldrStimRGBdata)
         end
 
         % the ldr data
-        stimRGBstimMatrix = ldrStimRGBdata;
-        stimRGBstimMatrix(stimRGBstimMatrix<0) = 0;
-        stimRGBstimMatrix(stimRGBstimMatrix>1) = 1;
-        ldrStimTexture =  ...
+        for frameIndex = 1:4
+            stimRGBstimMatrix = ldrStimRGBdata + squeeze(obj.psychImagingEngine.ditherOffsets(frameIndex,:,:,:));
+            stimRGBstimMatrix(stimRGBstimMatrix<0) = 0;
+            stimRGBstimMatrix(stimRGBstimMatrix>1) = 1;
+            ldrStimTextures(frameIndex) =  ...
                 Screen('MakeTexture', obj.psychImagingEngine.masterWindowPtr, stimRGBstimMatrix, optimizeForDrawAngle, specialFlags, floatprecision);
+        end
         
         % save stim textures in cache    
-        obj.stimCache.textures{stimIndex} = struct('hdr', hdrStimTextures, 'ldr', ldrStimTexture);
+        obj.stimCache.textures{stimIndex} = struct('hdr', hdrStimTextures, 'ldr', ldrStimTextures);
         
     catch err
         obj.shutDown();

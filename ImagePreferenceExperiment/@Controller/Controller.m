@@ -11,7 +11,10 @@ classdef Controller < handle
     end
     
     properties (Access = private)
-        initParams = struct('debugMode', true);
+        initParams = struct(...
+           'debugMode', true, ...
+           'giveVerbalFeedback', true...
+           );
         stimulusSize;
         targetLocations;
     end
@@ -24,6 +27,7 @@ classdef Controller < handle
             % parse inputs
             parser = inputParser;
             parser.addParamValue('debugMode', obj.initParams.debugMode, @islogical);
+            parser.addParamValue('giveVerbalFeedback', obj.initParams.giveVerbalFeedback, @islogical);
             % Execute the parser to make sure input is good
             parser.parse(varargin{:});
             % Copy the parse parameters to the ExperimentController object
@@ -35,7 +39,7 @@ classdef Controller < handle
             obj.initController();
             
             % Instantiate our viewer object
-            obj.viewOutlet = View('debugMode', obj.initParams.debugMode);
+            obj.viewOutlet = View('debugMode', obj.initParams.debugMode, 'giveVerbalFeedback', obj.initParams.giveVerbalFeedback);
             
             % Instantiate our model
             obj.model = Model();

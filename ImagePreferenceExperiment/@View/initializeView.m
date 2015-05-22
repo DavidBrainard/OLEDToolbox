@@ -1,5 +1,15 @@
 function initializeView(obj)
 
+    try
+       % Instantiate a gamePad object for user feedback
+        obj.gamePad = GamePad();
+    catch err
+        obj.gamePad = [];
+        fprintf(2,'\nA game pad was not detected. Will run using the mouse. \n');
+        fprintf('Hit enter to continue');
+        pause;
+    end
+    
     Screen('Preference', 'SkipSyncTests', 2);
     sca;
     
