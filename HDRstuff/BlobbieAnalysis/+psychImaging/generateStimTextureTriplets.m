@@ -4,8 +4,6 @@ function generateStimTextureTriplets(frameBufferImageOLED, frameBufferImageLCDNo
         
     optimizeForDrawAngle = []; specialFlags = []; floatprecision = 2;
     
-    fprintf('Wrote stimulus at %2.0f %2.0f\n', x0, y0);
-
     if isempty(PsychImagingEngine.ditherOffsets)
         ditherOffsetValues = [ -0.3750   -0.1250  0.1250  0.3750];
         noiseMagnitude = 0; %0.06;
@@ -32,8 +30,7 @@ function generateStimTextureTriplets(frameBufferImageOLED, frameBufferImageLCDNo
                 frameBufferImageLCDXYZscaling(rows, end-border:end, :) = val2;
             end
         end
-        
-        
+         
         for frameIndex = 1:4
             stimRGBstimMatrix = frameBufferImageOLED + squeeze(PsychImagingEngine.ditherOffsets(frameIndex,:,:,:));
             stimRGBstimMatrix(find(stimRGBstimMatrix<0)) = 0;
@@ -43,14 +40,12 @@ function generateStimTextureTriplets(frameBufferImageOLED, frameBufferImageLCDNo
             PsychImagingEngine.texturePointersOLED(frameIndex,stimIndex, toneMappingMethodIndex) = texturePtr;
         end
         
-
-
         texturePtr = Screen('MakeTexture', PsychImagingEngine.masterWindowPtr, frameBufferImageLCDNoXYZscaling, optimizeForDrawAngle, specialFlags, floatprecision);
-        %update the list of Samsung texture pointers
+        %update the list of LCDNoXYZscaling texture pointers
         PsychImagingEngine.texturePointersLCDNoXYZscaling(stimIndex, toneMappingMethodIndex) = texturePtr;
     
         texturePtr = Screen('MakeTexture', PsychImagingEngine.masterWindowPtr, frameBufferImageLCDXYZscaling, optimizeForDrawAngle, specialFlags, floatprecision);
-        %update the list of Samsung texture pointers
+        %update the list of LCDXYZscaling texture pointers
         PsychImagingEngine.texturePointersLCDXYZscaling(stimIndex, toneMappingMethodIndex) = texturePtr;
         
         

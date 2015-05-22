@@ -8,7 +8,6 @@ function ToneMapStimuliDifferentMethods
     calStructLCD  = utils.loadDisplayCalXYZ('StereoLCDLeft', []);
     [minRealizableLuminanceOLED, maxRealizableLuminanceRGBgunsOLED] = utils.computeDisplayLimits(calStructOLED)
     [minRealizableLuminanceLCD,  maxRealizableLuminanceRGBgunsLCD]  = utils.computeDisplayLimits(calStructLCD)
-
     
     % Which lighting condition:1 = ceiling light; 2=area lights
     lightingCondIndex = 2;
@@ -34,7 +33,6 @@ function ToneMapStimuliDifferentMethods
     % would approximateley perceive   
     delta = 0.0001; % small delta to avoid taking log(0) when encountering black pixels in the % luminance map
     inputEnsembleKey = exp((1/numel(luminances))*(sum(sum(log(luminances + delta)))))
-    % inputEnsembleKey = prctile(luminances(:), 50)
     
     % XYZscaling for LCD = true tonemappings
     % Tonemapping parameters for linear mapping to display
@@ -68,6 +66,7 @@ function ToneMapStimuliDifferentMethods
         'inputEnsembleKey', inputEnsembleKey, ... 
         'alpha', alpha, ...
         'finalScaling', finalScaling, ...
+        'doNotExceedSceneLuminance', true, ...
         'description', sprintf('Reinhardt, alpha = %2.3f, key = %2.3f', alpha, inputEnsembleKey) ...
     );
 
@@ -81,6 +80,7 @@ function ToneMapStimuliDifferentMethods
         'inputEnsembleKey', inputEnsembleKey, ... 
         'alpha', alpha, ...
         'finalScaling', finalScaling, ...
+        'doNotExceedSceneLuminance', true, ...
         'description', sprintf('Reinhardt, alpha = %2.3f, key = %2.3f', alpha, inputEnsembleKey) ...
     );
 
@@ -94,6 +94,7 @@ function ToneMapStimuliDifferentMethods
         'inputEnsembleKey', inputEnsembleKey, ... 
         'alpha', alpha, ...
         'finalScaling', finalScaling, ...
+        'doNotExceedSceneLuminance', true, ...
         'description', sprintf('Reinhardt, alpha = %2.3f, key = %2.3f', alpha, inputEnsembleKey) ...
     );
 
@@ -117,7 +118,24 @@ function ToneMapStimuliDifferentMethods
 
     
     
-    visualizationIsOn = false;   % true;
+    visualizationIsOn = true;
+    
+    if (visualizationIsOn)
+        subplotPosVectors = NicePlot.getSubPlotPosVectors(...
+            'rowsNum',      3, ...
+            'colsNum',      5, ...
+            'widthMargin',  0.02, ...
+            'leftMargin',   0.03, ...
+            'heightMargin', 0.04, ...
+            'bottomMargin', 0.03, ...
+            'topMargin',    0.01);
+    end
+    
+    
+    luminanceRange = [min([inputEnsembleLuminanceRange(1) minRealizableLuminanceOLED]) , max([inputEnsembleLuminanceRange(2) sum(maxRealizableLuminanceRGBgunsOLED)])];
+    luminanceEdges = logspace(log10(luminanceRange(1)),log10(luminanceRange(2)*1.2), 256);
+    
+    
     
     for specularSPDindex = 1:numel(specularSPDconds)
         for shapeIndex = 1:numel(shapeConds)
@@ -129,6 +147,8 @@ function ToneMapStimuliDifferentMethods
                     sensorXYZcalFormat = squeeze(ensembleSensorXYZcalFormat(shapeIndex, alphaIndex, specularSPDindex,:,:));
                     sceneLuminanceMap = CalFormatToImage(wattsToLumens*squeeze(sensorXYZcalFormat(2,:)), nCols, mRows); 
                 
+                    
+                    
                     % Unwrap the tonemapping function and params
                     toneMappingData        = toneMappingMethods{toneMappingMethodIndex};
                     toneMappingFunction    = toneMappingData{1};
@@ -144,6 +164,7 @@ function ToneMapStimuliDifferentMethods
                     toneMappedRGBprimaryOLEDCalFormat = utils.mapToGamut(SensorToPrimary(calStructOLED, toneMappedXYZcalFormat));
                     XYZtmp = CalFormatToImage(PrimaryToSensor(calStructOLED, toneMappedRGBprimaryOLEDCalFormat), nCols, mRows);
                     toneMappedOLEDluminanceMap = wattsToLumens * squeeze(XYZtmp(:,:,2));
+
 
                     % Transform the OLED RGB primaries for rendering on OLED
                     originCalStructOBJ = calStructOLED; destinationCalStructOBJ = calStructOLED;
@@ -202,14 +223,14 @@ function ToneMapStimuliDifferentMethods
                     h = figure(1); clf; set(h, 'Position', [10 10 2247 1086]);
                     set(h, 'Name', toneMappingDescription);
                     % Plot luminance image
-                    subplot(3,5,1);
+                    subplot('Position', subplotPosVectors(1,1).v);
                     
                     imshow(sceneLuminanceMap, 'DisplayRange', inputEnsembleLuminanceRange);
                     title(sprintf('ensemble lum range: %2.1f - %2.1f cd/m2', inputEnsembleLuminanceRange(1), inputEnsembleLuminanceRange(2)), 'FontName', 'System', 'FontSize', 13);
                     colormap(gray(256))
                     
                     % Plot the luminance map of the OLED-tonemapped image
-                    subplot(3,5,2);
+                    subplot('Position', subplotPosVectors(1,2).v);
                     imshow(toneMappedOLEDluminanceMap, 'DisplayRange', [minRealizableLuminanceOLED sum(maxRealizableLuminanceRGBgunsOLED)]);
                     if (isfield(toneMappingParams, 'clipSceneLumincanceLevels'))
                         title(sprintf('OLED: %2.3f - %2.1f cd/m2 (clip: %2.1f-%2.1f)', min(toneMappedOLEDluminanceMap(:)), max(toneMappedOLEDluminanceMap(:)), toneMappingParams.clipSceneLumincanceLevels(1), toneMappingParams.clipSceneLumincanceLevels(2)), 'FontName', 'System', 'FontSize', 13);
@@ -218,7 +239,7 @@ function ToneMapStimuliDifferentMethods
                     end
                     
                     % Plot the luminance map of the LCD-tonemapped image
-                    subplot(3,5,3);
+                    subplot('Position', subplotPosVectors(1,3).v);
                     imshow(toneMappedLCDluminanceMap, 'DisplayRange', [minRealizableLuminanceOLED sum(maxRealizableLuminanceRGBgunsOLED)]);
                     if (isfield(toneMappingParams, 'clipSceneLumincanceLevels'))
                         title(sprintf('LCD: %2.3f - %2.1f cd/m2 (clip: %2.1f-%2.1f)', min(toneMappedLCDluminanceMap(:)), max(toneMappedLCDluminanceMap(:)), toneMappingParams.clipSceneLumincanceLevels(1), toneMappingParams.clipSceneLumincanceLevels(2)), 'FontName', 'System', 'FontSize', 13);
@@ -227,19 +248,19 @@ function ToneMapStimuliDifferentMethods
                     end
                     
                     % Plot the tonemapped primaryOLEDimage
-                    subplot(3,5,4);
+                    subplot('Position', subplotPosVectors(1,4).v);
                     imshow(CalFormatToImage(toneMappedRGBprimaryOLEDCalFormat,nCols, mRows), 'DisplayRange', [0 1]);
                     title(sprintf('OLED primary'), 'FontName', 'System', 'FontSize', 13);
         
 
                     % Plot the tonemapped settingsOLEDimage
-                    subplot(3,5,5);
+                    subplot('Position', subplotPosVectors(1,5).v);
                     imshow(squeeze(ensembleToneMappeRGBsettingsOLEDimage(shapeIndex, alphaIndex, specularSPDindex, toneMappingMethodIndex, :,:,:)), 'DisplayRange', [0 1]);
                     title(sprintf('OLED settings'), 'FontName', 'System', 'FontSize', 13);
                     
                     
                     % Plot the tonemapped primaryLCDimage
-                    subplot(3,5,9);
+                    subplot('Position', subplotPosVectors(2,4).v);
                     imshow(CalFormatToImage(toneMappedRGBprimaryLCDCalFormatNoXYZscaling,nCols, mRows), 'DisplayRange', [0 1]);
                     lumMap = squeeze(ensembleToneMappedLCDluminanceMap(shapeIndex, alphaIndex, specularSPDindex, toneMappingMethodIndex, 1, :,:));
                     maxLum = max(lumMap(:));
@@ -248,12 +269,12 @@ function ToneMapStimuliDifferentMethods
                     title(sprintf('LCD primary (no XYZ scale), maxLum = %2.1f, contrast = %2.1f', maxLum, contrast), 'FontName', 'System', 'FontSize', 13);
                     
                     % Plot the tonemapped settingsLCDimage
-                    subplot(3,5,10);
+                    subplot('Position', subplotPosVectors(2,5).v);
                     imshow(squeeze(ensembleToneMappeRGBsettingsLCDimage(shapeIndex, alphaIndex, specularSPDindex, toneMappingMethodIndex, 1, :,:,:)), 'DisplayRange', [0 1]);
                     title(sprintf('LCD settings (no XYZ scale)'), 'FontName', 'System', 'FontSize', 13);
                     
                     % Plot the tonemapped settingsLCDimage
-                    subplot(3,5,14);
+                    subplot('Position', subplotPosVectors(3,4).v);
                     lumMap = squeeze(ensembleToneMappedLCDluminanceMap(shapeIndex, alphaIndex, specularSPDindex, toneMappingMethodIndex, 2, :,:));
                     maxLum = max(lumMap(:));
                     minLum = min(lumMap(:));
@@ -262,30 +283,32 @@ function ToneMapStimuliDifferentMethods
                     title(sprintf('LCD primary (XYZ scale), maxLum = %2.2f, contrast = %2.1f', maxLum, contrast), 'FontName', 'System', 'FontSize', 13);
                     
                     % Plot the tonemapped settingsLCDimage
-                    subplot(3,5,15);
+                    subplot('Position', subplotPosVectors(3,5).v);
                     imshow(squeeze(ensembleToneMappeRGBsettingsLCDimage(shapeIndex, alphaIndex, specularSPDindex, toneMappingMethodIndex, 2, :,:,:)), 'DisplayRange', [0 1]);
                     title(sprintf('LCD settings (XYZ scale)'), 'FontName', 'System', 'FontSize', 13);
                     
                     
                     % Plot histogram of scene luminance
-                    subplot(3,5,6);
-                    PlotLuminanceHistogram('scene luminance histogram', sceneLuminanceMap(:),  inputEnsembleLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD));
-
-                    % Plot histogram of the OLED-tonemapped image
-                    subplot(3,5,7);
-                    PlotLuminanceHistogram('OLED luminance histogram ', toneMappedOLEDluminanceMap(:),  inputEnsembleLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD));
-
-                    % Plot histogram of the LCD-tonemapped image
-                    subplot(3,5,8);
-                    PlotLuminanceHistogram('LCD luminance histogram ', toneMappedLCDluminanceMap(:),  inputEnsembleLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD));
-
+                    subplot('Position', subplotPosVectors(3,2).v);
+                    %plotUtils.LuminanceHistogram('scene luminance', sceneLuminanceMap(:),  luminanceRange, luminanceEdges, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD));
+                    plotUtils.LuminanceHistogramAndMappingCombo('OLED tone map vs scene luminance', sceneLuminanceMap(:), toneMappedOLEDluminanceMap(:), luminanceRange, luminanceEdges, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD));
                     
-                    subplot(3,5,12);
-                    PlotMappedLuminance(sceneLuminanceMap(:), toneMappedOLEDluminanceMap(:), inputEnsembleLuminanceRange, toneMappingParams.outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'linear');
+                    subplot('Position', subplotPosVectors(3,3).v);
+                    %plotUtils.LuminanceHistogram('scene luminance', sceneLuminanceMap(:),  luminanceRange, luminanceEdges, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD));
+                    plotUtils.LuminanceHistogramAndMappingCombo('LCD tone map vs scene luminance', sceneLuminanceMap(:), toneMappedLCDluminanceMap(:), luminanceRange, luminanceEdges, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD));
+                    
+                    
+                    % Plot histogram of the scene image
+                    subplot('Position', subplotPosVectors(2,1).v);
+                    plotUtils.LuminanceHistogram('sceneluminance', sceneLuminanceMap(:), sceneLuminanceMap(:), luminanceRange, luminanceEdges, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD));
 
-                    subplot(3,5,13);
-                    PlotMappedLuminance(sceneLuminanceMap(:), toneMappedLCDluminanceMap(:),  inputEnsembleLuminanceRange, toneMappingParams.outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'linear');
-                
+                    % Plot histogram of the OLED-tonemapped image luminance
+                    subplot('Position', subplotPosVectors(2,2).v);
+                    plotUtils.LuminanceHistogram('OLED image luminance', sceneLuminanceMap(:), toneMappedOLEDluminanceMap(:),  luminanceRange, luminanceEdges, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD));
+
+                    % Plot histogram of the LCD-tonemapped image luminace
+                    subplot('Position', subplotPosVectors(2,3).v);
+                    plotUtils.LuminanceHistogram('LCD image luminance', sceneLuminanceMap(:), toneMappedLCDluminanceMap(:),  luminanceRange, luminanceEdges, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD));        
                     drawnow;
                     end % visualizationIsON
                 end % toneMappingMethodIndex
@@ -300,9 +323,11 @@ function ToneMapStimuliDifferentMethods
     ensembleSceneLuminanceMap               = single(ensembleSceneLuminanceMap);
     ensembleToneMappedOLEDluminanceMap      = single(ensembleToneMappedOLEDluminanceMap);
     ensembleToneMappedLCDluminanceMap       = single(ensembleToneMappedLCDluminanceMap);
-        
+    OLEDDisplayRange                        = {minRealizableLuminanceOLED, maxRealizableLuminanceRGBgunsOLED};
+    LCDDisplayRange                         = {minRealizableLuminanceLCD, maxRealizableLuminanceRGBgunsLCD};    
+    
     dataFilename = sprintf('ToneMappedData/ToneMappedStimuliDifferentMethods.mat');
-    save(dataFilename, 'toneMappingMethods', 'ensembleToneMappeRGBsettingsOLEDimage', 'ensembleToneMappeRGBsettingsLCDimage', 'ensembleSceneLuminanceMap', 'ensembleToneMappedOLEDluminanceMap', 'ensembleToneMappedLCDluminanceMap');
+    save(dataFilename, 'toneMappingMethods', 'ensembleToneMappeRGBsettingsOLEDimage', 'ensembleToneMappeRGBsettingsLCDimage', 'ensembleSceneLuminanceMap', 'ensembleToneMappedOLEDluminanceMap', 'ensembleToneMappedLCDluminanceMap', 'OLEDDisplayRange', 'LCDDisplayRange');
     fprintf('\nData saved in ''%s''\n', dataFilename);
     
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
@@ -311,44 +336,27 @@ function ToneMapStimuliDifferentMethods
             'widthMargin',  0.06, ...
             'heightMargin', 0.1, ...
             'leftMargin',   0.03, ...
-            'bottomMargin', 0.03, ...
+            'bottomMargin', 0.08, ...
             'topMargin',    0.03);
         
     if (visualizationIsOn)
-    h = figure(2);
-    set(h, 'Position', [20 20 1400 560]);
+    hFig = figure(2);
+    set(hFig, 'Position', [20 20 1400 503]);
     clf;
     
+    ensembleToneMappedLCDluminanceMapNoXYZscaling   = ensembleToneMappedLCDluminanceMap(:, :, :, :, 1, :,:);
+    ensembleToneMappedLCDluminanceMapXYZscaling     = ensembleToneMappedLCDluminanceMap(:, :, :, :, 2, :,:);
+    
     subplot('Position', subplotPosVectors(1,1).v);
-    PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedOLEDluminanceMap(:), inputEnsembleLuminanceRange, toneMappingParams.outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'linear');
-    title(sprintf('OLED vs scene luminance'));
+    plotUtils.LuminanceHistogramAndMappingCombo('OLED tonemap luminance vs scene luminance', ensembleSceneLuminanceMap(:), ensembleToneMappedOLEDluminanceMap(:), luminanceRange, luminanceEdges, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD));
 
-    
     subplot('Position', subplotPosVectors(1,2).v);
-    ensembleToneMappedLCDluminanceMapNoXYZscaling = ensembleToneMappedLCDluminanceMap(:, :, :, :, 1, :,:);
-    PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedLCDluminanceMapNoXYZscaling(:), inputEnsembleLuminanceRange, toneMappingParams.outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'linear');
-    title(sprintf('LCD (no XYZ scaling) vs scene luminance'));
+    plotUtils.LuminanceHistogramAndMappingCombo('LCD (no scale) tonemap luminance vs scene luminance', ensembleSceneLuminanceMap(:), ensembleToneMappedLCDluminanceMapNoXYZscaling(:), luminanceRange, luminanceEdges, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD));
 
-    
     subplot('Position', subplotPosVectors(1,3).v);
-    ensembleToneMappedLCDluminanceMapXYZscaling = ensembleToneMappedLCDluminanceMap(:, :, :, :, 2, :,:);
-    PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedLCDluminanceMapXYZscaling(:), inputEnsembleLuminanceRange, toneMappingParams.outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'linear');
-    title(sprintf('LCD (XYZ scaling) vs scene luminance'));
+    plotUtils.LuminanceHistogramAndMappingCombo('LCD (scale) tonemap luminance vs scene luminance', ensembleToneMappedLCDluminanceMapXYZscaling(:), ensembleToneMappedLCDluminanceMapNoXYZscaling(:), luminanceRange, luminanceEdges, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD));
     
-    % NicePlot.exportFigToPDF('ToneMappingMethods', h, 300);
-    
-%     subplot('Position', subplotPosVectors(2,1).v);
-%     PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedOLEDluminanceMap(:), inputEnsembleLuminanceRange, toneMappingParams.outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'linear');
-%     title(sprintf('OLED vs scene luminance'));
-% 
-%     
-%     subplot('Position', subplotPosVectors(2,2).v);
-%     PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedLCDluminanceMapNoXYZscaling(:), inputEnsembleLuminanceRange, toneMappingParams.outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'linear');
-%     title(sprintf('LCD (no XYZ scaling) vs scene luminance'));
-% 
-%     subplot('Position', subplotPosVectors(2,3).v);
-%     PlotMappedLuminance(ensembleSceneLuminanceMap(:), ensembleToneMappedLCDluminanceMapXYZscaling(:), inputEnsembleLuminanceRange, toneMappingParams.outputLuminanceRange, sum(maxRealizableLuminanceRGBgunsOLED), sum(maxRealizableLuminanceRGBgunsLCD), 'linear');
-%     title(sprintf('LCD (XYZ scaling) vs scene luminance'));
+    NicePlot.exportFigToPDF('mappedLuminances.pdf', hFig, 72);
     end
     
 end
@@ -356,69 +364,7 @@ end
 
 
 
-    
-function PlotMappedLuminance(sceneLuminance, toneMappedLuminance, inputEnsembleLuminanceRange, outputLuminanceRange, maxRealizableLuminanceRGBgunsOLED, maxRealizableLuminanceRGBgunsLCD, axesScaling)
-    
-    toneMapMinLum = outputLuminanceRange(1);
-    toneMapMaxLum = outputLuminanceRange(2);
-    minSceneLuminance = inputEnsembleLuminanceRange(1);
-    maxSceneLuminance = inputEnsembleLuminanceRange(2);
-    
-    plot(sceneLuminance,toneMappedLuminance, 'k.');
-    hold on;
-    plot([min([minSceneLuminance toneMapMinLum]) max([maxSceneLuminance toneMapMaxLum])], [min([minSceneLuminance toneMapMinLum]) max([maxSceneLuminance toneMapMaxLum])], '--', 'Color', [0.5 0.5 0.5]);
-    plot([min([minSceneLuminance toneMapMinLum]) max([maxSceneLuminance toneMapMaxLum])], maxRealizableLuminanceRGBgunsOLED*[1 1], 'r-');
-    plot([min([minSceneLuminance toneMapMinLum]) max([maxSceneLuminance toneMapMaxLum])], maxRealizableLuminanceRGBgunsLCD*[1 1], 'b-');
-    set(gca, 'XColor', [0.2 0.1 0.8], 'YColor', [0.2 0.1 0.8]);
-    
-    if (strcmp(axesScaling, 'log'))
-        n = ceil(log(maxSceneLuminance)/log(10));
-        set(gca, 'XLim', [min([minSceneLuminance toneMapMinLum]) max([maxSceneLuminance toneMapMaxLum])]);
-        set(gca, 'YLim', [min([minSceneLuminance toneMapMinLum]) max([maxSceneLuminance toneMapMaxLum])]);
-        set(gca, 'Xscale', 'log', 'XTick', 10.^(-3:1:n), 'XTickLabel', {10.^(-3:1:n)});
-        set(gca, 'Yscale', 'log', 'YTick', 10.^(-3:1:n), 'YTickLabel', {10.^(-3:1:n)});
-        
-    else
-        set(gca, 'XLim', [minSceneLuminance maxSceneLuminance]);
-        set(gca, 'YLim', [0 1000]);
-        set(gca, 'Xscale', 'linear', 'XTick', [0:1000:10000] , 'XTickLabel', [0:1000:10000]);
-        set(gca, 'Yscale', 'linear', 'YTick', [0:100:1000],    'YTickLabel',  [0:100:1000]);
-        
-    end
-    
-    xlabel('scene luminance', 'FontName', 'System', 'FontSize', 13); 
-    ylabel('tone mapped luminance', 'FontName', 'System', 'FontSize', 13);
-    axis 'square'; grid on
-end
 
-
-
-
-function PlotLuminanceHistogram(plotTitle, luma,  inputEnsembleLuminanceRange, maxRealizableLuminanceRGBgunsOLED, maxRealizableLuminanceRGBgunsLCD)
-    
-    minLuminance = inputEnsembleLuminanceRange(1);
-    maxLuminance = inputEnsembleLuminanceRange(2);
-    luminanceHistogramBinsNum = 1024;
-    deltaLum = (maxLuminance-minLuminance)/luminanceHistogramBinsNum;
-    luminanceEdges = minLuminance:deltaLum:maxLuminance;
-    [N,~] = histcounts(luma, luminanceEdges);
-    [x,y] = stairs(luminanceEdges(1:end-1),N);
-    plot(x,0.5+y,'-', 'Color', 'k');
-    hold on
-    plot(sum(maxRealizableLuminanceRGBgunsOLED)*[1 1], [0.5 max(N)], 'r-', 'LineWidth', 2);
-    plot(sum(maxRealizableLuminanceRGBgunsLCD)*[1 1], [0.5 max(N)], 'b-','LineWidth', 2);
-    legend('image lum',  'max OLED lum', 'max LCD lum');
-    grid on;
-    m = ceil(log(max(N))/log(10));
-    n = ceil(log(maxLuminance)/log(10));
-    
-    set(gca, 'XColor', [0.2 0.1 0.8], 'YColor', [0.2 0.1 0.8], 'Xscale', 'log', 'YScale', 'log', 'YLim', [1 max([2 max(N)])], ...
-        'XLim', [minLuminance maxLuminance], 'XTick', 10.^(-3:1:n), 'YTick', 10.^(0:1:m), ...
-        'YTickLabel', {10.^(0:1:m)}, 'XTickLabel', {10.^(-3:1:n)});
-    xlabel('luminance (cd/m2)');
-    ylabel('# of pixels');
-    title(plotTitle, 'FontName', 'System', 'FontSize', 13);
-end
 
 
 
