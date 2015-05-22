@@ -3,13 +3,16 @@ function RunImagePreferenceExperiment
     [rootDir,~] = fileparts(which(mfilename))
     cd(rootDir);
     
-    debugMode = true
-    disp('When running on Samsung rig set this to false');
-    disp('Hit enter to continue');
-    pause
+    debugMode = true;
+    if (debugMode)
+        fprintf(2,'DebugMode is set to true. If running on the Samsung rig, set the debugMode to false.\n');
+        disp('Hit enter to continue');
+        pause
+    end
+    
     
     % use debugMode = false, when running on the Samsung
-    experimentController = Controller('debugMode', debugMode, 'giveVerbalFeedback', false);
+    experimentController = Controller('debugMode', debugMode, 'giveVerbalFeedback', true);
     
     % Select acache file
     cacheFileNameList = {...
