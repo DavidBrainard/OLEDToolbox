@@ -5,7 +5,7 @@ function RenderToneMappedStimuliDifferentMethods
     
     % this loads: 'toneMappingMethods', 'ensembleToneMappeRGBsettingsOLEDimage', 'ensembleToneMappeRGBsettingsLCDimage', 'ensembleSceneLuminanceMap', 'ensembleToneMappedOLEDluminanceMap', 'ensembleToneMappedLCDluminanceMap');
     
-    debugMode = true;
+    debugMode = false;
     global PsychImagingEngine
     psychImaging.prepareEngine(debugMode);
     
