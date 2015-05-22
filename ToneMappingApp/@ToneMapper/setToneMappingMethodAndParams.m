@@ -17,6 +17,10 @@ function setToneMappingMethodAndParams(obj,~,~, varargin)
        toneMapping.alpha = varargin{3}; 
     end
     
+%     if (strcmp(toneMapping.name, 'CUMULATIVE_LOG_HISTOGRAM_BASED'))
+%        toneMapping.thresholdAsPercentileOfDiffs = varargin{3}; 
+%     end
+    
     % save toneMapping
     obj.toneMappingMethods(displayName) = toneMapping;
     

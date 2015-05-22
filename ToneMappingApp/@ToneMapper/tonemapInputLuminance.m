@@ -53,36 +53,54 @@ function outputLuminance = tonemapInputLuminance(obj, displayName, inputLuminanc
             normalizedOutputLuminance = (outputLuminance-minToneMappedSceneLum)/(maxToneMappedSceneLum-minToneMappedSceneLum);
             outputLuminance = normalizedOutputLuminance * maxLuminanceAvailableForToneMapping;
         end
-    elseif (strcmp(toneMapping.name, 'CUMULATIVE_HISTOGRAM'))
+    elseif (strcmp(toneMapping.name, 'CUMULATIVE_LOG_HISTOGRAM_BASED'))
         
         % Compute cumulative luminance histogram
         minLum = min(inputLuminance(:));
         maxLum = max(inputLuminance(:));
-        Nbins = 5000;
-        beta = 2;
-        threshold = numel(inputLuminance)/Nbins*beta;
-        
+        Nbins = 30000;
         luminanceCenters = linspace(minLum, maxLum, Nbins);
         [counts, centers] = hist(inputLuminance(:), luminanceCenters);
         
-        cumulativeHistogram = zeros(1,numel(counts));
+        
+        counts = log(1+counts.*(1:numel(counts)));
+        counts = counts/max(counts);
+    
+        cumHistogram = zeros(1,numel(counts));
         for k = 1:numel(counts)
+            cumHistogram(k) = sum(counts(1:k));
+        end
+        deltasInOriginalCumulativeHistogram = diff(cumHistogram);
+         
+        k = input('Enter threshold as fraction of max difference, [e.g. 0.8, <= 1.0] : ');
+        threshold = k*max(deltasInOriginalCumulativeHistogram ); %prctile(deltasInOriginalCumulativeHistogram, k);
+    
+        % Reshape cum histogram to eliminate very sharp transitions
+        cumHistogram = zeros(1,numel(counts));
+        for k = 1:numel(cumHistogram)
             nextVal = sum(counts(1:k));
             if (k > 1)
-                delta = nextVal - cumulativeHistogram(k-1);
-                if (delta > threshold)
-                    nextVal = cumulativeHistogram(k-1) + threshold;
+                delta = nextVal - cumHistogram(k-1);
+                if (delta < 0)
+                    error('delta < 0')
                 end
+                if (delta > threshold)
+                      delta = threshold;
+                end
+                cumHistogram(k) = cumHistogram(k-1)+delta;
+            else
+                cumHistogram(1) = nextVal;
             end
-            cumulativeHistogram(k) = nextVal;
         end
-        cumulativeHistogram = cumulativeHistogram / max(cumulativeHistogram);
+
+        
+        cumHistogram = cumHistogram / max(cumHistogram);
         
         deltaLum = centers(2)-centers(1);
         indices = round(inputLuminance/deltaLum);
         indices(indices == 0) = 1;
         indices(indices > Nbins) = Nbins;
-        outputLuminance = cumulativeHistogram(indices) * maxLuminanceAvailableForToneMapping;
+        outputLuminance = cumHistogram(indices) * maxLuminanceAvailableForToneMapping;
     else
         error('Tonemapping ''%s'' not implemented yet', toneMapping.name);
     end
