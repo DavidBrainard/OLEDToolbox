@@ -13,7 +13,11 @@ function GenerateStimulusCache
     
     % Contruct containers with cal data
     emulatedDisplayNames = {'LCD', 'OLED'};
-    emulatedDisplayCals  = {PrepareCal(calLCD, sensorXYZ), PrepareCal(calOLED, sensorXYZ)};
+    lumLCD = 500;
+    lumOLED = 580;
+    emulatedDisplayCals  = {PrepareCal(calLCD, sensorXYZ, lumLCD), PrepareCal(calOLED, sensorXYZ, lumOLED)};
+    emulatedDisplayCals  = {PrepareCal(calOLED, sensorXYZ, lumLCD), PrepareCal(calOLED, sensorXYZ, lumOLED)};
+    
     displayCal = containers.Map(emulatedDisplayNames,emulatedDisplayCals);
     
     
@@ -44,8 +48,8 @@ function GenerateStimulusCache
     % and flat reflectances, i.e. low alpha images)
     alphasExamined = {'0.080', '0.160', '0.320'}; % {'0.005', '0.010', '0.020', '0.040', '0.080', '0.160', '0.320'};
     specularStrengthsExamined = {'0.60', '0.30'};   
-    lightingConditionsExamined = {'area1_front0_ceiling0', 'area0_front0_ceiling1'}
-    
+    lightingConditionsExamined = {'area1_front0_ceiling0'};
+    %lightingConditionsExamined = {'area0_front0_ceiling1'};
    
      wattsToLumens = 683;
      
@@ -78,24 +82,86 @@ function GenerateStimulusCache
         end
     end
     
-    % Compute histogram - based tone mapping function
-    cumulativeHistogram = ComputeCumulativeHistogramBasedToneMappingFunction(luminanceEnsembleCalFormat);
+    
+    ensembleLuminances = luminanceEnsembleCalFormat(:);
+    minEnsembleLum = min(ensembleLuminances);
+    maxEnsembleLum = max(ensembleLuminances);
+    Nbins = 30000;
+    ensembleCenters = linspace(minEnsembleLum, maxEnsembleLum, Nbins);
+    
+    toneMappingParams = struct(...
+        'name', 'CUMULATIVE_LOG_HISTOGRAM_BASED' ...
+        );
+    
+%     toneMappingParams = struct(...
+%         'name', 'LINEAR_MAPPING_TO_GAMUT' ...
+%         );
+    
+%     toneMappingParams = struct(...
+%         'name', 'LINEAR_SATURATING', ...
+%         'gain', 5 ...
+%         );
+    
+%     toneMappingParams = struct(...
+%         'name', 'REINHARDT', ...
+%         'alpha', 4.0 ...
+%         );
+    
+    if (strcmp(char(lightingConditionsExamined), 'area1_front0_ceiling0'))
+        cacheFileName = sprintf('FullSetArea_%s_OLEDlum_%2.0f_LCDlum_%2.0f', toneMappingParams.name, lumOLED, lumLCD);
+    elseif (strcmp(char(lightingConditionsExamined), 'area0_front0_ceiling1'))
+        cacheFileName = sprintf('FullSetCeiling_%s_OLEDlum_%2.0f_LCDlum_%2.0f', toneMappingParams.name, lumOLED, lumLCD);
+    else
+        error('What ?');
+    end
+    
+
+    if (strcmp(toneMappingParams.name, 'CUMULATIVE_LOG_HISTOGRAM_BASED'))
+        % Compute histogram - based tone mapping function
+        kFraction = input('Enter threshold as fraction of max difference, [e.g. 0.8, <= 1.0] : ');
+        toneMappingParams.mappingFunction = ComputeCumulativeHistogramBasedToneMappingFunction(luminanceEnsembleCalFormat, ensembleCenters, kFraction);
+    elseif (strcmp(toneMappingParams.name, 'LINEAR_MAPPING_TO_GAMUT'))
+        toneMappingParams.mappingFunction.input  = ensembleCenters;
+        toneMappingParams.mappingFunction.output = (0:numel(ensembleCenters)-1)/(numel(ensembleCenters)-1);
+    elseif (strcmp(toneMappingParams.name, 'LINEAR_SATURATING'))
+        toneMappingParams.mappingFunction.input  = ensembleCenters;
+        toneMappingParams.mappingFunction.output = toneMappingParams.gain * (0:numel(ensembleCenters)-1)/(numel(ensembleCenters)-1);
+        toneMappingParams.mappingFunction.output(toneMappingParams.mappingFunction.output>1) = 1;
+    elseif (strcmp(toneMappingParams.name, 'REINHARDT'))
+        
+        delta = 0.0001; % small delta to avoid taking log(0) when encountering pixels with zero luminance
+        sceneKey = exp((1/numel(ensembleCenters))*sum(log(ensembleCenters + delta)));
+        % Scale luminance according to alpha parameter and scene key
+        scaledInputLuminance = toneMappingParams.alpha / sceneKey * ensembleCenters;
+        % Compress high luminances
+        outputLuminance = scaledInputLuminance ./ (1.0+scaledInputLuminance);
+        minToneMappedSceneLum = min(outputLuminance(:));
+        maxToneMappedSceneLum = max(outputLuminance(:));
+        normalizedOutputLuminance = (outputLuminance-minToneMappedSceneLum)/(maxToneMappedSceneLum-minToneMappedSceneLum);
+        
+        toneMappingParams.mappingFunction.input  = ensembleCenters;
+        toneMappingParams.mappingFunction.output = normalizedOutputLuminance;
+
+    else
+        error('Do not know how to do this');
+    end
     
 
     h = figure(1);
     set(h, 'Position', [10 449 2497 893], 'Color', [0 0 0]);
     clf;
-    histogramCountHeight = 100;
+    histogramCountHeight = 1;
     
     
     
     
     maxLuminanceAvailableForToneMapping = renderingDisplayProperties.maxLuminance;
     
+    
     % Now tone map the full set
     alphasExamined = {'0.005', '0.010', '0.020', '0.040', '0.080', '0.160', '0.320'};
     specularStrengthsExamined = {'0.60', '0.15', '0.30'};   
-    lightingConditionsExamined = {'area1_front0_ceiling0', 'area0_front0_ceiling1'};
+
     
     rowsNum = 3;
     colsNum = numel(alphasExamined) * numel(specularStrengthsExamined) * numel(lightingConditionsExamined);
@@ -124,7 +190,7 @@ function GenerateStimulusCache
                 [linearSRGBCalFormat, nCols, mRows] = ImageToCalFormat(linearSRGBimage);
                 
                 
-                [linearSRGBCalFormatToneMapped, luminanceCalFormatToneMapped] = ToneMap(linearSRGBCalFormat, cumulativeHistogram, maxLuminanceAvailableForToneMapping);
+                [linearSRGBCalFormatToneMapped, luminanceCalFormatToneMapped] = ToneMap(linearSRGBCalFormat, toneMappingParams, maxLuminanceAvailableForToneMapping);
                 
                 linearSRGBEnsembleCalFormatToneMapped(specularReflectionIndex, alphaIndex, lightingIndex, :,:) = linearSRGBCalFormatToneMapped;
                 luminanceToneMappedEnsembleCalFormat(specularReflectionIndex, alphaIndex, lightingIndex, :) = luminanceCalFormatToneMapped;
@@ -135,13 +201,15 @@ function GenerateStimulusCache
                 
                 
                 subplot('Position', subplotPosVectors(2,imIndex).v);
-                [s.counts, s.centers] = hist(luminanceCalFormatToneMapped, cumulativeHistogram.centers); 
+                [s.counts, s.centers] = hist(luminanceCalFormatToneMapped, ensembleCenters); 
                 bar(s.centers, s.counts, 'FaceColor', [1.0 0.1 0.5], 'EdgeColor', 'none');
-                hold on;
                 maxHistogramCount = min(s.counts(s.counts>0))*histogramCountHeight;
-                counts = cumulativeHistogram.amplitudes*0.95*maxHistogramCount;
-                plot(cumulativeHistogram.centers, counts, 'b-');
-                set(gca, 'YLim', [0 maxHistogramCount], 'XLim', [0 1.05*max(cumulativeHistogram.centers)], 'YTick', [], 'XColor', [1 1 1], 'YColor', [1 1 1]);
+                hold on;
+                counts = toneMappingParams.mappingFunction.output*0.95*maxHistogramCount;
+                plot(toneMappingParams.mappingFunction.input, counts, 'b-');
+
+                
+                set(gca, 'YLim', [0 maxHistogramCount], 'XLim', [0 1.05*max(ensembleCenters)], 'YTick', [], 'XColor', [1 1 1], 'YColor', [1 1 1]);
                 xlabel('luminance (cd/m2)', 'Color', [1 1 1]);
                 hold off;
                 
@@ -161,8 +229,7 @@ function GenerateStimulusCache
 
     
     
-    cacheFileName = 'FullSetHistogramBasedToneMapping';
-
+    
     imIndex = 0;
     for lightingIndex = 1:numel(lightingConditionsExamined)
         for specularReflectionIndex = 1:numel(specularStrengthsExamined)
@@ -199,23 +266,17 @@ function GenerateStimulusCache
 end
 
 
-function cumulativeHistogram = ComputeCumulativeHistogramBasedToneMappingFunction(ensembleLuminances)
+function toneMappingFunction = ComputeCumulativeHistogramBasedToneMappingFunction(ensembleLuminances, ensembleCenters, kFraction)
     
     fprintf('Computing histogram - based tone mapping function\n');
     
     ensembleLuminances = ensembleLuminances(:);
-    minEnsembleLum = min(ensembleLuminances);
-    maxEnsembleLum = max(ensembleLuminances);
-    Nbins = 30000;
-    ensembleCenters = linspace(minEnsembleLum, maxEnsembleLum, Nbins);
+    Nbins = numel(ensembleCenters);
     [ensembleCounts, ensembleCenters] = hist(ensembleLuminances, ensembleCenters);
     
-    % multiply counts by centers.^exponent. This seems key to get good
-    % resolution at the smoothly varying highlights.
-    % The lower the exponent the more resolution in the highlights
-    exponent = input('Enter the exponent, [e.g. 0.2, 0.5] : ');
-    ensembleCountsExp = ensembleCounts/max(ensembleCounts) .* ensembleCenters/max(ensembleCenters);
-    ensembleCountsExp = ensembleCountsExp .^ exponent;
+    % Operate on the log of the cumulative histogram
+    ensembleCounts = log(1+ensembleCounts);
+    ensembleCountsExp = ensembleCounts/max(ensembleCounts);
 
     % determine threshold for cumulative histogram jumps
     % The smaller the beta, the less spiky the histogram, and the less
@@ -227,8 +288,11 @@ function cumulativeHistogram = ComputeCumulativeHistogramBasedToneMappingFunctio
     end
     deltasInOriginalCumulativeHistogram = diff(cumHistogram);
 
-    k = input('Enter threshold as percentile of diffs(cum histogram), [e.g. 96, 99] : ');
-    betaThreshold = prctile(deltasInOriginalCumulativeHistogram, k);
+    %k = input('Enter threshold as percentile of diffs(cum histogram), [e.g. 96, 99] : ');
+    %betaThreshold = prctile(deltasInOriginalCumulativeHistogram, k);
+        
+    
+    betaThreshold = kFraction*max(deltasInOriginalCumulativeHistogram );
         
     cumHistogram = zeros(1,numel(ensembleCountsExp));
     for k = 1:numel(cumHistogram)
@@ -247,14 +311,14 @@ function cumulativeHistogram = ComputeCumulativeHistogramBasedToneMappingFunctio
         end
     end
 
-    cumulativeHistogram.amplitudes = cumHistogram / max(cumHistogram);
-    cumulativeHistogram.centers    = ensembleCenters;    
+    toneMappingFunction.output = cumHistogram / max(cumHistogram);
+    toneMappingFunction.input  = ensembleCenters;    
 end
 
 
 
 
-function [linearSRGBCalFormatToneMapped, luminanceToneMapped] = ToneMap(linearSRGBCalFormat, cumulativeHistogram, maxLuminanceAvailableForToneMapping)
+function [linearSRGBCalFormatToneMapped, luminanceToneMapped] = ToneMap(linearSRGBCalFormat, toneMappingParams, maxLuminanceAvailableForToneMapping)
 
     % To XYZ
     XYZcalFormat = SRGBPrimaryToXYZ(linearSRGBCalFormat);
@@ -267,13 +331,16 @@ function [linearSRGBCalFormatToneMapped, luminanceToneMapped] = ToneMap(linearSR
     inputLuminance = squeeze(xyYcalFormat(3,:))*wattsToLumens;
     
     % Tone map input luminance
-    deltaLum = cumulativeHistogram.centers(2)-cumulativeHistogram.centers(1);
-    Nbins = numel(cumulativeHistogram.centers);
+    toneMappingFunction = toneMappingParams.mappingFunction;
+     
+ 
+    deltaLum = toneMappingFunction.input(2)-toneMappingFunction.input(1);
+    Nbins = numel(toneMappingFunction.input);
     indices = round(inputLuminance/deltaLum);
     indices(indices == 0) = 1;
     indices(indices > Nbins) = Nbins;
-    outputLuminance = cumulativeHistogram.amplitudes(indices) * maxLuminanceAvailableForToneMapping;
-        
+    outputLuminance = toneMappingFunction.output(indices) * maxLuminanceAvailableForToneMapping;
+   
     % Replace luminance channel with tone mapped luminance channel
     
     xyYcalFormatToneMapped = xyYcalFormat;
@@ -383,13 +450,22 @@ function XYZcalFormatToneMapped = XYZFromSRGB_by_LinearMappingOfSRGB1ToNominalLu
 end
 
 
-function cal = PrepareCal(cal, sensorXYZ)
+function cal = PrepareCal(cal, sensorXYZ, desiredMaxLuminance)
     cal.nPrimaryBases = 3;
     cal = CalibrateFitLinMod(cal);
     
     % set sensor to XYZ
     cal  = SetSensorColorSpace(cal, sensorXYZ.T,  sensorXYZ.S);
 
+    % compute native max luminance
+    wattsToLumens = 683;
+    XYZ = SettingsToSensor(cal, [1 1 1]');
+    maxLuminance = XYZ(2) * wattsToLumens;
+    
+    scalingFactor = desiredMaxLuminance/maxLuminance;
+    cal.P_device = cal.P_device * scalingFactor;
+    cal = SetSensorColorSpace(cal, sensorXYZ.T,  sensorXYZ.S);
+    
     % Generate 1024-level LUTs 
     nInputLevels = 1024;
     cal  = CalibrateFitGamma(cal, nInputLevels);
