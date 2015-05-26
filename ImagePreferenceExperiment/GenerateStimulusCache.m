@@ -150,7 +150,7 @@ function GenerateStimulusCache
     h = figure(1);
     set(h, 'Position', [10 449 2497 893], 'Color', [0 0 0]);
     clf;
-    histogramCountHeight = 1;
+    histogramCountHeight = 200;
     
     
     
@@ -190,7 +190,7 @@ function GenerateStimulusCache
                 [linearSRGBCalFormat, nCols, mRows] = ImageToCalFormat(linearSRGBimage);
                 
                 
-                [linearSRGBCalFormatToneMapped, luminanceCalFormatToneMapped] = ToneMap(linearSRGBCalFormat, toneMappingParams, maxLuminanceAvailableForToneMapping);
+                [linearSRGBCalFormatToneMapped, inputLuminance, luminanceCalFormatToneMapped] = ToneMap(linearSRGBCalFormat, toneMappingParams, maxLuminanceAvailableForToneMapping);
                 
                 linearSRGBEnsembleCalFormatToneMapped(specularReflectionIndex, alphaIndex, lightingIndex, :,:) = linearSRGBCalFormatToneMapped;
                 luminanceToneMappedEnsembleCalFormat(specularReflectionIndex, alphaIndex, lightingIndex, :) = luminanceCalFormatToneMapped;
@@ -201,7 +201,7 @@ function GenerateStimulusCache
                 
                 
                 subplot('Position', subplotPosVectors(2,imIndex).v);
-                [s.counts, s.centers] = hist(luminanceCalFormatToneMapped, ensembleCenters); 
+                [s.counts, s.centers] = hist(inputLuminance, ensembleCenters); 
                 bar(s.centers, s.counts, 'FaceColor', [1.0 0.1 0.5], 'EdgeColor', 'none');
                 maxHistogramCount = min(s.counts(s.counts>0))*histogramCountHeight;
                 hold on;
@@ -260,8 +260,9 @@ function GenerateStimulusCache
         end
     end
     
+    comparisonMode = 'HDR_vs_LDR';
     orderedIndicesNames = {'specularReflectionIndex', 'alphaIndex', 'lightingIndex'};
-    save(cacheFileName, 'cachedData', 'orderedIndicesNames', 'specularStrengthsExamined', 'alphasExamined', 'lightingConditionsExamined');
+    save(cacheFileName, 'cachedData', 'orderedIndicesNames', 'specularStrengthsExamined', 'alphasExamined', 'lightingConditionsExamined', 'comparisonMode');
     
 end
 
@@ -318,7 +319,7 @@ end
 
 
 
-function [linearSRGBCalFormatToneMapped, luminanceToneMapped] = ToneMap(linearSRGBCalFormat, toneMappingParams, maxLuminanceAvailableForToneMapping)
+function [linearSRGBCalFormatToneMapped, inputLuminance, luminanceToneMapped] = ToneMap(linearSRGBCalFormat, toneMappingParams, maxLuminanceAvailableForToneMapping)
 
     % To XYZ
     XYZcalFormat = SRGBPrimaryToXYZ(linearSRGBCalFormat);
