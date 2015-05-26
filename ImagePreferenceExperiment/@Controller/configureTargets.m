@@ -5,6 +5,5 @@ function configureTargets(obj)
     obj.targetLocations.left  = CenterRectOnPointd(stimRect, 0.25*obj.viewOutlet.screenSize.width, obj.viewOutlet.screenSize.height/2);
     obj.targetLocations.right = CenterRectOnPointd(stimRect, 0.75*obj.viewOutlet.screenSize.width, obj.viewOutlet.screenSize.height/2);
     
-    
 end
 

@@ -1,6 +1,7 @@
 function response = getMouseResponse(obj)
 
     response.terminateExperiment = false;
+    response.finalizeAdjustment = false;
     response.elapsed_time = nan;
     response.selectedStimulus = nan;
     
@@ -45,20 +46,33 @@ function response = getMouseResponse(obj)
                         response.selectedStimulus = 'HDR';
                         if (obj.initParams.giveVerbalFeedback)
                             Speak('Correct');
+                        else
+                            WaitSecs(0.5);
                         end
                         keepGoing = false;
-                        WaitSecs(0.5);
+                        
                     elseif (IsInRect(mx, my, obj.currentLDRStimRect))
                         response.elapsed_time = GetSecs-response.begin;
                         response.selectedStimulus = 'LDR';
                         if (obj.initParams.giveVerbalFeedback)
                             Speak('False');
+                        else
+                            WaitSecs(0.5);
                         end
                         keepGoing = false;
-                        WaitSecs(0.5);
+                       
                     elseif (IsInRect(mx, my, obj.screenRect))
                         sound(obj.feedbackSounds.tryAgain, obj.feedbackSounds.frequency);
                     end  
+                    
+                case obj.gamePad.directionalButtonChange
+                    response.finalizeAdjustment = true; 
+                    keepGoing = false;
+                    if (obj.initParams.giveVerbalFeedback)
+                        Speak('Finalized');
+                    else
+                        WaitSecs(0.5);
+                    end
             end
             
          end
@@ -80,17 +94,21 @@ function response = getMouseResponse(obj)
                     response.selectedStimulus = 'HDR';
                     if (obj.initParams.giveVerbalFeedback)
                         Speak('Correct');
+                    else
+                        WaitSecs(0.5);
                     end
                     keepGoing = false;
-                    WaitSecs(0.005);
+                    
                 elseif (IsInRect(mx, my, obj.currentLDRStimRect))
                     response.elapsed_time = GetSecs-response.begin;
                     response.selectedStimulus = 'LDR';
                     if (obj.initParams.giveVerbalFeedback)
                         Speak('False');
+                    else
+                         WaitSecs(0.5);
                     end
                     keepGoing = false;
-                    WaitSecs(0.005);
+                   
                 elseif (IsInRect(mx, my, obj.screenRect))
                     sound(obj.feedbackSounds.tryAgain, obj.feedbackSounds.frequency);
                 end

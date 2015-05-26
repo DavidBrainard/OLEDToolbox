@@ -4,6 +4,9 @@ classdef Controller < handle
     properties (SetAccess = private)
         viewOutlet;
         model;
+        
+        comparisonMode;
+        conditionsData;
     end
     
     properties (SetAccess = private, Dependent)
@@ -48,6 +51,8 @@ classdef Controller < handle
         % Method to load the stimulus cache
         loadStimulusCache(obj, cacheFileName);
         
+        % Method to run the experiment
+        runExperiment(obj);
         
         % Method to shutdown
         shutDown(obj);

@@ -6,61 +6,132 @@ function showStimulus(obj,stimIndex, hdrDestRect, ldrDestRect)
     
     sourceRect = []; rotationAngle = 0; filterMode = []; globalAlpha = 1.0;
     
-    % retrieve stim textures from cache    
-    s = obj.stimCache.textures{stimIndex};
+    if (numel(stimIndex) == 1)
         
-    try
-        % --- SCREEN 1  ---
-        frameIndex = 1;
-        Screen('SelectStereoDrawBuffer', obj.psychImagingEngine.masterWindowPtr, 0);
-        Screen('DrawTexture', obj.psychImagingEngine.masterWindowPtr, s.hdr(frameIndex), ...
-            sourceRect, hdrDestRect, rotationAngle, filterMode, globalAlpha); 
-        Screen('DrawTexture', obj.psychImagingEngine.masterWindowPtr, s.ldr(frameIndex), ...
-            sourceRect, ldrDestRect, rotationAngle, filterMode, globalAlpha); 
+        % comparison mode: 'HDR_vs_LDR'
         
-        % --- SCREEN 2  ---
-        frameIndex = 2;
-        Screen('SelectStereoDrawBuffer', obj.psychImagingEngine.masterWindowPtr, 1);
-        Screen('DrawTexture', obj.psychImagingEngine.masterWindowPtr, s.hdr(frameIndex), ...
-            sourceRect, hdrDestRect, rotationAngle, filterMode, globalAlpha); 
-        Screen('DrawTexture', obj.psychImagingEngine.masterWindowPtr, s.ldr(frameIndex), ...
-            sourceRect, ldrDestRect, rotationAngle, filterMode, globalAlpha); 
+        % retrieve stim textures from cache    
+        s = obj.stimCache.textures{stimIndex};
+
+        try
+            % --- SCREEN 1  ---
+            frameIndex = 1;
+            Screen('SelectStereoDrawBuffer', obj.psychImagingEngine.masterWindowPtr, 0);
+            Screen('DrawTexture', obj.psychImagingEngine.masterWindowPtr, s.hdr(frameIndex), ...
+                sourceRect, hdrDestRect, rotationAngle, filterMode, globalAlpha); 
+            Screen('DrawTexture', obj.psychImagingEngine.masterWindowPtr, s.ldr(frameIndex), ...
+                sourceRect, ldrDestRect, rotationAngle, filterMode, globalAlpha); 
+
+            % --- SCREEN 2  ---
+            frameIndex = 2;
+            Screen('SelectStereoDrawBuffer', obj.psychImagingEngine.masterWindowPtr, 1);
+            Screen('DrawTexture', obj.psychImagingEngine.masterWindowPtr, s.hdr(frameIndex), ...
+                sourceRect, hdrDestRect, rotationAngle, filterMode, globalAlpha); 
+            Screen('DrawTexture', obj.psychImagingEngine.masterWindowPtr, s.ldr(frameIndex), ...
+                sourceRect, ldrDestRect, rotationAngle, filterMode, globalAlpha); 
+
+            if (~isempty(obj.psychImagingEngine.slaveWindowPtr))
+                % --- SCREEN 3  ---
+                frameIndex = 3;
+                Screen('SelectStereoDrawBuffer', obj.psychImagingEngine.slaveWindowPtr, 0);
+                Screen('DrawTexture', obj.psychImagingEngine.slaveWindowPtr, s.hdr(frameIndex), ...
+                sourceRect, hdrDestRect, rotationAngle, filterMode, globalAlpha); 
+                Screen('DrawTexture', obj.psychImagingEngine.slaveWindowPtr, s.ldr(frameIndex), ...
+                sourceRect, ldrDestRect, rotationAngle, filterMode, globalAlpha);
+
+                % --- SCREEN 4  ---
+                frameIndex = 4;
+                Screen('SelectStereoDrawBuffer', obj.psychImagingEngine.slaveWindowPtr, 1);
+                Screen('DrawTexture', obj.psychImagingEngine.slaveWindowPtr, s.hdr(frameIndex), ...
+                sourceRect, hdrDestRect, rotationAngle, filterMode, globalAlpha); 
+                Screen('DrawTexture', obj.psychImagingEngine.slaveWindowPtr, s.ldr(frameIndex), ...
+                sourceRect, ldrDestRect, rotationAngle, filterMode, globalAlpha);
+            end
+
+            % Flip all 4 buffers to show the stimulus
+            if (~isempty(obj.psychImagingEngine.slaveWindowPtr))
+                Screen('Flip', obj.psychImagingEngine.slaveWindowPtr, [], [], 1);
+            end
+
+            Screen('Flip', obj.psychImagingEngine.masterWindowPtr, [], [], 1); 
+       
         
-        if (~isempty(obj.psychImagingEngine.slaveWindowPtr))
-            % --- SCREEN 3  ---
-            frameIndex = 3;
-            Screen('SelectStereoDrawBuffer', obj.psychImagingEngine.slaveWindowPtr, 0);
-            Screen('DrawTexture', obj.psychImagingEngine.slaveWindowPtr, s.hdr(frameIndex), ...
-            sourceRect, hdrDestRect, rotationAngle, filterMode, globalAlpha); 
-            Screen('DrawTexture', obj.psychImagingEngine.slaveWindowPtr, s.ldr(frameIndex), ...
-            sourceRect, ldrDestRect, rotationAngle, filterMode, globalAlpha);
-        
-            % --- SCREEN 4  ---
-            frameIndex = 4;
-            Screen('SelectStereoDrawBuffer', obj.psychImagingEngine.slaveWindowPtr, 1);
-            Screen('DrawTexture', obj.psychImagingEngine.slaveWindowPtr, s.hdr(frameIndex), ...
-            sourceRect, hdrDestRect, rotationAngle, filterMode, globalAlpha); 
-            Screen('DrawTexture', obj.psychImagingEngine.slaveWindowPtr, s.ldr(frameIndex), ...
-            sourceRect, ldrDestRect, rotationAngle, filterMode, globalAlpha);
+        catch err
+            obj.shutDown();
+            rethrow(err);
         end
         
-        % Flip all 4 buffers to show the stimulus
-        if (~isempty(obj.psychImagingEngine.slaveWindowPtr))
-            Screen('Flip', obj.psychImagingEngine.slaveWindowPtr, [], [], 1);
+        
+        
+    elseif (numel(stimIndex) == 3)
+        % comparison mode: 'Best_tonemapping_parameter_HDR_and_LDR'
+        
+        % retrieve stim textures from cache    
+        sOne = obj.stimCache.textures{stimIndex{1}};
+        
+        % retrieve stim textures from cache    
+        sTwo = obj.stimCache.textures{stimIndex{2}};
+        
+        
+        if (strcmp(stimIndex{3}, 'LDR'))
+            s1 = sOne.ldr;
+            s2 = sTwo.ldr;
+        elseif (strcmp(stimIndex{3}, 'HDR'))
+            s1 = sOne.hdr;
+            s2 = sTwo.hdr;
+        else
+            stimIndex(3)
+            error('3rd entry must be set to ''LDR'' or ''HDR''.');
         end
         
-        Screen('Flip', obj.psychImagingEngine.masterWindowPtr, [], [], 1); 
-        
-    catch err
-        obj.shutDown();
-        rethrow(err);
+        try
+            % --- SCREEN 1  ---
+            frameIndex = 1;
+            Screen('SelectStereoDrawBuffer', obj.psychImagingEngine.masterWindowPtr, 0);
+            Screen('DrawTexture', obj.psychImagingEngine.masterWindowPtr, s1(frameIndex), ...
+                sourceRect, hdrDestRect, rotationAngle, filterMode, globalAlpha); 
+            Screen('DrawTexture', obj.psychImagingEngine.masterWindowPtr, s2(frameIndex), ...
+                sourceRect, ldrDestRect, rotationAngle, filterMode, globalAlpha); 
+            
+            % --- SCREEN 2  ---
+            frameIndex = 2;
+            Screen('SelectStereoDrawBuffer', obj.psychImagingEngine.masterWindowPtr, 1);
+            Screen('DrawTexture', obj.psychImagingEngine.masterWindowPtr, s1(frameIndex), ...
+                sourceRect, hdrDestRect, rotationAngle, filterMode, globalAlpha); 
+            Screen('DrawTexture', obj.psychImagingEngine.masterWindowPtr, s2(frameIndex), ...
+                sourceRect, ldrDestRect, rotationAngle, filterMode, globalAlpha);
+            
+            if (~isempty(obj.psychImagingEngine.slaveWindowPtr))
+                % --- SCREEN 3  ---
+                frameIndex = 3;
+                Screen('SelectStereoDrawBuffer', obj.psychImagingEngine.slaveWindowPtr, 0);
+                Screen('DrawTexture', obj.psychImagingEngine.slaveWindowPtr, s1(frameIndex), ...
+                sourceRect, hdrDestRect, rotationAngle, filterMode, globalAlpha); 
+                Screen('DrawTexture', obj.psychImagingEngine.slaveWindowPtr, s2(frameIndex), ...
+                sourceRect, ldrDestRect, rotationAngle, filterMode, globalAlpha);
+
+                % --- SCREEN 4  ---
+                frameIndex = 4;
+                Screen('SelectStereoDrawBuffer', obj.psychImagingEngine.slaveWindowPtr, 1);
+                Screen('DrawTexture', obj.psychImagingEngine.slaveWindowPtr, s1(frameIndex), ...
+                sourceRect, hdrDestRect, rotationAngle, filterMode, globalAlpha); 
+                Screen('DrawTexture', obj.psychImagingEngine.slaveWindowPtr, s2(frameIndex), ...
+                sourceRect, ldrDestRect, rotationAngle, filterMode, globalAlpha);
+            end
+
+            % Flip all 4 buffers to show the stimulus
+            if (~isempty(obj.psychImagingEngine.slaveWindowPtr))
+                Screen('Flip', obj.psychImagingEngine.slaveWindowPtr, [], [], 1);
+            end
+
+            Screen('Flip', obj.psychImagingEngine.masterWindowPtr, [], [], 1); 
+            
+        catch err
+            obj.shutDown();
+            rethrow(err);
+        end    
     end
 
 end
 
-
-function DrawTexture(windowPtr, texturePointer, destRect)
-
-            
-end
 

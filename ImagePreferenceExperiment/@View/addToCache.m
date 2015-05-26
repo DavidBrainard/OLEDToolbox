@@ -52,7 +52,7 @@ function addToCache(obj, stimIndex, hdrStimRGBdata, ldrStimRGBdata)
         
         % save stim textures in cache    
         obj.stimCache.textures{stimIndex} = struct('hdr', hdrStimTextures, 'ldr', ldrStimTextures);
-        
+       
     catch err
         obj.shutDown();
         rethrow(err);
