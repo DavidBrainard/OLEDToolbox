@@ -13,8 +13,8 @@ function GenerateStimulusCacheDifferentAlphas
     
     % Contruct containers with cal data
     emulatedDisplayNames = {'LCD', 'OLED'};
-    lumLCD = [];
-    lumOLED = [];
+    lumLCD = [];  % native max lum for LCD display
+    lumOLED = []; % native max lum for OLED display
     emulatedDisplayCals  = {PrepareCal(calLCD, sensorXYZ, lumLCD), PrepareCal(calOLED, sensorXYZ, lumOLED)};
     
     displayCal = containers.Map(emulatedDisplayNames,emulatedDisplayCals);
@@ -52,8 +52,21 @@ function GenerateStimulusCacheDifferentAlphas
     lightingConditionsExamined = {'area1_front0_ceiling0'};
     shapesExamined = {'Blobbie9SubsHighFreq', 'Blobbie9SubsVeryLowFreq'};
    
+    % Best set is following
+%     shapesExaminedBest              = {shapesExamined{ [1 2] }}
+%     alphasExaminedBest              = {alphasExamined{ [2 4 5 6 7] }}
+%     specularStrengthsExaminedBest   = {specularStrengthsExamined{ [1 3] }}
+%     lightingConditionsExaminedBest  = {lightingConditionsExamined{ [1] }}
+    
+    shapesExamined              = {shapesExamined{ [1 2] }}
+    alphasExamined              = {alphasExamined{ [2 4 5 6 7] }}
+    specularStrengthsExamined   = {specularStrengthsExamined{ [1 3] }}
+    lightingConditionsExamined  = {lightingConditionsExamined{ [1] }}
+    
+    
     wattsToLumens = 683;
-     
+    
+    fprintf('Loading an ensemble of blobbie images to compute the ensemble key and cumulative histogram.\n');
     % Compute ensemble luminance statistics (Histogram, cumulative histogram)
     imageNum = 0;
     for shapeIndex = 1:numel(shapesExamined)
@@ -62,7 +75,7 @@ function GenerateStimulusCacheDifferentAlphas
                 for alphaIndex = 1:numel(alphasExamined)
 
                     blobbieFileName = sprintf('%s_Samsung_FlatSpecularReflectance_%s.spd___Samsung_NeutralDay_BlueGreen_0.60.spd___alpha_%s___Lights_%s_rotationAngle_0.mat',shapesExamined{shapeIndex}, specularStrengthsExamined{specularReflectionIndex}, alphasExamined{alphaIndex}, lightingConditionsExamined{lightingIndex});
-                    fprintf('Loading %s\n', blobbieFileName);
+                    fprintf('\t%s\n', blobbieFileName);
                     linearSRGBimage = ConvertRT3scene(multiSpectralBlobbieFolder,blobbieFileName);
                     % To calFormat
                     [linearSRGBcalFormat, nCols, mRows] = ImageToCalFormat(linearSRGBimage);
@@ -86,63 +99,78 @@ function GenerateStimulusCacheDifferentAlphas
     end
     
     
+    % Compute scene key and cumulative histogram for the ensemble of images
     ensembleLuminances = luminanceEnsembleCalFormat(:);
     minEnsembleLum = min(ensembleLuminances);
     maxEnsembleLum = max(ensembleLuminances);
     Nbins = 30000;
     ensembleCenters = linspace(minEnsembleLum, maxEnsembleLum, Nbins);
+
+    delta = 0.0001; % small delta to avoid taking log(0) when encountering pixels with zero luminance
+    sceneKey = exp((1/numel(ensembleCenters))*sum(log(ensembleCenters + delta)));
     
+    kFraction = 0.9; % input('Enter threshold as fraction of max difference, [e.g. 0.8, <= 1.0] : ');
+    cumulativeHistogram = ComputeCumulativeHistogramBasedToneMappingFunction(luminanceEnsembleCalFormat, ensembleCenters, kFraction);
 
     
+    % Range of Reinhard alphas to examine
+    minAlpha = 0.2; maxAlpha = 20.0; alphasNum = 6;
+    ReinhardtAlphas = logspace(log10(minAlpha),log10(maxAlpha),alphasNum)
     
-
-
-    h = figure(1);
-    set(h, 'Position', [10 449 2497 893], 'Color', [0 0 0]);
-    clf;
-    histogramCountHeight = 200;
-
     
-    % Now tone map a subset
-    alphasExamined = {alphasExamined{4}};  % {'0.005', '0.010', '0.020', '0.040', '0.080', '0.160', '0.320'};
-    specularStrengthsExamined = {specularStrengthsExamined{1}}; % {'0.60', '0.30', '0.15'};   
-    lightingConditionsExamined = {lightingConditionsExamined{1}}; % {'area1_front0_ceiling0'};
-    shapesExamined = {shapesExamined{1}}; % {'Blobbie9SubsHighFreq', 'Blobbie9SubsVeryLowFreq'};
+    % Tone mapping methods to examine
+    tonemappingMethods = {'REINHARDT'}; %, 'LINEAR_SATURATING', 'LINEAR_MAPPING_TO_GAMUT', 'CUMULATIVE_LOG_HISTOGRAM_BASED'};
+    
+    % Blobbie subset for the cache
+%     shapesExamined              = {shapesExamined{ [1] }}
+%     alphasExamined              = {alphasExamined{ [1 4] }}
+%     specularStrengthsExamined   = {specularStrengthsExamined{ [1 3] }}
+%     lightingConditionsExamined  = {lightingConditionsExamined{ [1] }}
+    
+    % Generate cache filename
+    d = displayCal('OLED');
+    XYZ = SettingsToSensor(d, [1 1 1]');
+    lumOLED = XYZ(2) * wattsToLumens;
+
+    d = displayCal('LCD');
+    XYZ = SettingsToSensor(d, [1 1 1]');
+    lumLCD = XYZ(2) * wattsToLumens;
+    
+    
+    
+    % Determine cache file name
+    
+%     if (strcmp(char(lightingConditionsExamined), 'area1_front0_ceiling0'))
+%         cacheFileName = sprintf('%s_AreaLights_Alpha_%s_SpecularReflectance_%s_%s_OLEDlum_%2.0f_LCDlum_%2.0f',  shapesExamined{1}, alphasExamined{1}, specularStrengthsExamined{1}, lumOLED, lumLCD);
+%     elseif (strcmp(char(lightingConditionsExamined), 'area0_front0_ceiling1'))
+%         cacheFileName = sprintf('%s_CeilingLights_Alpha_%s_SpecularReflectance_%s_%s_OLEDlum_%2.0f_LCDlum_%2.0f',  shapesExamined{1}, alphasExamined{1}, specularStrengthsExamined{1}, lumOLED, lumLCD);
+%     else
+%         error('What ?');
+%     end
     
     if (strcmp(char(lightingConditionsExamined), 'area1_front0_ceiling0'))
-        if isempty(lumOLED)
-            d = displayCal('OLED');
-            XYZ = SettingsToSensor(d, [1 1 1]');
-            lumOLED = XYZ(2) * wattsToLumens
-        end
-        if isempty(lumLCD)
-            d = displayCal('LCD');
-            XYZ = SettingsToSensor(d, [1 1 1]');
-            lumLCD = XYZ(2) * wattsToLumens
-        end 
-        cacheFileName = sprintf('FullSetArea_Alpha_%s_%s_OLEDlum_%2.0f_LCDlum_%2.0f',  alphasExamined{1}, shapesExamined{1}, lumOLED, lumLCD);
+        cacheFileName = sprintf('AreaLights_ReinhardtVaryingAlpha_OLEDlum_%2.0f_LCDlum_%2.0f', lumOLED, lumLCD);
     elseif (strcmp(char(lightingConditionsExamined), 'area0_front0_ceiling1'))
-        cacheFileName = sprintf('FullSetCeiling_Alpha_%s_%s_OLEDlum_%2.0f_LCDlum_%2.0f', alphasExamined{1}, shapesExamined{1}, lumOLED, lumLCD);
+        cacheFileName = sprintf('CeilingLights_ReinhardtVaryingAlpha_OLEDlum_%2.0f_LCDlum_%2.0f', lumOLED, lumLCD);
     else
         error('What ?');
     end
     
     
-    minAlpha = 0.4;
-    maxAlpha = 10.0;
-    alphasNum = 4;
-    
-    ReinhardtAlphas = [logspace(log10(minAlpha),log10(maxAlpha),alphasNum)];
-    tonemappingMethods = {'REINHARDT', 'LINEAR_SATURATING', 'LINEAR_MAPPING_TO_GAMUT', 'CUMULATIVE_LOG_HISTOGRAM_BASED'};
-    
-    delta = 0.0001; % small delta to avoid taking log(0) when encountering pixels with zero luminance
-    sceneKey = exp((1/numel(ensembleCenters))*sum(log(ensembleCenters + delta)))
-    
-    kFraction = 0.9; % input('Enter threshold as fraction of max difference, [e.g. 0.8, <= 1.0] : ');
-    cumulativeHistogram = ComputeCumulativeHistogramBasedToneMappingFunction(luminanceEnsembleCalFormat, ensembleCenters, kFraction);
-                                
+       
+    % Set up the figure arrangment
     rowsNum = 3;
-    colsNum = (2+(numel(tonemappingMethods)-2)*numel(ReinhardtAlphas)) * numel(shapesExamined) *numel(alphasExamined) * numel(specularStrengthsExamined) * numel(lightingConditionsExamined);
+    zeroParamToneMappingMethods = 0;
+    if (ismember('LINEAR_MAPPING_TO_GAMUT', tonemappingMethods))
+        zeroParamToneMappingMethods = zeroParamToneMappingMethods + 1;
+    end
+    if (ismember('CUMULATIVE_LOG_HISTOGRAM_BASED', tonemappingMethods))
+        zeroParamToneMappingMethods = zeroParamToneMappingMethods + 1;
+    end
+    
+    colsNum = (zeroParamToneMappingMethods + (numel(tonemappingMethods)-zeroParamToneMappingMethods)*numel(ReinhardtAlphas)) * ...
+              numel(shapesExamined) *numel(alphasExamined) * numel(specularStrengthsExamined) * numel(lightingConditionsExamined);
+          
     displayEveryNthPattern = 1;
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
         'rowsNum',      rowsNum, ...
@@ -152,6 +180,16 @@ function GenerateStimulusCacheDifferentAlphas
         'bottomMargin', 0.01, ...
         'topMargin',    0.01);
     
+    h = figure(1);
+    set(h, 'Position', [10 449 2497 893], 'Color', [0 0 0]);
+    clf;
+    histogramCountHeight = 200;
+
+    
+    % Compute the tone mapped images
+    fprintf('Computing tone mapped image for a subset of the image ensemble\n');
+    cachedData = [];
+    
     imIndex = 0;
     for shapeIndex = 1:numel(shapesExamined)
         for lightingIndex = 1:numel(lightingConditionsExamined)
@@ -159,7 +197,7 @@ function GenerateStimulusCacheDifferentAlphas
                 for alphaIndex = 1:numel(alphasExamined)
 
                     blobbieFileName = sprintf('%s_Samsung_FlatSpecularReflectance_%s.spd___Samsung_NeutralDay_BlueGreen_0.60.spd___alpha_%s___Lights_%s_rotationAngle_0.mat', shapesExamined{shapeIndex}, specularStrengthsExamined{specularReflectionIndex}, alphasExamined{alphaIndex}, lightingConditionsExamined{lightingIndex});
-                    fprintf('Preparing and caching %s\n', blobbieFileName);
+                    fprintf('\t%s\n', blobbieFileName);
                     linearSRGBimage = ConvertRT3scene(multiSpectralBlobbieFolder,blobbieFileName);
 
                     % To calFormat
@@ -184,7 +222,7 @@ function GenerateStimulusCacheDifferentAlphas
                         
                         for toneMappingParamIndex = 1:toneMappingParamRange
 
-                            if (strcmp(toneMappingParams.name, 'REINHARDT'))
+                            if ( (strcmp(toneMappingParams.name, 'REINHARDT')) || (strcmp(toneMappingParams.name, 'LINEAR_SATURATING')) )
                                 toneMappingParams.alpha = ReinhardtAlphas(toneMappingParamIndex);
                                 % Scale luminance according to alpha parameter and scene key
                                 scaledInputLuminance = toneMappingParams.alpha / sceneKey * ensembleCenters;
@@ -193,50 +231,48 @@ function GenerateStimulusCacheDifferentAlphas
                                 minToneMappedSceneLum = min(outputLuminance(:));
                                 maxToneMappedSceneLum = max(outputLuminance(:));
                                 normalizedOutputLuminance = (outputLuminance-minToneMappedSceneLum)/(maxToneMappedSceneLum-minToneMappedSceneLum);
-                                toneMappingParams.mappingFunction.input  = ensembleCenters;
-                                toneMappingParams.mappingFunction.output = normalizedOutputLuminance;
-                            elseif (strcmp(toneMappingParams.name, 'LINEAR_SATURATING'))
-                                toneMappingParams.alpha = ReinhardtAlphas(toneMappingParamIndex);
-                                % Scale luminance according to alpha parameter and scene key
-                                scaledInputLuminance = toneMappingParams.alpha / sceneKey * ensembleCenters;
-                                % Compress high luminances
-                                outputLuminance = scaledInputLuminance ./ (1.0+scaledInputLuminance);
-                                minToneMappedSceneLum = min(outputLuminance(:));
-                                maxToneMappedSceneLum = max(outputLuminance(:));
-                                normalizedOutputLuminance = (outputLuminance-minToneMappedSceneLum)/(maxToneMappedSceneLum-minToneMappedSceneLum);
-                                [m, kthPointForDerivative] = min(abs(normalizedOutputLuminance-0.75));
-                                slope = (normalizedOutputLuminance(kthPointForDerivative)-normalizedOutputLuminance(1))/(ensembleCenters(kthPointForDerivative)-ensembleCenters(1));
-                                normalizedOutputLuminance = slope*(ensembleCenters - ensembleCenters(1));
-                                normalizedOutputLuminance(normalizedOutputLuminance>1) = 1;
-                                toneMappingParams.mappingFunction.input  = ensembleCenters;
-                                toneMappingParams.mappingFunction.output = normalizedOutputLuminance;
+                                
+                                if (strcmp(toneMappingParams.name, 'REINHARDT'))
+                                    toneMappingParams.mappingFunction.input  = ensembleCenters;
+                                    toneMappingParams.mappingFunction.output = normalizedOutputLuminance;
+                                else
+                                    toneMappingParams.slopeAtReinhardtOutputOf = 0.75;
+                                    [m, kthPointForDerivative] = min(abs(normalizedOutputLuminance-toneMappingParams.slopeAtReinhardtOutputOf));
+                                    slope = (normalizedOutputLuminance(kthPointForDerivative)-normalizedOutputLuminance(1))/(ensembleCenters(kthPointForDerivative)-ensembleCenters(1));
+                                    normalizedOutputLuminance = slope*(ensembleCenters - ensembleCenters(1));
+                                    normalizedOutputLuminance(normalizedOutputLuminance>1) = 1;
+                                    toneMappingParams.mappingFunction.input  = ensembleCenters;
+                                    toneMappingParams.mappingFunction.output = normalizedOutputLuminance;
+                                end 
                             end
 
 
+                            % Update cache with settings images for all emulated displays
+                            
                             for emulatedDisplayName = emulatedDisplayNames
-
                                 emulatedDisplayCal = displayCal(char(emulatedDisplayName));
                                 XYZ = SettingsToSensor(emulatedDisplayCal, [1 1 1]');
-                                maxLuminanceAvailableForToneMapping= XYZ(2) * wattsToLumens;
+                                maxLuminanceAvailableForToneMapping = XYZ(2) * wattsToLumens;
 
                                 [linearSRGBCalFormatToneMapped, inputLuminance, luminanceCalFormatToneMapped] = ToneMap(linearSRGBCalFormat, toneMappingParams, maxLuminanceAvailableForToneMapping);
-
                                 [settingsImage, realizableLinearSRGBimage] = GenerateSettingsImageForDisplay(CalFormatToImage(linearSRGBCalFormatToneMapped, nCols, mRows), renderingDisplayCal, emulatedDisplayCal);
+                                
                                 if ((any(settingsImage(:) < 0)) || (any(settingsImage(:) > 1)))
                                     error('settings image must be between 0 and 1');
                                 end
                                 % Save data
+                                fprintf('Adding to cached data (%s) \n', char(emulatedDisplayName));
                                 if strcmp(char(emulatedDisplayName), 'LCD')
-                                    cachedData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingParamIndex, toneMappingMethodIndex).ldrSettingsImage = settingsImage;
+                                    cachedData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex).ldrSettingsImage = single(settingsImage);
                                 elseif strcmp(char(emulatedDisplayName), 'OLED')
-                                    cachedData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingParamIndex, toneMappingMethodIndex).hdrSettingsImage = settingsImage;
+                                    cachedData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex).hdrSettingsImage = single(settingsImage);
                                 else
                                     error('Unknown emulatedDisplayName', char(emulatedDisplayName));
                                 end
-
                             end
 
 
+                            % Select which images to display
                             if mod(imIndex-1,displayEveryNthPattern) == 0
                                 subplot('Position', subplotPosVectors(1,floor(imIndex/displayEveryNthPattern)+1).v);
                                 imshow(CalFormatToImage(sRGB.gammaCorrect(linearSRGBCalFormat), nCols, mRows));
@@ -265,6 +301,8 @@ function GenerateStimulusCacheDifferentAlphas
                             end
 
                             imIndex = imIndex + 1;
+                            
+                            
                         end
                     end
                 end
@@ -272,9 +310,11 @@ function GenerateStimulusCacheDifferentAlphas
         end
     end
     
+    size(cachedData)
+    
     comparisonMode = 'Best_tonemapping_parameter_HDR_and_LDR';
-    orderedIndicesNames = {'shapeIndex', 'specularReflectionIndex', 'alphaIndex', 'lightingIndex', 'toneMappingParamIndex', 'toneMappingMethodIndex'};
-    save(cacheFileName, 'cachedData', 'orderedIndicesNames', 'shapesExamined', 'specularStrengthsExamined', 'alphasExamined', 'lightingConditionsExamined', 'ReinhardtAlphas', 'tonemappingMethods', 'comparisonMode');
+    orderedIndicesNames = {'shapeIndex', 'specularReflectionIndex', 'alphaIndex', 'lightingIndex', 'toneMappingMethodIndex', 'toneMappingParamIndex'};
+    save(cacheFileName, 'cachedData', 'orderedIndicesNames', 'shapesExamined', 'specularStrengthsExamined', 'alphasExamined', 'lightingConditionsExamined', 'tonemappingMethods', 'ReinhardtAlphas', 'comparisonMode');
     
 end
 
@@ -379,7 +419,6 @@ function [settingsImage, realizableSRGBimage] = GenerateSettingsImageForDisplay(
     % To XYZ
     XYZcalFormat = SRGBPrimaryToXYZ(linearSRGBcalFormat);
     
-
     % to RGB primaries of the emulated display
     emulatedDisplayRGBPrimariesCalFormat = SensorToPrimary(emulatedDisplayCal, XYZcalFormat);
     

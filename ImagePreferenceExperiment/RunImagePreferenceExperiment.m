@@ -12,7 +12,8 @@ function RunImagePreferenceExperiment
     
     
     % use debugMode = false, when running on the Samsung
-    experimentController = Controller('debugMode', debugMode, 'giveVerbalFeedback', false);
+    experimentController = Controller('debugMode', debugMode, ...
+                                      'giveVerbalFeedback', false);
     
     % Select acache file
 %     cacheFileNameList = {...
@@ -23,7 +24,7 @@ function RunImagePreferenceExperiment
 %         };
 
     cacheFileNameList = {...
-        'FullSetArea_Reinhardt_VarAlpha_OLEDlum_572_LCDlum_171.mat' ...
+        'AreaLights_ReinhardtVaryingAlpha_OLEDlum_572_LCDlum_171.mat' ...
         };
     
 %     cacheFileNameList = {...
@@ -34,7 +35,11 @@ function RunImagePreferenceExperiment
     experimentController.loadStimulusCache(cacheFileNameList);
     
     % Run the experiment
-    experimentController.runExperiment();
+    params = struct(...
+        'blocksNum', 2 ...
+        );
+    
+    experimentController.runExperiment(params);
     
     experimentController.shutDown();
 end

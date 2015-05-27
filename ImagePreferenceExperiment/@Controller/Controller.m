@@ -7,6 +7,7 @@ classdef Controller < handle
         
         comparisonMode;
         conditionsData;
+        thumbnailStimImages;
     end
     
     properties (SetAccess = private, Dependent)
@@ -52,7 +53,7 @@ classdef Controller < handle
         loadStimulusCache(obj, cacheFileName);
         
         % Method to run the experiment
-        runExperiment(obj);
+        runExperiment(obj, params);
         
         % Method to shutdown
         shutDown(obj);
