@@ -2,12 +2,12 @@ function response = getMouseResponse(obj)
 
     response.terminateExperiment = false;
     response.finalizeAdjustment = false;
-    response.elapsed_time = nan;
+    response.elapsedTime = nan;
     response.selectedStimulus = nan;
     
     % Set the initial position of the mouse to be in the centre of the screen
     SetMouse(obj.screenSize.width/2, obj.screenSize.height/2, obj.psychImagingEngine.masterWindowPtr);
-    response.begin = GetSecs;
+    
 
     % Start listening for key presses, while suppressing any
     % output of keypresses on the command window
@@ -16,12 +16,15 @@ function response = getMouseResponse(obj)
         
     % Loop the animation until a key is pressed
     keepGoing = true;
+    
+    response.begin = GetSecs;
+    
     while (keepGoing)
         
         % First check game pad
         if (~isempty(obj.gamePad))
             % Read the gamePage
-            [action, time] = obj.gamePad.read();
+            [action, response.end, response.actualTime] = obj.gamePad.read();
         
             switch (action)
                 case obj.gamePad.noChange       % do nothing
@@ -29,11 +32,15 @@ function response = getMouseResponse(obj)
                 case obj.gamePad.buttonChange   % see which button was pressed
                      % Trigger buttons
                     if (obj.gamePad.buttonLeftUpperTrigger)
-                        fprintf('[%s]: Left Upper Trigger button\n', time);
+                        if (obj.initParams.giveVerbalFeedback)
+                            fprintf('[%s]: Left Upper Trigger button\n', time);
+                        end
                         mx = 1920*0.25; 
                         my = 1080/2;
                     elseif (obj.gamePad.buttonRightUpperTrigger)
-                        fprintf('[%s]: Right Upper Trigger button\n', time);
+                        if (obj.initParams.giveVerbalFeedback)
+                            fprintf('[%s]: Right Upper Trigger button\n', time);
+                        end
                         mx = 1920*0.75; 
                         my = 1080/2;
                     else
@@ -42,7 +49,7 @@ function response = getMouseResponse(obj)
                     end
                     
                     if (IsInRect(mx, my, obj.currentHDRStimRect))
-                        response.elapsed_time = GetSecs-response.begin;
+                        response.elapsedTime = response.end-response.begin;
                         response.selectedStimulus = 'HDR';
                         if (obj.initParams.giveVerbalFeedback)
                             Speak('Correct');
@@ -52,7 +59,7 @@ function response = getMouseResponse(obj)
                         keepGoing = false;
                         
                     elseif (IsInRect(mx, my, obj.currentLDRStimRect))
-                        response.elapsed_time = GetSecs-response.begin;
+                        response.elapsedTime = response.end-response.begin;
                         response.selectedStimulus = 'LDR';
                         if (obj.initParams.giveVerbalFeedback)
                             Speak('False');
@@ -90,7 +97,7 @@ function response = getMouseResponse(obj)
             if ( clickedMouse)
                 % See if the mouse cursor is inside the square
                 if (IsInRect(mx, my, obj.currentHDRStimRect))
-                    response.elapsed_time = GetSecs-response.begin;
+                    response.elapsedTime = response.end-response.begin;
                     response.selectedStimulus = 'HDR';
                     if (obj.initParams.giveVerbalFeedback)
                         Speak('Correct');
@@ -100,7 +107,7 @@ function response = getMouseResponse(obj)
                     keepGoing = false;
                     
                 elseif (IsInRect(mx, my, obj.currentLDRStimRect))
-                    response.elapsed_time = GetSecs-response.begin;
+                    response.elapsedTime = response.end-response.begin;
                     response.selectedStimulus = 'LDR';
                     if (obj.initParams.giveVerbalFeedback)
                         Speak('False');

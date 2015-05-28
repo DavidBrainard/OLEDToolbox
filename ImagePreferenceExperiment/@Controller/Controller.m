@@ -2,12 +2,23 @@ classdef Controller < handle
     %CONTROLLER Class controlling the flow of the experiment
     
     properties (SetAccess = private)
+        
+        % the psychImaging view object
         viewOutlet;
+        
+        % the model object (currently does not do anything)
         model;
         
+        % the input cache data
         comparisonMode;
         conditionsData;
         thumbnailStimImages;
+        
+        % the run params (passed to runExperiment)
+        runParams;
+        
+        % the obtained results
+        stimPreferenceMatrices;
     end
     
     properties (SetAccess = private, Dependent)
@@ -58,7 +69,7 @@ classdef Controller < handle
         % Method to shutdown
         shutDown(obj);
         
-        % getters of dependent properties
+        % getters for dependent properties
         function val = get.numberOfCachedStimuli(obj)
             val = obj.viewOutlet.numberOfCachedStimuli;
         end
@@ -66,17 +77,27 @@ classdef Controller < handle
     end
     
     
-    methods (Access = private)
-        
+    methods (Access = private)     
         % Method to initialize the controller
         initController(obj);
         
         % Method to configure the target locations
         configureTargets(obj);
         
-        % Method to present a stimulus and obtain a response
+        % Method to present a stimulus pair and obtain a response
         response = presentStimulusAndGetResponse(obj, stimIndex, HDRposition);
         
+        % Method to conduct a blocked (or not) pairwise stimulus comparison and return an updated stimPreferenceData struct
+        [stimPreferenceData, abnormalTermination] = doPairwiseStimulusComparison(obj, oldStimPreferenceData, testSinglePair, whichDisplay);
+        
+        % Method to visualize the current preference matrix with the corresponding stimuli
+        visualizePreferenceMatrix(obj, stimPreferenceData, whichDisplay);
+        
+        % Method to visualize the current preferred image histogram
+        visualizePreferredImageHistogram(obj, stimPreferenceData);
+        
+        % Method to save the data
+        saveData(obj);
     end
     
 end
