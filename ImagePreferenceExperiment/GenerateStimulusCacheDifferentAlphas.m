@@ -58,7 +58,7 @@ function GenerateStimulusCacheDifferentAlphas
 %     specularStrengthsExaminedBest   = {specularStrengthsExamined{ [1 3] }}
 %     lightingConditionsExaminedBest  = {lightingConditionsExamined{ [1] }}
     
-    shapesExamined              = {shapesExamined{ [1 2] }}
+    shapesExamined              = {shapesExamined{ [1] }}
     alphasExamined              = {alphasExamined{ [2 4 5 6 7] }}
     specularStrengthsExamined   = {specularStrengthsExamined{ [1 3] }}
     lightingConditionsExamined  = {lightingConditionsExamined{ [1] }}
@@ -114,9 +114,11 @@ function GenerateStimulusCacheDifferentAlphas
 
     
     % Range of Reinhard alphas to examine
-    minAlpha = 0.2; maxAlpha = 20.0; alphasNum = 6;
-    ReinhardtAlphas = logspace(log10(minAlpha),log10(maxAlpha),alphasNum)
-    
+    minAlpha = 0.4; maxAlpha = 20.0; alphasNum = 5;
+    ReinhardtAlphas = [0.001 logspace(log10(minAlpha),log10(maxAlpha),alphasNum)];
+    if (any(ReinhardtAlphas <= 0))
+        error('Reinhardt alpha cannot be <= 0');
+    end
     
     % Tone mapping methods to examine
     tonemappingMethods = {'REINHARDT'}; %, 'LINEAR_SATURATING', 'LINEAR_MAPPING_TO_GAMUT', 'CUMULATIVE_LOG_HISTOGRAM_BASED'};

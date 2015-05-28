@@ -121,6 +121,7 @@ function response = getMouseResponse(obj)
                 if (indices(1) == obj.keyboard.escapeKey)
                     keepGoing = false;
                     response.terminateExperiment = true;
+                    response.selectedStimulus = 'UserTerminated';
                 end
             end
         end

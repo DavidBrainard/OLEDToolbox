@@ -81,12 +81,12 @@ function loadStimulusCache(obj, cacheFileNameList)
                                 
                                 for toneMappingParamIndex = 1:numel(toneMappingParams)
                                     stimIndex = stimIndex + 1;
-                                    fprintf('Loading stimulus #%d/%d\n', stimIndex+1, prod(size(cachedData)));
+                                    fprintf('Loading stimulus #%d/%d\n', stimIndex, prod(size(cachedData)));
                                     hdrStimRGBdata = cachedData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex).hdrSettingsImage;
                                     ldrStimRGBdata = cachedData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex).ldrSettingsImage;
                                     obj.conditionsData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex) = stimIndex;
-                                    obj.thumbnailStimImages(stimIndex,1,:,:,:) = uint8(255.0*hdrStimRGBdata(1:2:end, 1:2:end,:));
-                                    obj.thumbnailStimImages(stimIndex,2,:,:,:) = uint8(255.0*ldrStimRGBdata(1:2:end, 1:2:end,:));
+                                    obj.thumbnailStimImages(stimIndex,1,:,:,:) = uint8(255.0*hdrStimRGBdata(1:8:end, 1:8:end,:));
+                                    obj.thumbnailStimImages(stimIndex,2,:,:,:) = uint8(255.0*ldrStimRGBdata(1:8:end, 1:8:end,:));
                                     obj.viewOutlet.addToCache(stimIndex, double(hdrStimRGBdata), double(ldrStimRGBdata));
                                 end
                             end

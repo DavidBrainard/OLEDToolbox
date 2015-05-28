@@ -53,7 +53,7 @@ classdef Controller < handle
         loadStimulusCache(obj, cacheFileName);
         
         % Method to run the experiment
-        runExperiment(obj, params);
+        abnormalTermination = runExperiment(obj, params);
         
         % Method to shutdown
         shutDown(obj);
