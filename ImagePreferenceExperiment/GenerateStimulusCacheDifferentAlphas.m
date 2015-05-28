@@ -58,8 +58,8 @@ function GenerateStimulusCacheDifferentAlphas
 %     specularStrengthsExaminedBest   = {specularStrengthsExamined{ [1 3] }}
 %     lightingConditionsExaminedBest  = {lightingConditionsExamined{ [1] }}
     
-    shapesExamined              = {shapesExamined{ [1] }}
-    alphasExamined              = {alphasExamined{ [2 4 5 6 7] }}
+    shapesExamined              = {shapesExamined{ [1 2 ] }}
+    alphasExamined              = {alphasExamined{ [2  7] }}
     specularStrengthsExamined   = {specularStrengthsExamined{ [1 3] }}
     lightingConditionsExamined  = {lightingConditionsExamined{ [1] }}
     
