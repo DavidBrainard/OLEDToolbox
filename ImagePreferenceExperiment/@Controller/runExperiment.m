@@ -73,9 +73,7 @@ function abnormalTermination = runExperiment(obj, params)
         
         
         for repIndex = 1:params.repsNum
-            
-            Speak(sprintf('Starting repetition %d of %d', repIndex, params.repsNum));
-            
+
             % Randomize conditions
             randomizedConditionTuplets = conditionTuplets(randperm(size(conditionTuplets,1)), :);
             
@@ -159,12 +157,16 @@ function abnormalTermination = runExperiment(obj, params)
                     % Update stimPreferenceMatrices
                     obj.stimPreferenceMatrices{shapeIndex,specularReflectionIndex,roughnessIndex,lightingIndex,toneMappingMethodIndex, repIndex} = stimPreferenceData;
 
-                    % Visualize data
-                    obj.visualizePreferenceMatrix(stimPreferenceData, params.whichDisplay);
-                    obj.visualizePreferredImageHistogram(stimPreferenceData);
-
+                    if (obj.initParams.debugMode)
+                        % Visualize data
+                        obj.visualizePreferenceMatrix(stimPreferenceData, params.whichDisplay);
+                        obj.visualizePreferredImageHistogram(stimPreferenceData);
+                    end
                 end  % conditionIndex
             end
+            
+            Speak(sprintf('Finished repetition %d of %d', repIndex, params.repsNum));
+            
         end % for repIndex
         
     else
@@ -173,5 +175,12 @@ function abnormalTermination = runExperiment(obj, params)
     
     % save the run params
     obj.runParams = params;
+    
+    % save the collected data
+    thumbnailStimImages = obj.thumbnailStimImages;
+    save(params.dataFileName, 'params', 'stimPreferenceData', 'thumbnailStimImages');
+    fprintf('Saved data to ''%s''.', params.dataFileName);
+    Speak(sprintf('Data were saved. All done.'));
+    
 end
 

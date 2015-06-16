@@ -3,7 +3,7 @@ function RunImagePreferenceExperiment
     [rootDir,~] = fileparts(which(mfilename))
     cd(rootDir);
     
-    debugMode = true;
+    debugMode = false;
     if (debugMode)
         fprintf(2,'DebugMode is set to true. If running on the Samsung rig, set the debugMode to false.\n');
         disp('Hit enter to continue');
@@ -25,9 +25,10 @@ function RunImagePreferenceExperiment
     
     % Specify experiment params
     params = struct(...
-        'repsNum', 2, ...
+        'repsNum', 1, ...
         'varyToneMappingParamsInBlockDesign', false, ...   % set to true to do comparisons of tone mapping param value within blocks
-        'whichDisplay', 'HDR'...
+        'whichDisplay', 'HDR',...
+        'dataFileName', 'nicolasFirstData.mat'...
     );
     
     % Run the experiment

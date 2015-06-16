@@ -82,7 +82,7 @@ function loadStimulusCache(obj, cacheFileNameList)
                                 
                                 for toneMappingParamIndex = 1:numel(toneMappingParams)
                                     stimIndex = stimIndex + 1;
-                                    if (mod((stimIndex-1),5 == 0))
+                                    if (mod(stimIndex-1,5) == 0)
                                         Speak(sprintf('Loading %d of %d images', stimIndex, prod(size(cachedData))));
                                     end
                                     fprintf('Loading stimulus #%d/%d\n', stimIndex, prod(size(cachedData)));
