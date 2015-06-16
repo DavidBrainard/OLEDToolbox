@@ -89,14 +89,17 @@ function response = getMouseResponse(obj)
             clickedMouse = false;
             % Get the current position of the mouse
             [mx, my, buttons] = GetMouse(obj.psychImagingEngine.masterWindowPtr);
+            
             while any(buttons) % wait for release
                 [mx, my, buttons] = GetMouse(obj.psychImagingEngine.masterWindowPtr);
                 clickedMouse = true;
             end
 
             if ( clickedMouse)
+                response.begin = GetSecs;
+                
                 % See if the mouse cursor is inside the square
-                if (IsInRect(mx, my, obj.currentHDRStimRect))
+                if (IsInRect(mx, my, obj.currentHDRStimRect))    
                     response.elapsedTime = response.end-response.begin;
                     response.selectedStimulus = 'HDR';
                     if (obj.initParams.giveVerbalFeedback)

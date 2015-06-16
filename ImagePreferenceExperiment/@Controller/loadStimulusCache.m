@@ -13,6 +13,7 @@ function loadStimulusCache(obj, cacheFileNameList)
     stimIndex = 0;
     
     for k = 1:numel(cacheFileNameList)
+        
         load(cacheFileNameList{k}, 'cachedData', 'orderedIndicesNames');
     
         if ( strcmp(orderedIndicesNames{1}, 'specularReflectionIndex') && ...
@@ -81,6 +82,9 @@ function loadStimulusCache(obj, cacheFileNameList)
                                 
                                 for toneMappingParamIndex = 1:numel(toneMappingParams)
                                     stimIndex = stimIndex + 1;
+                                    if (mod((stimIndex-1),5 == 0))
+                                        Speak(sprintf('Loading %d of %d images', stimIndex, prod(size(cachedData))));
+                                    end
                                     fprintf('Loading stimulus #%d/%d\n', stimIndex, prod(size(cachedData)));
                                     hdrStimRGBdata = cachedData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex).hdrSettingsImage;
                                     ldrStimRGBdata = cachedData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex).ldrSettingsImage;

@@ -50,7 +50,6 @@ function [stimPreferenceData, abnormalTermination] = doPairwiseStimulusCompariso
         stimPreferenceData.reactionTimeInMilliseconds(responseMatrixRowIndex, responseMatrixColIndex) = round(response.elapsedTime*1000);
         stimPreferenceData.actualTime{responseMatrixRowIndex, responseMatrixColIndex} = response.actualTime;
         
-        response.actualTime
         
         if (strcmp(response.selectedStimulus,'HDR'))
             if (obj.initParams.giveVerbalFeedback)
