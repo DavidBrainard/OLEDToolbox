@@ -3,18 +3,19 @@ function AnalyzeImagePreferenceExperiment
     [rootDir,~] = fileparts(which(mfilename));
     cd(rootDir);
     
-    dataFileName = 'nicolasFirstData.mat';
+    dataFileName = 'nicolasSecondData.mat';
     load(dataFileName)
     whos
  
-    shapeIndicesArray               = 1:size(stimPreferenceMatrices,1);
-    specularReflectionIndicesArray  = 1;size(stimPreferenceMatrices,2);
-    roughnessIndicesArray           = 1:size(stimPreferenceMatrices,3);
-    lightingIndicesArray            = 1:size(stimPreferenceMatrices,4);
-    toneMappingMethodIndicesArray   = 1:size(stimPreferenceMatrices,5);
+    shapeIndicesArray               = 1:size(stimPreferenceMatrices,1)
+    specularReflectionIndicesArray  = 1:size(stimPreferenceMatrices,2)
+    roughnessIndicesArray           = 1:size(stimPreferenceMatrices,3)
+    lightingIndicesArray            = 1:size(stimPreferenceMatrices,4)
+    toneMappingMethodIndicesArray   = 1:size(stimPreferenceMatrices,5)
     repsNum                         = size(stimPreferenceMatrices,6)
     pause
     
+    showIndividualTrialData = false;
     
     if (strcmp(params.whichDisplay,'HDR'))
         thumbnailStimImages = squeeze(thumbnailStimImages(:,1,:,:,:));
@@ -52,10 +53,11 @@ function AnalyzeImagePreferenceExperiment
                                     stimPresentations = stimPresentations + 1;
                                     
                                     % stimulus selected
-                                    stimIndex = stimPreferenceData.stimulusChosen(rowIndex, colIndex);
+                                    selectedStimIndex = stimPreferenceData.stimulusChosen(rowIndex, colIndex);
                                     
                                     % 1D preference histogram
-                                    stimRowIndex = find(stimPreferenceData.rowStimIndices == stimIndex);
+                                    stimRowIndex = find(stimPreferenceData.rowStimIndices == selectedStimIndex);
+                                    
                                     if (isnan(prefStatsStruct.stimulusPreferenceRate(stimRowIndex)))
                                         prefStatsStruct.stimulusPreferenceRate(stimRowIndex) = 1;
                                     else
@@ -71,9 +73,9 @@ function AnalyzeImagePreferenceExperiment
                                             prefStatsStruct.meanResponseLatency2D(rowIndex, colIndex) + stimPreferenceData.reactionTimeInMilliseconds(rowIndex, colIndex);
                                     end
                                     
-                                    %2D preference histogram
+                                    % 2D preference histogram
                                     % count how many times the row stimulus was selected between the (row,col) stim pair
-                                    if (stimIndex == stimPreferenceData.rowStimIndices(rowIndex))
+                                    if (selectedStimIndex == stimPreferenceData.rowStimIndices(rowIndex))
                                         if (isnan(prefStatsStruct.stimulusPreferenceRate2D(rowIndex, colIndex)))
                                             prefStatsStruct.stimulusPreferenceRate2D(rowIndex, colIndex) = 1;
                                         else
@@ -81,9 +83,16 @@ function AnalyzeImagePreferenceExperiment
                                                 prefStatsStruct.stimulusPreferenceRate2D(rowIndex, colIndex) + 1;
                                         end
                                     else
-                                        if (isnan(prefStatsStruct.stimulusPreferenceRate2D(rowIndex, colIndex)))
-                                            prefStatsStruct.stimulusPreferenceRate2D(rowIndex, colIndex) = 0;
+                                        if (isnan(prefStatsStruct.stimulusPreferenceRate2D(colIndex, rowIndex)))
+                                            prefStatsStruct.stimulusPreferenceRate2D(colIndex, rowIndex) = 1;
+                                        else
+                                            prefStatsStruct.stimulusPreferenceRate2D(colIndex,rowIndex) = ...
+                                                prefStatsStruct.stimulusPreferenceRate2D(colIndex,rowIndex) + 1;
                                         end
+                                        
+%                                         if (isnan(prefStatsStruct.stimulusPreferenceRate2D(rowIndex, colIndex)))
+%                                             prefStatsStruct.stimulusPreferenceRate2D(rowIndex, colIndex) = 0;
+%                                         end
                                     end
                                     
                                 end
@@ -93,21 +102,16 @@ function AnalyzeImagePreferenceExperiment
                             % update
                             preferenceDataStats{shapeIndex, specularReflectionIndex,roughnessIndex,lightingIndex,toneMappingMethodIndex} = prefStatsStruct;
                             
-                            visualizePreferenceMatrix(stimPreferenceData, thumbnailStimImages, repIndex);
-                            visualizePreferredImageHistogram(stimPreferenceData, repIndex);
+                            if (showIndividualTrialData)
+                                visualizePreferenceMatrix(stimPreferenceData, thumbnailStimImages, repIndex);
+                                visualizePreferredImageHistogram(stimPreferenceData, repIndex);
+                            end
                         end % repIndex
                         
-                        % make 2D matrices symmetric
-                        for rowIndex = 1:numel(stimPreferenceData.rowStimIndices)
-                            for colIndex = 1:rowIndex-1
-                                [prefStatsStruct.meanResponseLatency2D(rowIndex,colIndex),prefStatsStruct.meanResponseLatency2D(colIndex,rowIndex)] = ...
-                                    symmetrizeEntry(prefStatsStruct.meanResponseLatency2D(rowIndex,colIndex),prefStatsStruct.meanResponseLatency2D(colIndex,rowIndex)); 
-                            
-                                [prefStatsStruct.stimulusPreferenceRate2D(rowIndex,colIndex),prefStatsStruct.stimulusPreferenceRate2D(colIndex,rowIndex)] = ...
-                                    symmetrizeEntry(prefStatsStruct.stimulusPreferenceRate2D(rowIndex,colIndex),prefStatsStruct.stimulusPreferenceRate2D(colIndex,rowIndex)); 
-                            end
-                        end
-                           
+                        
+                        
+                        prefStatsStruct.stimulusPreferenceRate2D
+                        pause
                         
                         % average over reps
                         % rate at which each stimulus was picked (collapsed across all pairwise conditions).
@@ -116,12 +120,12 @@ function AnalyzeImagePreferenceExperiment
                         prefStatsStruct.stimulusPreferenceRate  = prefStatsStruct.stimulusPreferenceRate / (repsNum*(numel(stimPreferenceData.rowStimIndices)-1));
                         figure(97);
                         clf;
-                        bar(prefStatsStruct.stimulusPreferenceRate )
+                        bar(prefStatsStruct.stimulusPreferenceRate)
                         
                         
                         % mean response latency for the paired comparison (row,col)
                         prefStatsStruct.meanResponseLatency2D    = round(prefStatsStruct.meanResponseLatency2D / repsNum);   
-                        plot2Dhistogram(98,prefStatsStruct.meanResponseLatency2D, []);
+                        plot2Dhistogram(98,prefStatsStruct.meanResponseLatency2D);
                         
                         % rate at which the row stimulus was picked during the comparison (row,col)
                         % a rate of 1.0, means that the row stimulus was picked each time the (row,col) stimulus was presented
@@ -142,31 +146,33 @@ end
 
 function plot2Dhistogram(figNo,data2D)
 
+    
+    
+    for row = 1:size(data2D,1)
+        slice = data2D(row,:);
+        indices = find(~isnan(slice));
+        cummuativeColumn(row) = sum(slice(indices))/(size(data2D,2)-1);
+    end
+    cummuativeColumn
+  
     figure(figNo);
     clf;
-    
+    subplot(2,2,1);
     bar3(data2D)
-    colormap(jet);
+    xlabel('col'); ylabel('row');
+    
+    subplot(2,2,3);
+    imagesc(data2D);
+    axis 'square'
+    colormap(gray);
+    
+    subplot(2, 2, [2 4]);
+    bar(1:numel(cummuativeColumn), cummuativeColumn);
+    
     drawnow;
 end
 
 
-
-function [s1,s2] = symmetrizeEntry(s1original,s2original)
-    if (isnan(s1original)) && (isnan(s2original))
-        s1 = s1original;
-        s2 = s2original;
-    elseif (isnan(s1original)) && (~isnan(s2original))
-        s1 = s2original;
-        s2 = s2original;
-    elseif (isnan(s2original)) && (~isnan(s1original))
-        s2 = s1original;
-        s1 = s1original;
-    else
-        s1 = s1original+s2original;
-        s2 = s1original+s2original;
-    end
-end
 
 function visualizePreferenceMatrix(stimPreferenceData, thumbnailStimImages, repIndex)
 
