@@ -96,7 +96,7 @@ function visualizePreferenceMatrix(obj, stimPreferenceData, whichDisplay)
     
     maxCounter = max(preferenceCounter);
     if (maxCounter < 2)
-        macCounter = 2;
+        maxCounter = 2;
     end
     
     for colIndex = 1:numel(stimPreferenceData.colStimIndices)
