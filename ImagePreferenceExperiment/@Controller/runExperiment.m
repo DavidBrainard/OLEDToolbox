@@ -178,7 +178,9 @@ function abnormalTermination = runExperiment(obj, params)
     
     % save the collected data
     thumbnailStimImages = obj.thumbnailStimImages;
-    save(params.dataFileName, 'params', 'stimPreferenceData', 'thumbnailStimImages');
+    stimPreferenceMatrices = obj.stimPreferenceMatrices;
+    
+    save(params.dataFileName, 'params', 'stimPreferenceMatrices', 'thumbnailStimImages');
     fprintf('Saved data to ''%s''.', params.dataFileName);
     Speak(sprintf('Data were saved. All done.'));
     
