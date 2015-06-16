@@ -111,7 +111,8 @@ function abnormalTermination = runExperiment(obj, params)
                     % Visualize results
                     obj.visualizePreferenceMatrix(stimPreferenceData, params.whichDisplay);
 
-                    Speak('Press enter for next block');
+                    Speak(sprintf('Finished block %d of %d', repIndex, params.repsNum));
+                    Speak('Hit enter for next block');
                     pause
 
                 end  % conditionIndex
@@ -165,8 +166,10 @@ function abnormalTermination = runExperiment(obj, params)
                 end  % conditionIndex
             end
             
-            Speak(sprintf('Finished repetition %d of %d', repIndex, params.repsNum));
-            
+            Speak(sprintf('Finished block %d of %d', repIndex, params.repsNum));
+            Speak('Hit enter for next block');
+            pause
+                    
         end % for repIndex
         
     else
