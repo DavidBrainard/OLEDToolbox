@@ -4,16 +4,24 @@ function AnalyzeImagePreferenceExperiment
     cd(rootDir);
     
     dataFileName = 'nicolasSecondData.mat';
+    s = whos('-file',dataFileName, 'cacheFileNameList');
+    if (isempty(s))
+        defaultCacheFileName = 'AreaLights_ReinhardtVaryingAlpha_OLEDlum_572_LCDlum_171.mat';
+        fprintf(2,'CacheFileNameList not on data file. Will load default file (''%s'').', defaultCacheFileName);
+        load(defaultCacheFileName, 'ReinhardtAlphas');
+    end
+    
     load(dataFileName)
-    whos
- 
     shapeIndicesArray               = 1:size(stimPreferenceMatrices,1)
     specularReflectionIndicesArray  = 1:size(stimPreferenceMatrices,2)
     roughnessIndicesArray           = 1:size(stimPreferenceMatrices,3)
     lightingIndicesArray            = 1:size(stimPreferenceMatrices,4)
     toneMappingMethodIndicesArray   = 1:size(stimPreferenceMatrices,5)
     repsNum                         = size(stimPreferenceMatrices,6)
-    pause
+    
+   
+    %(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex)
+    
     
     showIndividualTrialData = false;
     
@@ -28,79 +36,67 @@ function AnalyzeImagePreferenceExperiment
         for specularReflectionIndex = 1:numel(specularReflectionIndicesArray)
             for roughnessIndex = 1:numel(roughnessIndicesArray)
                 for lightingIndex = 1:numel(lightingIndicesArray)
-                    for toneMappingMethodIndex = 1:numel(toneMappingMethodIndicesArray)
+                    for toneMappingMethodIndex = 1:numel(toneMappingMethodIndicesArray)  
                         
-                        stimPresentations = 0; 
                         for repIndex = 1:repsNum
+                            % get the data for this repetition
                             stimPreferenceData = stimPreferenceMatrices{shapeIndex, specularReflectionIndex,roughnessIndex,lightingIndex,toneMappingMethodIndex, repIndex};
                             
                             if (repIndex == 1)
                                 prefStatsStruct = struct(...
-                                    'stimulusPreferenceRate',   nan(numel(stimPreferenceData.rowStimIndices), 1), ... 
                                     'stimulusPreferenceRate2D', nan(numel(stimPreferenceData.rowStimIndices), numel(stimPreferenceData.colStimIndices)), ... 
                                     'meanResponseLatency2D',    nan(numel(stimPreferenceData.rowStimIndices), numel(stimPreferenceData.colStimIndices)) ... 
                                 );
-                                preferenceDataStats{shapeIndex, specularReflectionIndex,roughnessIndex,lightingIndex,toneMappingMethodIndex} = prefStatsStruct;
                             end % repIndex == 1
-                            
-                            prefStatsStruct = preferenceDataStats{shapeIndex, specularReflectionIndex,roughnessIndex,lightingIndex,toneMappingMethodIndex};
                             
                             for rowIndex = 1:numel(stimPreferenceData.rowStimIndices)
                             for colIndex = 1:numel(stimPreferenceData.colStimIndices)
-
-                                if (~isnan(stimPreferenceData.stimulusChosen(rowIndex, colIndex)))
-                                    
-                                    stimPresentations = stimPresentations + 1;
-                                    
+                                if (~isnan(stimPreferenceData.stimulusChosen(rowIndex, colIndex)))    
                                     % stimulus selected
                                     selectedStimIndex = stimPreferenceData.stimulusChosen(rowIndex, colIndex);
+
+                                    % selection latency
+                                    latencyInMilliseconds = stimPreferenceData.reactionTimeInMilliseconds(rowIndex, colIndex);
                                     
-                                    % 1D preference histogram
-                                    stimRowIndex = find(stimPreferenceData.rowStimIndices == selectedStimIndex);
-                                    
-                                    if (isnan(prefStatsStruct.stimulusPreferenceRate(stimRowIndex)))
-                                        prefStatsStruct.stimulusPreferenceRate(stimRowIndex) = 1;
-                                    else
-                                        prefStatsStruct.stimulusPreferenceRate(stimRowIndex) = ...
-                                            prefStatsStruct.stimulusPreferenceRate(stimRowIndex) + 1;
-                                    end
-                                    
-                                    % 2D latency histogram
-                                    if (isnan(prefStatsStruct.meanResponseLatency2D(rowIndex, colIndex)))
-                                        prefStatsStruct.meanResponseLatency2D(rowIndex, colIndex) = stimPreferenceData.reactionTimeInMilliseconds(rowIndex, colIndex);
-                                    else
-                                        prefStatsStruct.meanResponseLatency2D(rowIndex, colIndex) = ...
-                                            prefStatsStruct.meanResponseLatency2D(rowIndex, colIndex) + stimPreferenceData.reactionTimeInMilliseconds(rowIndex, colIndex);
-                                    end
-                                    
-                                    % 2D preference histogram
-                                    % count how many times the row stimulus was selected between the (row,col) stim pair
                                     if (selectedStimIndex == stimPreferenceData.rowStimIndices(rowIndex))
+                                        % when the (row,col) stim pair was presented, the row stimulus was chosen
                                         if (isnan(prefStatsStruct.stimulusPreferenceRate2D(rowIndex, colIndex)))
                                             prefStatsStruct.stimulusPreferenceRate2D(rowIndex, colIndex) = 1;
+                                            prefStatsStruct.meanResponseLatency2D(rowIndex, colIndex) = latencyInMilliseconds;
                                         else
                                             prefStatsStruct.stimulusPreferenceRate2D(rowIndex, colIndex) = ...
                                                 prefStatsStruct.stimulusPreferenceRate2D(rowIndex, colIndex) + 1;
+                                            prefStatsStruct.meanResponseLatency2D(rowIndex, colIndex) = ...
+                                                prefStatsStruct.meanResponseLatency2D(rowIndex, colIndex) + latencyInMilliseconds;
                                         end
-                                    else
+                                        
+                                    elseif (selectedStimIndex == stimPreferenceData.colStimIndices(colIndex))
+                                        % when the (row,col) stim pair was presented, the col stimulus was chosen
                                         if (isnan(prefStatsStruct.stimulusPreferenceRate2D(colIndex, rowIndex)))
                                             prefStatsStruct.stimulusPreferenceRate2D(colIndex, rowIndex) = 1;
+                                            prefStatsStruct.meanResponseLatency2D(colIndex, rowIndex)    = latencyInMilliseconds;
                                         else
                                             prefStatsStruct.stimulusPreferenceRate2D(colIndex,rowIndex) = ...
                                                 prefStatsStruct.stimulusPreferenceRate2D(colIndex,rowIndex) + 1;
+                                            prefStatsStruct.meanResponseLatency2D(colIndex, rowIndex) = ...
+                                                prefStatsStruct.meanResponseLatency2D(colIndex, rowIndex) + latencyInMilliseconds;
                                         end
                                         
-%                                         if (isnan(prefStatsStruct.stimulusPreferenceRate2D(rowIndex, colIndex)))
-%                                             prefStatsStruct.stimulusPreferenceRate2D(rowIndex, colIndex) = 0;
-%                                         end
-                                    end
-                                    
-                                end
+                                    else
+                                        error('How can this be?');
+                                    end  
+                                end  % ~isnan
                             end % colIndex
                             end % rowIndex
                             
-                            % update
-                            preferenceDataStats{shapeIndex, specularReflectionIndex,roughnessIndex,lightingIndex,toneMappingMethodIndex} = prefStatsStruct;
+                            % ensure that (row,col) with Prate = 0 do not have a nan value
+                            for rowIndex = 1:numel(stimPreferenceData.rowStimIndices)
+                            for colIndex = 1:numel(stimPreferenceData.colStimIndices)
+                                if ((rowIndex ~= colIndex) && isnan(prefStatsStruct.stimulusPreferenceRate2D(rowIndex, colIndex)))
+                                    prefStatsStruct.stimulusPreferenceRate2D(rowIndex, colIndex) = 0;
+                                end
+                            end
+                            end
                             
                             if (showIndividualTrialData)
                                 visualizePreferenceMatrix(stimPreferenceData, thumbnailStimImages, repIndex);
@@ -108,66 +104,184 @@ function AnalyzeImagePreferenceExperiment
                             end
                         end % repIndex
                         
-                        
-                        
-                        prefStatsStruct.stimulusPreferenceRate2D
-                        pause
-                        
                         % average over reps
-                        % rate at which each stimulus was picked (collapsed across all pairwise conditions).
-                        % a rate of 1.0, means that this stimulus was picked in all pairwise comparisons of
-                        % that stimulus with all the other stimuli
-                        prefStatsStruct.stimulusPreferenceRate  = prefStatsStruct.stimulusPreferenceRate / (repsNum*(numel(stimPreferenceData.rowStimIndices)-1));
-                        figure(97);
-                        clf;
-                        bar(prefStatsStruct.stimulusPreferenceRate)
-                        
-                        
                         % mean response latency for the paired comparison (row,col)
-                        prefStatsStruct.meanResponseLatency2D    = round(prefStatsStruct.meanResponseLatency2D / repsNum);   
-                        plot2Dhistogram(98,prefStatsStruct.meanResponseLatency2D);
+                        prefStatsStruct.meanResponseLatency2D = round(prefStatsStruct.meanResponseLatency2D / repsNum);   
+                        %plot2DLatencyHistogram(98,prefStatsStruct.meanResponseLatency2D);
                         
                         % rate at which the row stimulus was picked during the comparison (row,col)
                         % a rate of 1.0, means that the row stimulus was picked each time the (row,col) stimulus was presented
+                        % Note that stimulusPreferenceRate2D(row,col) + stimulusPreferenceRate2D(col,row) will always equal 1.0
                         prefStatsStruct.stimulusPreferenceRate2D = prefStatsStruct.stimulusPreferenceRate2D / repsNum;                      
-                        plot2Dhistogram(99,prefStatsStruct.stimulusPreferenceRate2D);
+                        %plot2DCondProbabilityHistogram(99,prefStatsStruct.stimulusPreferenceRate2D);
                         
                         % save averaged data
                         preferenceDataStats{shapeIndex, specularReflectionIndex,roughnessIndex,lightingIndex,toneMappingMethodIndex} = prefStatsStruct;
-                   
-                        pause;
                     end  % toneMappingMethodIndex
                 end
             end
         end
     end
     
+    lightingIndex = 1;
+    toneMappingMethodIndex = 1;
+    figNum = 1;
+    for shapeIndex = 1:numel(shapeIndicesArray)
+        for specularReflectionIndex = 1:numel(specularReflectionIndicesArray)
+            for roughnessIndex = 1:numel(roughnessIndicesArray)
+                stimIndices =  conditionsData(shapeIndex, specularReflectionIndex, roughnessIndex, lightingIndex, toneMappingMethodIndex, :);
+                imagePics = thumbnailStimImages(stimIndices,:,:,:);
+                plotSelectionProbabilityMatrix(figNum, preferenceDataStats{shapeIndex, specularReflectionIndex,roughnessIndex,lightingIndex,toneMappingMethodIndex}.stimulusPreferenceRate2D, ReinhardtAlphas, imagePics);
+                figNum = figNum + 1;
+            end
+        end
+    end
+    
 end
 
-function plot2Dhistogram(figNo,data2D)
+function plot2DLatencyHistogram(figNo, latency2D)
 
-    
-    
-    for row = 1:size(data2D,1)
-        slice = data2D(row,:);
-        indices = find(~isnan(slice));
-        cummuativeColumn(row) = sum(slice(indices))/(size(data2D,2)-1);
+    figure(figNo);
+    clf;
+    subplot(2,2,1);
+    h = bar3(latency2D);
+    for k = 1:length(h)
+        zdata = h(k).ZData;
+        h(k).CData = zdata;
+        h(k).FaceColor = 'interp';
     end
-    cummuativeColumn
+    colormap(parula);
+    colorbar
+    set(gca, 'XLim', [0 size(latency2D,2)+1], 'YLim', [0 size(latency2D,1)+1]);
+    title('P(choice = row | (row,col) pair');
+    xlabel('col'); ylabel('row');
+    
+    subplot(2,2,3);
+    imagesc(latency2D);
+    colorbar
+    axis 'square'
+end
+
+function plotSelectionProbabilityMatrix(figNum, ProwGivenRowColUnorderedPair, ReinhardtAlphas, imagePics)
+
+    % probabilty of occurence of the (row,col) pair (unordered, i.e, row-on-left, col-on-right OR col-on-left, row-on-right)
+    % uniform, since all pairs were presented an equal number of times
+    P_row_col_unorderedPair = ones(1,size(ProwGivenRowColUnorderedPair,2)) * 1.0 / (size(ProwGivenRowColUnorderedPair,2)-1);
+    
+    % allocate memory for P(prefered stimulus = row).
+    P_row = ones(size(ProwGivenRowColUnorderedPair,1),1);
+    
+    for row = 1:size(ProwGivenRowColUnorderedPair,1)
+        % the conditional probs that (selected stim = row, given (row,col) unordered pair presentation
+        P_row_condProb_vector = ProwGivenRowColUnorderedPair(row,:);
+        % do not include the (row,row) pair (nan)
+        indices = find(~isnan(P_row_condProb_vector));
+        % P_A = sum( P_A/B x P_B )
+        P_row(row) = sum(P_row_condProb_vector(indices) .* P_row_col_unorderedPair(indices));
+    end
+    
+    h = figure(figNum);
+    set(h, 'Position', [10 10 1906 838], 'Color', [0 0 0]);
+    clf;
+    
+    for k = 1:6
+        subplot(7,10, 60-(k-1)*10-9);
+        imshow(squeeze(double(imagePics(k,:,:,:)))/255.0);
+    end
+    
+    subplot(7,10, [1 11 21 31 41 51]+1);
+    hold on;
+    for k = 1:6
+        sceneKey = 4177; minSceneLum = 6.6; maxSceneLum = 11306.2;
+        inputLuminance = linspace(minSceneLum,maxSceneLum,1000);
+        scaledInputLuminance = ReinhardtAlphas(k) / sceneKey * inputLuminance;
+        outputLuminance = scaledInputLuminance ./ (1.0+scaledInputLuminance);
+        minL = min(outputLuminance); maxL = max(outputLuminance);
+        normOutLuminance(k,:) = (outputLuminance-minL)/(maxL-minL);
+        plot(inputLuminance, (k-1) + 0.0 +   0.75*normOutLuminance(k,:), 'r-', 'LineWidth', 2.0);
+        plot(inputLuminance, (k-1) + 0.0 + 0*normOutLuminance(k,:), 'k-');
+        plot([0 0], (k-1) + [1 1], 'k-');
+    end
+    set(gca, 'XLim', [0 maxSceneLum], 'YLim', [0 6], 'XTick', [], 'YTick', []);
+    box off; axis off
+    
+	subplot(7,10,[2 3 4 5  12 13 14 15  22 23 24 25 32 33 34 35  42 43 44 45  52 53 54 55 ]+1)
+    imagesc(ProwGivenRowColUnorderedPair);
+    for row = 1:6
+        for col = 1:6
+            if (~isnan(ProwGivenRowColUnorderedPair(row,col)))
+                text(col-0.2,row, sprintf('%2.2f', ProwGivenRowColUnorderedPair(row,col)), 'FontSize', 18, 'FontWeight', 'bold', 'Color', [1 0 0]);
+            end
+        end
+    end
+    set(gca, 'XTick', 0.5+[0:1:6], 'YTick', 0.5+[0:1:6], 'XTickLabel', {}, 'YTickLabel', {});
+    grid on
+    colormap(gray);
+    axis 'square';
+    axis 'xy'
+    
+    subplot(7,10,[6 7 8 9  16 17 18 19  26 27 28 29   36 37 38 39   46 47 48 49 56 57 58 59]+1)
+    barh((1:length(P_row)), P_row, 'FaceColor', [0.8 0.6 0.2], 'EdgeColor', [1 1 0]);
+    xlabel('P(select)', 'Color', [0.7 0.7 0.0], 'FontSize', 16);
+    set(gca, 'FontSize', 14, 'Color', [0 0 0], 'XColor', [0.7 0.7 0.0], 'YColor', [0.7 0.7 0.0]);
+    set(gca,'YLim',[0.5 length(P_row)+0.5], 'XLim', [0 1], 'YTickLabel', {});
+    axis 'square';
+    
+    subplot(7,10, [62 63 64 65]+1);
+    hold on;
+    for k = 1:6
+        plot(inputLuminance+(k-1)*max(inputLuminance(:)), 0.8*normOutLuminance(k,:), 'r-', 'LineWidth', 2.0);
+        plot(inputLuminance+(k-1)*max(inputLuminance(:)), 0*normOutLuminance(k,:), 'k-');
+        
+    end
+    box off; axis off
+    set(gca, 'XLim', [0 maxSceneLum*6], 'YLim', [0 1], 'XTick', [], 'YTick', []);
+    drawnow;
+    
+    NicePlot.exportFigToPDF(sprintf('image%d.pdf', figNum), h, 300);
+end
+
+
+
+function plot2DCondProbabilityHistogram(figNo,ProwGivenRowColUnorderedPair)
+
+    % probabilty of occurence of the (row,col) pair (unordered, i.e, row-on-left, col-on-right OR col-on-left, row-on-right)
+    % uniform, since all pairs were presented an equal number of times
+    P_row_col_unorderedPair = ones(1,size(ProwGivenRowColUnorderedPair,2)) * 1.0 / (size(ProwGivenRowColUnorderedPair,2)-1);
+    
+    % allocate memory for P(prefered stimulus = row).
+    P_row = ones(size(ProwGivenRowColUnorderedPair,1),1);
+    
+    for row = 1:size(ProwGivenRowColUnorderedPair,1)
+        % the conditional probs that (selected stim = row, given (row,col) unordered pair presentation
+        P_row_condProb_vector = ProwGivenRowColUnorderedPair(row,:);
+        % do not include the (row,row) pair (nan)
+        indices = find(~isnan(P_row_condProb_vector));
+        % P_A = sum( P_A/B x P_B )
+        P_row(row) = sum(P_row_condProb_vector(indices) .* P_row_col_unorderedPair(indices));
+    end
   
     figure(figNo);
     clf;
     subplot(2,2,1);
-    bar3(data2D)
+    h = bar3(ProwGivenRowColUnorderedPair);
+    for k = 1:length(h)
+        zdata = h(k).ZData;
+        h(k).CData = zdata;
+        h(k).FaceColor = 'interp';
+    end
+    colormap(parula);
+    colorbar
+    set(gca, 'XLim', [0 size(ProwGivenRowColUnorderedPair,2)+1], 'YLim', [0 size(ProwGivenRowColUnorderedPair,1)+1]);
+    title('P(choice = row | (row,col) pair');
     xlabel('col'); ylabel('row');
     
     subplot(2,2,3);
-    imagesc(data2D);
+    imagesc(ProwGivenRowColUnorderedPair);
     axis 'square'
-    colormap(gray);
     
     subplot(2, 2, [2 4]);
-    bar(1:numel(cummuativeColumn), cummuativeColumn);
+    bar(1:numel(P_row), P_row);
     
     drawnow;
 end
