@@ -6,12 +6,14 @@ function loadStimulusCache(obj, cacheFileNameList)
     obj.thumbnailStimImages = [];
     obj.conditionsData = [];
             
+    obj.cacheFileNameList = cacheFileNameList;
+    
     orderedIndicesNames = '';
     cachedData = [];
+    
     fprintf('Loading stimulus cache. Please wait ...\n');
     
     stimIndex = 0;
-    
     for k = 1:numel(cacheFileNameList)
         
         load(cacheFileNameList{k}, 'cachedData', 'orderedIndicesNames');

@@ -2,6 +2,7 @@ function saveData(obj)
 
     % data to save
     % the input cached data
+    cacheFileNameList = obj.cacheFileNameList;
     comparisonMode = obj.comparisonMode;
     conditionsData = obj.conditionsData;
     thumbnailStimImages = obj.thumbnailStimImages;
@@ -13,7 +14,7 @@ function saveData(obj)
     runParams = obj.runParams;
         
     dataFileName = sprintf('NicolasRunData.mat');
-    save(dataFileName, 'comparisonMode', 'conditionsData', 'thumbnailStimImages', 'stimPreferenceMatrices', 'runParams');
+    save(dataFileName, 'cacheFileNameList', 'comparisonMode', 'conditionsData', 'thumbnailStimImages', 'stimPreferenceMatrices', 'runParams');
 	fprintf('Data saved in ''%s'',\n', dataFileName);
 end
 

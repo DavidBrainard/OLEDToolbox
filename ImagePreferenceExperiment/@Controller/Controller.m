@@ -10,6 +10,7 @@ classdef Controller < handle
         model;
         
         % the input cache data
+        cacheFileNameList;
         comparisonMode;
         conditionsData;
         thumbnailStimImages;
