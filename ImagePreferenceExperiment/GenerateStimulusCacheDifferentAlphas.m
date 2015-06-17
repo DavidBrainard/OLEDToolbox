@@ -107,7 +107,9 @@ function GenerateStimulusCacheDifferentAlphas
     ensembleCenters = linspace(minEnsembleLum, maxEnsembleLum, Nbins);
 
     delta = 0.0001; % small delta to avoid taking log(0) when encountering pixels with zero luminance
-    sceneKey = exp((1/numel(ensembleCenters))*sum(log(ensembleCenters + delta)));
+    format long g
+    sceneKey = exp((1/numel(ensembleCenters))*sum(log(ensembleCenters + delta)))
+    [min(ensembleCenters (:)) max(ensembleCenters (:))]
     
     kFraction = 0.9; % input('Enter threshold as fraction of max difference, [e.g. 0.8, <= 1.0] : ');
     cumulativeHistogram = ComputeCumulativeHistogramBasedToneMappingFunction(luminanceEnsembleCalFormat, ensembleCenters, kFraction);
@@ -464,6 +466,7 @@ function XYZcalFormatToneMapped = XYZFromSRGB_by_ReinhardtLuminanceMapping(linea
     % compute scene key
     delta = 0.0001; % small delta to avoid taking log(0) when encountering pixels with zero luminance
     sceneKey = exp((1/numel(inputLuminance))*sum(log(inputLuminance + delta)));
+
     % Scale luminance according to alpha parameter and scene key
     scaledInputLuminance = alpha / sceneKey * inputLuminance;
     % Compress high luminances
