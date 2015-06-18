@@ -282,6 +282,7 @@ function GenerateStimulusCacheDifferentAlphas
                             subplot('Position', subplotPosVectors(2,imIndex+1).v);
                             [s.counts, s.centers] = hist(inputLuminance, ensembleCenters); 
                             cachedData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex).histogram = s;
+                             cachedData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex).toneMappingParams = toneMappingParams;
                             bar(s.centers, s.counts, 'FaceColor', [1.0 0.1 0.5], 'EdgeColor', 'none');
                             maxHistogramCount = min(s.counts(s.counts>0))*histogramCountHeight;
                             

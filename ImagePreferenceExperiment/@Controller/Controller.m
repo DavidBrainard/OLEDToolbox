@@ -16,6 +16,7 @@ classdef Controller < handle
         thumbnailStimImages;
         histograms;
         tonemappingMethods;
+        toneMappingParams;
         
         % the run params (passed to runExperiment)
         runParams;
@@ -31,7 +32,8 @@ classdef Controller < handle
     properties (Access = private)
         initParams = struct(...
            'debugMode', true, ...
-           'giveVerbalFeedback', true...
+           'giveVerbalFeedback', true, ...
+           'visualizeResultsOnLine', true ...
            );
         stimulusSize;
         targetLocations;
@@ -45,7 +47,9 @@ classdef Controller < handle
             % parse inputs
             parser = inputParser;
             parser.addParamValue('debugMode', obj.initParams.debugMode, @islogical);
+            parser.addParamValue('visualizeResultsOnLine', obj.initParams.visualizeResultsOnLine, @islogical);
             parser.addParamValue('giveVerbalFeedback', obj.initParams.giveVerbalFeedback, @islogical);
+            
             % Execute the parser to make sure input is good
             parser.parse(varargin{:});
             % Copy the parse parameters to the ExperimentController object

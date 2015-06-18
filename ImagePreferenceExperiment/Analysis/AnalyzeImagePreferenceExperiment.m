@@ -7,8 +7,10 @@ function AnalyzeImagePreferenceExperiment
     s = whos('-file',dataFileName, 'cacheFileNameList');
     
     if (isempty(s))
-        % get the data from the new data file 
-        newDataFile = 'tmp.dat';
+        % get the data from the tmp data file 
+        fprintf(2,'\n\n\nNOTE: GETTING DATA FORM TMP FILE\n\n\n');
+        newDataFile = 'tmp.mat';
+        load(newDataFile)
         whos('-file', newDataFile)
         defaultCacheFileName = 'AreaLights_ReinhardtVaryingAlpha_OLEDlum_572_LCDlum_171.mat';
         fprintf(2,'CacheFileNameList not on data file. Will load default file (''%s'').', defaultCacheFileName);
@@ -135,7 +137,13 @@ function AnalyzeImagePreferenceExperiment
             for roughnessIndex = 1:numel(roughnessIndicesArray)
                 stimIndices =  conditionsData(shapeIndex, specularReflectionIndex, roughnessIndex, lightingIndex, toneMappingMethodIndex, :);
                 imagePics = thumbnailStimImages(stimIndices,:,:,:);
-                plotSelectionProbabilityMatrix(figNum, preferenceDataStats{shapeIndex, specularReflectionIndex,roughnessIndex,lightingIndex,toneMappingMethodIndex}.stimulusPreferenceRate2D, ReinhardtAlphas, imagePics);
+                
+                for toneMappingParamIndex = 1:numel(stimIndices)
+                	hist{toneMappingParamIndex}        = histograms{shapeIndex, specularReflectionIndex, roughnessIndex, lightingIndex, toneMappingMethodIndex,toneMappingParamIndex};
+                    toneMapping{toneMappingParamIndex} = toneMappingParams{shapeIndex, specularReflectionIndex, roughnessIndex, lightingIndex, toneMappingMethodIndex,toneMappingParamIndex};   
+                end
+                
+                plotSelectionProbabilityMatrix(figNum, preferenceDataStats{shapeIndex, specularReflectionIndex,roughnessIndex,lightingIndex,toneMappingMethodIndex}.stimulusPreferenceRate2D, imagePics, hist, toneMapping);
                 figNum = figNum + 1;
             end
         end
@@ -166,7 +174,7 @@ function plot2DLatencyHistogram(figNo, latency2D)
     axis 'square'
 end
 
-function plotSelectionProbabilityMatrix(figNum, ProwGivenRowColUnorderedPair, ReinhardtAlphas, imagePics)
+function plotSelectionProbabilityMatrix(figNum, ProwGivenRowColUnorderedPair, imagePics, hist, toneMapping)
 
     % probabilty of occurence of the (row,col) pair (unordered, i.e, row-on-left, col-on-right OR col-on-left, row-on-right)
     % uniform, since all pairs were presented an equal number of times
@@ -188,26 +196,30 @@ function plotSelectionProbabilityMatrix(figNum, ProwGivenRowColUnorderedPair, Re
     set(h, 'Position', [10 10 1906 838], 'Color', [0 0 0]);
     clf;
     
-    for k = 1:6
+    for k = 1:size(imagePics,1)
         subplot(7,10, 60-(k-1)*10-9);
         imshow(squeeze(double(imagePics(k,:,:,:)))/255.0);
     end
     
+    
+    maxHistCountResolved = 100;
+    
     subplot(7,10, [1 11 21 31 41 51]+1);
     hold on;
-    for k = 1:6
-        sceneKey = 4177; minSceneLum = 6.6; maxSceneLum = 11306.2;
-        inputLuminance = linspace(minSceneLum,maxSceneLum,1000);
-        scaledInputLuminance = ReinhardtAlphas(k) / sceneKey * inputLuminance;
-        outputLuminance = scaledInputLuminance ./ (1.0+scaledInputLuminance);
-        minL = min(outputLuminance); maxL = max(outputLuminance);
-        normOutLuminance(k,:) = (outputLuminance-minL)/(maxL-minL);
-        plot(inputLuminance, (k-1) + 0.0 +   0.75*normOutLuminance(k,:), 'r-', 'LineWidth', 2.0);
-        plot(inputLuminance, (k-1) + 0.0 + 0*normOutLuminance(k,:), 'k-');
-        plot([0 0], (k-1) + [1 1], 'k-');
+    
+    % crop the hist count to reveal information at low counts
+    histCount = hist{k}.counts;
+    histCount(histCount>maxHistCountResolved) = maxHistCountResolved;
+    histCount(histCount==0) = nan;
+    
+    for k = 1:numel(hist)
+        plot(hist{k}.centers, k-1 + 0.9*histCount/max(histCount), '-', 'Color', [0.7 1.0 0.8]);
+        plot(toneMapping{k}.mappingFunction.input, k-1 + 0.85*toneMapping{k}.mappingFunction.output/max(toneMapping{k}.mappingFunction.output), 'r-', 'LineWidth', 2.0);
     end
-    set(gca, 'XLim', [0 maxSceneLum], 'YLim', [0 6], 'XTick', [], 'YTick', []);
+    
+    set(gca, 'XLim', [0 max(toneMapping{k}.mappingFunction.input)], 'YLim', [0 6], 'XTick', [], 'YTick', []);
     box off; axis off
+    
     
 	subplot(7,10,[2 3 4 5  12 13 14 15  22 23 24 25 32 33 34 35  42 43 44 45  52 53 54 55 ]+1)
     imagesc(ProwGivenRowColUnorderedPair);
@@ -233,13 +245,12 @@ function plotSelectionProbabilityMatrix(figNum, ProwGivenRowColUnorderedPair, Re
     
     subplot(7,10, [62 63 64 65]+1);
     hold on;
-    for k = 1:6
-        plot(inputLuminance+(k-1)*max(inputLuminance(:)), 0.8*normOutLuminance(k,:), 'r-', 'LineWidth', 2.0);
-        plot(inputLuminance+(k-1)*max(inputLuminance(:)), 0*normOutLuminance(k,:), 'k-');
-        
+    for k = 1:numel(toneMapping)
+        plot(hist{k}.centers*0.9 + (k-1)*max(hist{k}.centers), histCount/max(histCount), '-', 'Color', [0.7 1.0 0.8]);
+        plot(toneMapping{k}.mappingFunction.input*0.9 + (k-1)*max(toneMapping{k}.mappingFunction.input), 0.9*toneMapping{k}.mappingFunction.output/max(toneMapping{k}.mappingFunction.output), 'r-', 'LineWidth', 2.0);
     end
     box off; axis off
-    set(gca, 'XLim', [0 maxSceneLum*6], 'YLim', [0 1], 'XTick', [], 'YTick', []);
+    set(gca, 'XLim', [0 max(toneMapping{k}.mappingFunction.input)*6], 'YLim', [0 1], 'XTick', [], 'YTick', []);
     drawnow;
     
     NicePlot.exportFigToPDF(sprintf('image%d.pdf', figNum), h, 300);

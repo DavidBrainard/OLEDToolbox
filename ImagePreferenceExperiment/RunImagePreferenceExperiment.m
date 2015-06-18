@@ -3,17 +3,17 @@ function RunImagePreferenceExperiment
     [rootDir,~] = fileparts(which(mfilename))
     cd(rootDir);
     
-    debugMode = false;
-    if (debugMode)
-        fprintf(2,'DebugMode is set to true. If running on the Samsung rig, set the debugMode to false.\n');
-        disp('Hit enter to continue');
-        pause
+    runningOnSamsung = input('Running on the Samsung [y/n] : ', 's');
+    if (isempty(runningOnSamsung)) || (strcmp(runningOnSamsung, 'n'))
+        debugMode = true;
+    else
+        debugMode = false;
     end
-    
     
     % use debugMode = false, when running on the Samsung
     experimentController = Controller('debugMode', debugMode, ...
-                                      'giveVerbalFeedback', false);
+                                      'giveVerbalFeedback', false, ...
+                                      'visualizeResultsOnLine', false );
     
     % Select a stimulus cache file(s)
     cacheFileNameList = {...
@@ -25,10 +25,10 @@ function RunImagePreferenceExperiment
     
     % Specify experiment params
     params = struct(...
-        'repsNum', 10, ...
+        'repsNum', 1, ...
         'varyToneMappingParamsInBlockDesign', false, ...   % set to true to do comparisons of tone mapping param value within blocks
         'whichDisplay', 'HDR',...
-        'dataFileName', 'nicolasSecondData.mat'...
+        'dataFileName', 'tmp.mat'... % 'nicolasSecondData.mat'...
     );
     
     % Run the experiment

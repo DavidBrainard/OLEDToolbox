@@ -2,12 +2,13 @@ function saveData(obj)
 
     % data to save
     % the input cached data
-    cacheFileNameList = obj.cacheFileNameList;
-    comparisonMode = obj.comparisonMode;
-    conditionsData = obj.conditionsData;
+    cacheFileNameList   = obj.cacheFileNameList;
+    comparisonMode      = obj.comparisonMode;
+    conditionsData      = obj.conditionsData;
     thumbnailStimImages = obj.thumbnailStimImages;
-    histograms = obj.histograms;
-    tonemappingMethods = obj.tonemappingMethods;
+    histograms          = obj.histograms;
+    tonemappingMethods  = obj.tonemappingMethods;
+    toneMappingParams   = obj.toneMappingParams;
     
     % the obtained results
     stimPreferenceMatrices = obj.stimPreferenceMatrices;
@@ -15,9 +16,9 @@ function saveData(obj)
     % the run params
     runParams = obj.runParams;
         
-    dataFileName = sprintf('NicolasRunData.mat');
-    dataFileName = 'tmp.dat';
-    save(dataFileName, 'cacheFileNameList', 'comparisonMode', 'conditionsData', 'thumbnailStimImages', 'stimPreferenceMatrices', 'runParams', 'histograms', 'tonemappingMethods');
-	fprintf('Data saved in ''%s'',\n', dataFileName);
+    % Save everything
+    save(runParams.dataFileName, 'cacheFileNameList', 'comparisonMode', 'conditionsData', 'thumbnailStimImages', 'stimPreferenceMatrices', 'runParams', 'histograms', 'tonemappingMethods', 'toneMappingParams');
+	fprintf('Data saved in ''%s'',\n', runParams.dataFileName);
+    Speak(sprintf('Data were saved. All done.'));
 end
 

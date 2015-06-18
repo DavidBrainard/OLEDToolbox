@@ -158,7 +158,7 @@ function abnormalTermination = runExperiment(obj, params)
                     % Update stimPreferenceMatrices
                     obj.stimPreferenceMatrices{shapeIndex,specularReflectionIndex,roughnessIndex,lightingIndex,toneMappingMethodIndex, repIndex} = stimPreferenceData;
 
-                    if (obj.initParams.debugMode)
+                    if (obj.initParams.debugMode) && (obj.initParams.visualizeResultsOnLine)
                         % Visualize data
                         obj.visualizePreferenceMatrix(stimPreferenceData, params.whichDisplay);
                         obj.visualizePreferredImageHistogram(stimPreferenceData);
@@ -179,14 +179,7 @@ function abnormalTermination = runExperiment(obj, params)
     % save the run params
     obj.runParams = params;
     
-    % save the collected data
-    thumbnailStimImages = obj.thumbnailStimImages;
-    stimPreferenceMatrices = obj.stimPreferenceMatrices;
-    conditionsData = obj.conditionsData;
-    
-    save(params.dataFileName, 'params', 'stimPreferenceMatrices', 'conditionsData', 'thumbnailStimImages');
-    fprintf('Saved data to ''%s''.', params.dataFileName);
-    Speak(sprintf('Data were saved. All done.'));
-    
+    % save the collected data together with other data from the cache file
+    obj.saveData();
 end
 
