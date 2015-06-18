@@ -5,7 +5,11 @@ function AnalyzeImagePreferenceExperiment
     
     dataFileName = 'nicolasSecondData.mat';
     s = whos('-file',dataFileName, 'cacheFileNameList');
+    
     if (isempty(s))
+        % get the data from the new data file 
+        newDataFile = 'tmp.dat';
+        whos('-file', newDataFile)
         defaultCacheFileName = 'AreaLights_ReinhardtVaryingAlpha_OLEDlum_572_LCDlum_171.mat';
         fprintf(2,'CacheFileNameList not on data file. Will load default file (''%s'').', defaultCacheFileName);
         load(defaultCacheFileName, 'ReinhardtAlphas');

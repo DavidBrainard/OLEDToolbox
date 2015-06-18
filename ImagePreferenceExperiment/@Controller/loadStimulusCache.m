@@ -59,6 +59,7 @@ function loadStimulusCache(obj, cacheFileNameList)
             load(cacheFileNameList{k}, 'shapesExamined', 'specularStrengthsExamined', 'alphasExamined', 'lightingConditionsExamined', 'tonemappingMethods', 'ReinhardtAlphas', 'comparisonMode');
             
             obj.comparisonMode = comparisonMode;
+            obj.tonemappingMethods = tonemappingMethods;
             
             % set the stimulus size
             settingsImage = cachedData(1,1,1,1,1,1).ldrSettingsImage;
@@ -90,6 +91,7 @@ function loadStimulusCache(obj, cacheFileNameList)
                                     fprintf('Loading stimulus #%d/%d\n', stimIndex, prod(size(cachedData)));
                                     hdrStimRGBdata = cachedData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex).hdrSettingsImage;
                                     ldrStimRGBdata = cachedData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex).ldrSettingsImage;
+                                    obj.histograms{shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex} = cachedData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex).histogram;
                                     obj.conditionsData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex) = stimIndex;
                                     obj.thumbnailStimImages(stimIndex,1,:,:,:) = uint8(255.0*hdrStimRGBdata(1:8:end, 1:8:end,:));
                                     obj.thumbnailStimImages(stimIndex,2,:,:,:) = uint8(255.0*ldrStimRGBdata(1:8:end, 1:8:end,:));

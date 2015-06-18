@@ -14,6 +14,8 @@ classdef Controller < handle
         comparisonMode;
         conditionsData;
         thumbnailStimImages;
+        histograms;
+        tonemappingMethods;
         
         % the run params (passed to runExperiment)
         runParams;

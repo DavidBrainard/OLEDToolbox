@@ -6,7 +6,9 @@ function saveData(obj)
     comparisonMode = obj.comparisonMode;
     conditionsData = obj.conditionsData;
     thumbnailStimImages = obj.thumbnailStimImages;
-        
+    histograms = obj.histograms;
+    tonemappingMethods = obj.tonemappingMethods;
+    
     % the obtained results
     stimPreferenceMatrices = obj.stimPreferenceMatrices;
     
@@ -14,7 +16,8 @@ function saveData(obj)
     runParams = obj.runParams;
         
     dataFileName = sprintf('NicolasRunData.mat');
-    save(dataFileName, 'cacheFileNameList', 'comparisonMode', 'conditionsData', 'thumbnailStimImages', 'stimPreferenceMatrices', 'runParams');
+    dataFileName = 'tmp.dat';
+    save(dataFileName, 'cacheFileNameList', 'comparisonMode', 'conditionsData', 'thumbnailStimImages', 'stimPreferenceMatrices', 'runParams', 'histograms', 'tonemappingMethods');
 	fprintf('Data saved in ''%s'',\n', dataFileName);
 end
 
