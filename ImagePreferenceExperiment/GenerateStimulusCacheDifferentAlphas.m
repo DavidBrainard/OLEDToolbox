@@ -175,10 +175,10 @@ function GenerateStimulusCacheDifferentAlphas
     colsNum = (zeroParamToneMappingMethods + (numel(tonemappingMethods)-zeroParamToneMappingMethods)*numel(ReinhardtAlphas)) * ...
               numel(shapesExamined) *numel(alphasExamined) * numel(specularStrengthsExamined) * numel(lightingConditionsExamined);
           
-    displayEveryNthPattern = 1;
+
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
         'rowsNum',      rowsNum, ...
-        'colsNum',      round(colsNum/displayEveryNthPattern), ...
+        'colsNum',      colsNum, ...
         'widthMargin',  0.005, ...
         'leftMargin',   0.01, ...
         'bottomMargin', 0.01, ...
@@ -252,7 +252,6 @@ function GenerateStimulusCacheDifferentAlphas
 
 
                             % Update cache with settings images for all emulated displays
-                            
                             for emulatedDisplayName = emulatedDisplayNames
                                 emulatedDisplayCal = displayCal(char(emulatedDisplayName));
                                 XYZ = SettingsToSensor(emulatedDisplayCal, [1 1 1]');
@@ -265,7 +264,8 @@ function GenerateStimulusCacheDifferentAlphas
                                     error('settings image must be between 0 and 1');
                                 end
                                 % Save data
-                                fprintf('Adding to cached data (%s) \n', char(emulatedDisplayName));
+                                fprintf('Adding to cached data (%s) LuminanceRange: %2.4f\n', char(emulatedDisplayName), max(inputLuminance(:))/min(inputLuminance(:)));
+
                                 if strcmp(char(emulatedDisplayName), 'LCD')
                                     cachedData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex).ldrSettingsImage = single(settingsImage);
                                 elseif strcmp(char(emulatedDisplayName), 'OLED')
@@ -275,38 +275,35 @@ function GenerateStimulusCacheDifferentAlphas
                                 end
                             end
 
+                            subplot('Position', subplotPosVectors(1, imIndex+1).v);
+                            imshow(CalFormatToImage(sRGB.gammaCorrect(linearSRGBCalFormat), nCols, mRows));
+                            title(sprintf('%2.3f', max(inputLuminance(:))/min(inputLuminance(:))), 'Color', [1 1 0]);
 
-                            % Select which images to display
-                            if mod(imIndex-1,displayEveryNthPattern) == 0
-                                subplot('Position', subplotPosVectors(1,floor(imIndex/displayEveryNthPattern)+1).v);
-                                imshow(CalFormatToImage(sRGB.gammaCorrect(linearSRGBCalFormat), nCols, mRows));
-
-                                subplot('Position', subplotPosVectors(2,floor(imIndex/displayEveryNthPattern)+1).v);
-                                [s.counts, s.centers] = hist(inputLuminance, ensembleCenters); 
-                                bar(s.centers, s.counts, 'FaceColor', [1.0 0.1 0.5], 'EdgeColor', 'none');
-                                maxHistogramCount = min(s.counts(s.counts>0))*histogramCountHeight;
-                                hold on;
-                                counts = toneMappingParams.mappingFunction.output*0.95*maxHistogramCount;
-                                plot(toneMappingParams.mappingFunction.input, counts, 'b-');
-                                if (strcmp(toneMappingParams.name, 'REINHARDT')) || (strcmp(toneMappingParams.name, 'LINEAR_SATURATING'))
-                                    title(sprintf('%s (%2.1f)', toneMappingParams.name, toneMappingParams.alpha), 'Color', [1 1 1]);
-                                else
-                                    title(sprintf('%s', toneMappingParams.name), 'Color', [1 1 1]);
-                                end
-
-                                set(gca, 'YLim', [0 maxHistogramCount], 'XLim', [0 1.05*max(ensembleCenters)], 'YTick', [], 'XColor', [1 1 1], 'YColor', [1 1 1]);
-                                xlabel('luminance (cd/m2)', 'Color', [1 1 1]);
-                                hold off;
-
-                                subplot('Position', subplotPosVectors(3,floor(imIndex/displayEveryNthPattern)+1).v);
-                                imshow(CalFormatToImage(sRGB.gammaCorrect(linearSRGBCalFormatToneMapped), nCols, mRows));
-
-                                drawnow;
+                            subplot('Position', subplotPosVectors(2,imIndex+1).v);
+                            [s.counts, s.centers] = hist(inputLuminance, ensembleCenters); 
+                            cachedData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex).histogram = s;
+                            bar(s.centers, s.counts, 'FaceColor', [1.0 0.1 0.5], 'EdgeColor', 'none');
+                            maxHistogramCount = min(s.counts(s.counts>0))*histogramCountHeight;
+                            
+                            hold on;
+                            counts = toneMappingParams.mappingFunction.output*0.95*maxHistogramCount;
+                            plot(toneMappingParams.mappingFunction.input, counts, 'b-');
+                            if (strcmp(toneMappingParams.name, 'REINHARDT')) || (strcmp(toneMappingParams.name, 'LINEAR_SATURATING'))
+                                title(sprintf('%s (%2.1f)', toneMappingParams.name, toneMappingParams.alpha), 'Color', [1 1 1]);
+                            else
+                                title(sprintf('%s', toneMappingParams.name), 'Color', [1 1 1]);
                             end
 
+                            set(gca, 'YLim', [0 maxHistogramCount], 'XLim', [0 1.05*max(ensembleCenters)], 'YTick', [], 'XColor', [1 1 1], 'YColor', [1 1 1]);
+                            xlabel('luminance (cd/m2)', 'Color', [1 1 1]);
+                            hold off;
+
+                            subplot('Position', subplotPosVectors(3,imIndex+1).v);
+                            imshow(CalFormatToImage(sRGB.gammaCorrect(linearSRGBCalFormatToneMapped), nCols, mRows));
+
+                            drawnow;
+
                             imIndex = imIndex + 1;
-                            
-                            
                         end
                     end
                 end
@@ -314,10 +311,9 @@ function GenerateStimulusCacheDifferentAlphas
         end
     end
     
-    size(cachedData)
-    
     comparisonMode = 'Best_tonemapping_parameter_HDR_and_LDR';
     orderedIndicesNames = {'shapeIndex', 'specularReflectionIndex', 'alphaIndex', 'lightingIndex', 'toneMappingMethodIndex', 'toneMappingParamIndex'};
+
     save(cacheFileName, 'cachedData', 'orderedIndicesNames', 'shapesExamined', 'specularStrengthsExamined', 'alphasExamined', 'lightingConditionsExamined', 'tonemappingMethods', 'ReinhardtAlphas', 'comparisonMode');
     
 end
