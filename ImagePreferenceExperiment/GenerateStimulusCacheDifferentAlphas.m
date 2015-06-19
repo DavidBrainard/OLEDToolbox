@@ -113,7 +113,8 @@ function GenerateStimulusCacheDifferentAlphas
     
     kFraction = 0.9; % input('Enter threshold as fraction of max difference, [e.g. 0.8, <= 1.0] : ');
     cumulativeHistogram = ComputeCumulativeHistogramBasedToneMappingFunction(luminanceEnsembleCalFormat, ensembleCenters, kFraction);
-
+    
+    PlotCumulativeToneMapFunction(cumulativeHistogram, luminanceEnsembleCalFormat, ensembleCenters);
     
     % Range of Reinhard alphas to examine
     minAlpha = 0.4; maxAlpha = 20.0; alphasNum = 5;
@@ -317,6 +318,51 @@ function GenerateStimulusCacheDifferentAlphas
 
     save(cacheFileName, 'cachedData', 'orderedIndicesNames', 'shapesExamined', 'specularStrengthsExamined', 'alphasExamined', 'lightingConditionsExamined', 'tonemappingMethods', 'ReinhardtAlphas', 'comparisonMode');
     
+end
+
+function PlotCumulativeToneMapFunction(cumulativeHistogram, luminanceEnsembleCalFormat, ensembleCenters)
+    hh = figure(99);
+    clf;
+    set(hh, 'Color', [0 0 0], 'Position', [10 10 1777 1185]);
+    subplot('Position', [0.05 0.04 0.93 0.94]);
+    hold on;
+    ensembleLuminances = luminanceEnsembleCalFormat(:);
+    Nbins = numel(ensembleCenters);
+    [ensembleCounts, ensembleCenters] = hist(ensembleLuminances, ensembleCenters);
+    
+    newBinsNum  = 350;
+    newBinSize  = round(numel(ensembleCounts)/(newBinsNum+1));
+    histCount   = zeros(newBinsNum,1);
+    histCenters = zeros(newBinsNum,1);
+    for binIndex = 1:newBinsNum
+        indices = ((binIndex-1)*newBinSize+1:1:binIndex*newBinSize);
+        histCount(binIndex) = sum(ensembleCounts(indices));
+        histCenters(binIndex) = mean(ensembleCenters(indices));
+    end
+    ensembleCounts = histCount;           
+    ensembleCenters = histCenters;
+    
+    maxHistCount = 3000;
+    ensembleCounts(ensembleCounts > maxHistCount) = maxHistCount;
+    
+    
+    ensembleCenters = [ensembleCenters(1) ensembleCenters' ensembleCenters(end)];
+    ensembleCounts  = [0                  ensembleCounts'  0];
+    
+    [ensembleCenters, ensembleCounts] = stairs(ensembleCenters, ensembleCounts);
+    patch('XData',ensembleCenters,'YData',ensembleCounts(:)/max(ensembleCounts(:)), 'FaceColor', [0.65 0.75 0.65], 'EdgeColor', [0 1 0], 'LineWidth', 2.0);
+    
+    for k = 10:-1:4
+        plot(cumulativeHistogram.input, cumulativeHistogram.output,'-', 'Color', [1.0 0 0]*(10-k)/12, 'LineWidth', k);
+    end
+    
+    plot(cumulativeHistogram.input, cumulativeHistogram.output,'r-', 'LineWidth', 2.0);
+    set(gca, 'Color', [0 0 0], 'XColor', [0.9 0.9 0.9], 'YColor', [0.9 0.9 0.9], 'FontSize', 16);
+    set(gca, 'XLim', [0 max(ensembleCenters)*1.02], 'YLim', [0 1]);
+    xlabel('scene luminance', 'FontSize', 24); ylabel('mapped luminance', 'FontSize', 24, 'FontWeight', 'bold');
+    grid on;
+    box on;
+    NicePlot.exportFigToPNG('HistogramBasedToneMappingFunction.png', hh, 300);
 end
 
 
