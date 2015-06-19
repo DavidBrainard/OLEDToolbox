@@ -4,10 +4,10 @@ function AnalyzeImagePreferenceExperiment
     cd(rootDir);
     
     dataFileName = 'nicolasSecondData.mat';
-    s = whos('-file',dataFileName, 'cacheFileNameList');
+    s = whos('-file',dataFileName, 'cacheFileNameList')
     
     if (isempty(s))
-        % get the data from the tmp data file 
+        % temp fix: get the data from the tmp data file 
         fprintf(2,'\n\n\nNOTE: GETTING DATA FORM TMP FILE\n\n\n');
         newDataFile = 'tmp.mat';
         load(newDataFile)
@@ -15,16 +15,23 @@ function AnalyzeImagePreferenceExperiment
         defaultCacheFileName = 'AreaLights_ReinhardtVaryingAlpha_OLEDlum_572_LCDlum_171.mat';
         fprintf(2,'CacheFileNameList not on data file. Will load default file (''%s'').', defaultCacheFileName);
         load(defaultCacheFileName, 'ReinhardtAlphas');
+        thumbnailStimImagesHiRes = thumbnailStimImages;
     end
     
-    load(dataFileName)
+    load(dataFileName);
+    
+    if (isempty(s))
+        % temp fix: get the data from the tmp data file 
+        thumbnailStimImages = thumbnailStimImagesHiRes ;
+    end
+    
     shapeIndicesArray               = 1:size(stimPreferenceMatrices,1)
     specularReflectionIndicesArray  = 1:size(stimPreferenceMatrices,2)
     roughnessIndicesArray           = 1:size(stimPreferenceMatrices,3)
     lightingIndicesArray            = 1:size(stimPreferenceMatrices,4)
     toneMappingMethodIndicesArray   = 1:size(stimPreferenceMatrices,5)
     repsNum                         = size(stimPreferenceMatrices,6)
-    
+
    
     %(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex)
     
@@ -262,7 +269,7 @@ function plotSelectionProbabilityMatrix(figNum, ProwGivenRowColUnorderedPair, im
     
     
 	subplot(7,10,[2 3 4 5  12 13 14 15  22 23 24 25 32 33 34 35  42 43 44 45  52 53 54 55 ]+1)
-    imagesc(ProwGivenRowColUnorderedPair);
+    imagesc(ProwGivenRowColUnorderedPair, [0 1.2]);
     for row = 1:6
         for col = 1:6
             if (~isnan(ProwGivenRowColUnorderedPair(row,col)))
