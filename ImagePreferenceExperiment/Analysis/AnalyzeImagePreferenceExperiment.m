@@ -129,6 +129,46 @@ function AnalyzeImagePreferenceExperiment
         end
     end
     
+    % Process histograms for visualization
+    lightingIndex = 1;
+    toneMappingMethodIndex = 1;
+    toneMappingParamIndex = 1;
+    
+    newBinsNum  = 255;
+    newBinSize  = round(numel(histograms{1, 1, 1, 1, 1,1}.counts)/(newBinsNum+1));
+    histCount   = zeros(newBinsNum,numel(shapeIndicesArray), numel(specularReflectionIndicesArray), numel(roughnessIndicesArray));
+    histCenters = zeros(newBinsNum,1);
+    
+    for shapeIndex = 1:numel(shapeIndicesArray)
+        for specularReflectionIndex = 1:numel(specularReflectionIndicesArray)
+            for roughnessIndex = 1:numel(roughnessIndicesArray)
+                counts = histograms{shapeIndex, specularReflectionIndex, roughnessIndex, lightingIndex, toneMappingMethodIndex,toneMappingParamIndex}.counts;
+                centers = histograms{shapeIndex, specularReflectionIndex, roughnessIndex, lightingIndex, toneMappingMethodIndex,toneMappingParamIndex}.centers;
+                nonZeroBins = find(counts>0);
+                minLum = centers(nonZeroBins(1));
+                maxLum = centers(nonZeroBins(end));
+                lumDynamicRange(shapeIndex, specularReflectionIndex, roughnessIndex, lightingIndex) = maxLum/minLum;
+                for binIndex = 1:newBinsNum
+                    indices = ((binIndex-1)*newBinSize+1:1:binIndex*newBinSize);
+                    histCount(binIndex,shapeIndex,specularReflectionIndex,roughnessIndex) = sum(counts(indices));
+                    histCenters(binIndex) = mean(centers(indices));
+                end
+            end
+        end
+    end
+    
+    
+    maxHistCountResolved = newBinSize*4;
+    
+    % clip over this count
+    histCount(histCount>maxHistCountResolved) = maxHistCountResolved;
+    histCount(histCount==0) = nan;
+    
+    % Normalize to 1.0
+    histCount = histCount / max(histCount(:));
+    
+
+    
     lightingIndex = 1;
     toneMappingMethodIndex = 1;
     figNum = 1;
@@ -139,11 +179,11 @@ function AnalyzeImagePreferenceExperiment
                 imagePics = thumbnailStimImages(stimIndices,:,:,:);
                 
                 for toneMappingParamIndex = 1:numel(stimIndices)
-                	hist{toneMappingParamIndex}        = histograms{shapeIndex, specularReflectionIndex, roughnessIndex, lightingIndex, toneMappingMethodIndex,toneMappingParamIndex};
                     toneMapping{toneMappingParamIndex} = toneMappingParams{shapeIndex, specularReflectionIndex, roughnessIndex, lightingIndex, toneMappingMethodIndex,toneMappingParamIndex};   
                 end
                 
-                plotSelectionProbabilityMatrix(figNum, preferenceDataStats{shapeIndex, specularReflectionIndex,roughnessIndex,lightingIndex,toneMappingMethodIndex}.stimulusPreferenceRate2D, imagePics, hist, toneMapping);
+                histCounts = squeeze(histCount(:,shapeIndex,specularReflectionIndex,roughnessIndex));
+                plotSelectionProbabilityMatrix(figNum, preferenceDataStats{shapeIndex, specularReflectionIndex,roughnessIndex,lightingIndex,toneMappingMethodIndex}.stimulusPreferenceRate2D, imagePics, histCenters, histCounts, lumDynamicRange(shapeIndex, specularReflectionIndex, roughnessIndex, lightingIndex), toneMapping);
                 figNum = figNum + 1;
             end
         end
@@ -174,7 +214,7 @@ function plot2DLatencyHistogram(figNo, latency2D)
     axis 'square'
 end
 
-function plotSelectionProbabilityMatrix(figNum, ProwGivenRowColUnorderedPair, imagePics, hist, toneMapping)
+function plotSelectionProbabilityMatrix(figNum, ProwGivenRowColUnorderedPair, imagePics, histCenters, histCounts, lumDynamicRange, toneMapping)
 
     % probabilty of occurence of the (row,col) pair (unordered, i.e, row-on-left, col-on-right OR col-on-left, row-on-right)
     % uniform, since all pairs were presented an equal number of times
@@ -193,27 +233,27 @@ function plotSelectionProbabilityMatrix(figNum, ProwGivenRowColUnorderedPair, im
     end
     
     h = figure(figNum);
-    set(h, 'Position', [10 10 1906 838], 'Color', [0 0 0]);
     clf;
+    set(h, 'Position', [10 10 2524 1056], 'Color', [0 0 0]);
+    
     
     for k = 1:size(imagePics,1)
         subplot(7,10, 60-(k-1)*10-9);
         imshow(squeeze(double(imagePics(k,:,:,:)))/255.0);
+        if (k == size(imagePics,1))
+            title(sprintf('DR=%2.1f',lumDynamicRange), 'Color', [0.7 0.7 0.0], 'FontSize', 18, 'FontWeight', 'bold');
+        end
     end
     
     
-    maxHistCountResolved = 100;
-    
+    % Plot the histograms
     subplot(7,10, [1 11 21 31 41 51]+1);
     hold on;
     
-    % crop the hist count to reveal information at low counts
-    histCount = hist{k}.counts;
-    histCount(histCount>maxHistCountResolved) = maxHistCountResolved;
-    histCount(histCount==0) = nan;
-    
-    for k = 1:numel(hist)
-        plot(hist{k}.centers, k-1 + 0.9*histCount/max(histCount), '-', 'Color', [0.7 1.0 0.8]);
+    for k = 1:numel(toneMapping)
+        X = [histCenters(:)          histCenters(:)];
+        Y = [k-1+0*(histCounts) k-1+0.9*histCounts];
+        line(X',Y', 'Color', [0.7 1.0 0.8]);
         plot(toneMapping{k}.mappingFunction.input, k-1 + 0.85*toneMapping{k}.mappingFunction.output/max(toneMapping{k}.mappingFunction.output), 'r-', 'LineWidth', 2.0);
     end
     
@@ -230,24 +270,31 @@ function plotSelectionProbabilityMatrix(figNum, ProwGivenRowColUnorderedPair, im
             end
         end
     end
-    set(gca, 'XTick', 0.5+[0:1:6], 'YTick', 0.5+[0:1:6], 'XTickLabel', {}, 'YTickLabel', {});
-    grid on
+    set(gca, 'XTick', [1:6], 'YTick', [1:6], 'XTickLabel', 1:6, 'YTickLabel', 1:6);
+    set(gca, 'FontSize', 16, 'Color', [0 0 0], 'XColor', [0.7 0.7 0.7], 'YColor', [0.7 0.7 0.7]);
+    xlabel('col', 'Color', [0.7 0.7 0.7], 'FontSize', 18);
+    ylabel('row', 'Color', [0.7 0.7 0.7], 'FontSize', 18);
+    grid off
     colormap(gray);
+    title('P[choice = row | (row,col)]', 'Color', [0.7 0.7 0.0], 'FontSize', 18, 'FontWeight', 'bold');
     axis 'square';
     axis 'xy'
     
     subplot(7,10,[6 7 8 9  16 17 18 19  26 27 28 29   36 37 38 39   46 47 48 49 56 57 58 59]+1)
     barh((1:length(P_row)), P_row, 'FaceColor', [0.8 0.6 0.2], 'EdgeColor', [1 1 0]);
-    xlabel('P(select)', 'Color', [0.7 0.7 0.0], 'FontSize', 16);
-    set(gca, 'FontSize', 14, 'Color', [0 0 0], 'XColor', [0.7 0.7 0.0], 'YColor', [0.7 0.7 0.0]);
+    xlabel('probability', 'Color', [0.7 0.7 0.7], 'FontSize', 18);
+    title('P[choice = row]', 'Color', [0.7 0.7 0.0], 'FontSize', 18, 'FontWeight', 'bold');
+    set(gca, 'FontSize', 16, 'Color', [0 0 0], 'XColor', [0.7 0.7 0.7], 'YColor', [0.7 0.7 0.7]);
     set(gca,'YLim',[0.5 length(P_row)+0.5], 'XLim', [0 1], 'YTickLabel', {});
     axis 'square';
     
     subplot(7,10, [62 63 64 65]+1);
     hold on;
     for k = 1:numel(toneMapping)
-        plot(hist{k}.centers*0.9 + (k-1)*max(hist{k}.centers), histCount/max(histCount), '-', 'Color', [0.7 1.0 0.8]);
-        plot(toneMapping{k}.mappingFunction.input*0.9 + (k-1)*max(toneMapping{k}.mappingFunction.input), 0.9*toneMapping{k}.mappingFunction.output/max(toneMapping{k}.mappingFunction.output), 'r-', 'LineWidth', 2.0);
+%         X = 0.9*[histCenters(:)      histCenters(:)] + (k-1)*max(histCenters);
+%         Y = [0*(histCount(:,k))      histCount(:,k)];
+%         line(X',Y', 'Color', [0.7 1.0 0.8]);
+         plot(0.95 * toneMapping{k}.mappingFunction.input+ (k-1)*max(toneMapping{k}.mappingFunction.input), toneMapping{k}.mappingFunction.output/max(toneMapping{k}.mappingFunction.output), 'r-', 'LineWidth', 2.0);
     end
     box off; axis off
     set(gca, 'XLim', [0 max(toneMapping{k}.mappingFunction.input)*6], 'YLim', [0 1], 'XTick', [], 'YTick', []);
