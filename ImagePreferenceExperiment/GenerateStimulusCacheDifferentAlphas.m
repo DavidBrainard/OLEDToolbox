@@ -38,33 +38,55 @@ function GenerateStimulusCacheDifferentAlphas
     renderingDisplayProperties.maxSRGB(3) = max(XYZToSRGBPrimary(XYZ));
     renderingDisplayProperties
     
+    wattsToLumens = 683;
+    % Generate cache filename
+    d = displayCal('OLED');
+    XYZ = SettingsToSensor(d, [1 1 1]');
+    lumOLED = XYZ(2) * wattsToLumens;
+
+    d = displayCal('LCD');
+    XYZ = SettingsToSensor(d, [1 1 1]');
+    lumLCD = XYZ(2) * wattsToLumens;
+    
     
     
     % Generate an ensemble of blobbie scenes to determine the best tone mapping function
     % based on the cumulative histogram of the ensemble
     multiSpectralBlobbieFolder = '/Users/Shared/Matlab/Toolboxes/OLEDToolbox/HDRstuff/BlobbieAnalysis/MultispectralData_0deg';
-    
+    multiSpectralBlobbieFolder = '/Users/Shared/Matlab/Toolboxes/OLEDToolbox/HDRstuff/BlobbieAnalysis/HighDynamicRange/';
     
     % Compute tone mapping function or Reinhardt key based on limited set (excude very high
     % and flat reflectances, i.e. low alpha images)
     alphasExamined = {'0.005', '0.010', '0.020', '0.040', '0.080', '0.160', '0.320'};
+    
     specularStrengthsExamined = {'0.60', '0.30', '0.15'};   
     lightingConditionsExamined = {'area1_front0_ceiling0'};
     shapesExamined = {'Blobbie9SubsHighFreq', 'Blobbie9SubsVeryLowFreq'};
-   
+    shapesExamined = {'Blobbie8SubsHighFreq', 'Blobbie8SubsVeryLowFreq'};
+    
     % Best set is following
 %     shapesExaminedBest              = {shapesExamined{ [1 2] }}
 %     alphasExaminedBest              = {alphasExamined{ [2 4 5 6 7] }}
 %     specularStrengthsExaminedBest   = {specularStrengthsExamined{ [1 3] }}
 %     lightingConditionsExaminedBest  = {lightingConditionsExamined{ [1] }}
     
-    shapesExamined              = {shapesExamined{ [1 2 ] }}
+    shapesExamined              = {shapesExamined{ [2 ] }}
     alphasExamined              = {alphasExamined{ [2  7] }}
     specularStrengthsExamined   = {specularStrengthsExamined{ [1 3] }}
     lightingConditionsExamined  = {lightingConditionsExamined{ [1] }}
     
     
-    wattsToLumens = 683;
+    if (strcmp(char(lightingConditionsExamined), 'area1_front0_ceiling0'))
+        cacheFileName = sprintf('HighDynamicRange_AreaLights_ReinhardtVaryingAlpha_OLEDlum_%2.0f_LCDlum_%2.0f', lumOLED, lumLCD);
+    elseif (strcmp(char(lightingConditionsExamined), 'area0_front0_ceiling1'))
+        cacheFileName = sprintf('HighDynamicRange_CeilingLights_ReinhardtVaryingAlpha_OLEDlum_%2.0f_LCDlum_%2.0f', lumOLED, lumLCD);
+    else
+        error('What ?');
+    end
+    
+    
+    
+    
     
     fprintf('Loading an ensemble of blobbie images to compute the ensemble key and cumulative histogram.\n');
     % Compute ensemble luminance statistics (Histogram, cumulative histogram)
@@ -74,7 +96,7 @@ function GenerateStimulusCacheDifferentAlphas
             for specularReflectionIndex = 1:numel(specularStrengthsExamined)
                 for alphaIndex = 1:numel(alphasExamined)
 
-                    blobbieFileName = sprintf('%s_Samsung_FlatSpecularReflectance_%s.spd___Samsung_NeutralDay_BlueGreen_0.60.spd___alpha_%s___Lights_%s_rotationAngle_0.mat',shapesExamined{shapeIndex}, specularStrengthsExamined{specularReflectionIndex}, alphasExamined{alphaIndex}, lightingConditionsExamined{lightingIndex});
+                    blobbieFileName = sprintf('%sShadowed_Samsung_FlatSpecularReflectance_%s.spd___Samsung_NeutralDay_BlueGreen_0.60.spd___alpha_%s___Lights_%s_rotationAngle_0.mat',shapesExamined{shapeIndex}, specularStrengthsExamined{specularReflectionIndex}, alphasExamined{alphaIndex}, lightingConditionsExamined{lightingIndex});
                     fprintf('\t%s\n', blobbieFileName);
                     linearSRGBimage = ConvertRT3scene(multiSpectralBlobbieFolder,blobbieFileName);
                     % To calFormat
@@ -117,7 +139,7 @@ function GenerateStimulusCacheDifferentAlphas
     PlotCumulativeToneMapFunction(cumulativeHistogram, luminanceEnsembleCalFormat, ensembleCenters);
     
     % Range of Reinhard alphas to examine
-    minAlpha = 0.4; maxAlpha = 20.0; alphasNum = 5;
+    minAlpha = 0.4; maxAlpha = 100.0; alphasNum = 5;
     ReinhardtAlphas = [0.001 logspace(log10(minAlpha),log10(maxAlpha),alphasNum)];
     if (any(ReinhardtAlphas <= 0))
         error('Reinhardt alpha cannot be <= 0');
@@ -132,36 +154,10 @@ function GenerateStimulusCacheDifferentAlphas
 %     specularStrengthsExamined   = {specularStrengthsExamined{ [1 3] }}
 %     lightingConditionsExamined  = {lightingConditionsExamined{ [1] }}
     
-    % Generate cache filename
-    d = displayCal('OLED');
-    XYZ = SettingsToSensor(d, [1 1 1]');
-    lumOLED = XYZ(2) * wattsToLumens;
+    
+    
+    
 
-    d = displayCal('LCD');
-    XYZ = SettingsToSensor(d, [1 1 1]');
-    lumLCD = XYZ(2) * wattsToLumens;
-    
-    
-    
-    % Determine cache file name
-    
-%     if (strcmp(char(lightingConditionsExamined), 'area1_front0_ceiling0'))
-%         cacheFileName = sprintf('%s_AreaLights_Alpha_%s_SpecularReflectance_%s_%s_OLEDlum_%2.0f_LCDlum_%2.0f',  shapesExamined{1}, alphasExamined{1}, specularStrengthsExamined{1}, lumOLED, lumLCD);
-%     elseif (strcmp(char(lightingConditionsExamined), 'area0_front0_ceiling1'))
-%         cacheFileName = sprintf('%s_CeilingLights_Alpha_%s_SpecularReflectance_%s_%s_OLEDlum_%2.0f_LCDlum_%2.0f',  shapesExamined{1}, alphasExamined{1}, specularStrengthsExamined{1}, lumOLED, lumLCD);
-%     else
-%         error('What ?');
-%     end
-    
-    if (strcmp(char(lightingConditionsExamined), 'area1_front0_ceiling0'))
-        cacheFileName = sprintf('AreaLights_ReinhardtVaryingAlpha_OLEDlum_%2.0f_LCDlum_%2.0f', lumOLED, lumLCD);
-    elseif (strcmp(char(lightingConditionsExamined), 'area0_front0_ceiling1'))
-        cacheFileName = sprintf('CeilingLights_ReinhardtVaryingAlpha_OLEDlum_%2.0f_LCDlum_%2.0f', lumOLED, lumLCD);
-    else
-        error('What ?');
-    end
-    
-    
        
     % Set up the figure arrangment
     rowsNum = 3;
@@ -201,7 +197,7 @@ function GenerateStimulusCacheDifferentAlphas
             for specularReflectionIndex = 1:numel(specularStrengthsExamined)
                 for alphaIndex = 1:numel(alphasExamined)
 
-                    blobbieFileName = sprintf('%s_Samsung_FlatSpecularReflectance_%s.spd___Samsung_NeutralDay_BlueGreen_0.60.spd___alpha_%s___Lights_%s_rotationAngle_0.mat', shapesExamined{shapeIndex}, specularStrengthsExamined{specularReflectionIndex}, alphasExamined{alphaIndex}, lightingConditionsExamined{lightingIndex});
+                    blobbieFileName = sprintf('%sShadowed_Samsung_FlatSpecularReflectance_%s.spd___Samsung_NeutralDay_BlueGreen_0.60.spd___alpha_%s___Lights_%s_rotationAngle_0.mat', shapesExamined{shapeIndex}, specularStrengthsExamined{specularReflectionIndex}, alphasExamined{alphaIndex}, lightingConditionsExamined{lightingIndex});
                     fprintf('\t%s\n', blobbieFileName);
                     linearSRGBimage = ConvertRT3scene(multiSpectralBlobbieFolder,blobbieFileName);
 
@@ -278,7 +274,7 @@ function GenerateStimulusCacheDifferentAlphas
 
                             subplot('Position', subplotPosVectors(1, imIndex+1).v);
                             imshow(CalFormatToImage(sRGB.gammaCorrect(linearSRGBCalFormat), nCols, mRows));
-                            title(sprintf('%2.3f', max(inputLuminance(:))/min(inputLuminance(:))), 'Color', [1 1 0]);
+                            title(sprintf('DR=%2.0f:1', max(inputLuminance(:))/min(inputLuminance(:))), 'Color', [1 1 0]);
 
                             subplot('Position', subplotPosVectors(2,imIndex+1).v);
                             [s.counts, s.centers] = hist(inputLuminance, ensembleCenters); 
