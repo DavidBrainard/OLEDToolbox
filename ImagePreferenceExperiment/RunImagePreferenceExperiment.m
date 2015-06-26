@@ -4,7 +4,7 @@ function RunImagePreferenceExperiment
     cd(rootDir);
     
     runningOnSamsung = input('Running on the Samsung [y/n] : ', 's');
-    if (isempty(runningOnSamsung)) || (strcmp(runningOnSamsung, 'n'))
+    if (isempty(runningOnSamsung)) || (~strcmp(runningOnSamsung, 'y'))
         debugMode = true;
     else
         debugMode = false;
@@ -20,7 +20,7 @@ function RunImagePreferenceExperiment
         'AreaLights_ReinhardtVaryingAlpha_OLEDlum_572_LCDlum_171.mat' ...
         };
     cacheFileNameList = {...
-        'HighDynamicRange_AreaLights_ReinhardtVaryingAlpha_OLEDlum_572_LCDlum_171.mat' ...
+        'BlobbieMacBeth_AreaLights_ReinhardtVaryingAlpha_OLEDlum_572_LCDlum_171.mat' ...
         };
     
     

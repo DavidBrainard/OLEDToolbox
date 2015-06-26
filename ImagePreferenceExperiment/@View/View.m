@@ -83,7 +83,7 @@ classdef View < handle
         % The stimIndex entry of the stimCache contains 2 pointers, one pointing to the texture
         % corresponding to the left stimulus and one pointing to the texture
         % correspond to the right stimulus. The data should be RGB settings values.
-        addToCache(obj, stimIndex, hdrStimRGBdata, ldrStimRGBdata);
+        addToCache(obj, stimIndex, hdrStimRGBdata, ldrStimRGBdata, mappingFunction, sceneHistogram);
         
         % Method to empty the cache, so that new data can be reloaded.
         emptyCache(obj);

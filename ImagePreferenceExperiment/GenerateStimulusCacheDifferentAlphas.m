@@ -49,43 +49,28 @@ function GenerateStimulusCacheDifferentAlphas
     lumLCD = XYZ(2) * wattsToLumens;
     
     
-    
     % Generate an ensemble of blobbie scenes to determine the best tone mapping function
     % based on the cumulative histogram of the ensemble
-    multiSpectralBlobbieFolder = '/Users/Shared/Matlab/Toolboxes/OLEDToolbox/HDRstuff/BlobbieAnalysis/MultispectralData_0deg';
-    multiSpectralBlobbieFolder = '/Users/Shared/Matlab/Toolboxes/OLEDToolbox/HDRstuff/BlobbieAnalysis/HighDynamicRange/';
+    multiSpectralBlobbieFolder = '/Users1/Shared/Matlab/RT3scenes/Blobbies/HighDynamicRange/';
     
     % Compute tone mapping function or Reinhardt key based on limited set (excude very high
     % and flat reflectances, i.e. low alpha images)
-    alphasExamined = {'0.005', '0.010', '0.020', '0.040', '0.080', '0.160', '0.320'};
+    % alphasExamined = {'0.005', '0.010', '0.020', '0.040', '0.080', '0.160', '0.320'};
     
-    specularStrengthsExamined = {'0.60', '0.30', '0.15'};   
-    lightingConditionsExamined = {'area1_front0_ceiling0'};
+    alphasExamined              = {'0.100', '0.320'};
+    specularStrengthsExamined   = {'0.60', '0.15'};   
+    lightingConditionsExamined  = {'area1_front0_ceiling0'};
     shapesExamined = {'Blobbie9SubsHighFreq', 'Blobbie9SubsVeryLowFreq'};
-    shapesExamined = {'Blobbie8SubsHighFreq', 'Blobbie8SubsVeryLowFreq'};
-    
-    % Best set is following
-%     shapesExaminedBest              = {shapesExamined{ [1 2] }}
-%     alphasExaminedBest              = {alphasExamined{ [2 4 5 6 7] }}
-%     specularStrengthsExaminedBest   = {specularStrengthsExamined{ [1 3] }}
-%     lightingConditionsExaminedBest  = {lightingConditionsExamined{ [1] }}
-    
-    shapesExamined              = {shapesExamined{ [2 ] }}
-    alphasExamined              = {alphasExamined{ [2  7] }}
-    specularStrengthsExamined   = {specularStrengthsExamined{ [1 3] }}
-    lightingConditionsExamined  = {lightingConditionsExamined{ [1] }}
+    shapesExamined = {'Blobbie8SubsHighFreqMacBethColorCheckers'}; % , 'Blobbie8SubsVeryLowFreqMacBethColorCheckers'}
     
     
     if (strcmp(char(lightingConditionsExamined), 'area1_front0_ceiling0'))
-        cacheFileName = sprintf('HighDynamicRange_AreaLights_ReinhardtVaryingAlpha_OLEDlum_%2.0f_LCDlum_%2.0f', lumOLED, lumLCD);
+        cacheFileName = sprintf('BlobbieMacBeth_AreaLights_ReinhardtVaryingAlpha_OLEDlum_%2.0f_LCDlum_%2.0f', lumOLED, lumLCD);
     elseif (strcmp(char(lightingConditionsExamined), 'area0_front0_ceiling1'))
-        cacheFileName = sprintf('HighDynamicRange_CeilingLights_ReinhardtVaryingAlpha_OLEDlum_%2.0f_LCDlum_%2.0f', lumOLED, lumLCD);
+        cacheFileName = sprintf('BlobbieMacBeth_CeilingLights_ReinhardtVaryingAlpha_OLEDlum_%2.0f_LCDlum_%2.0f', lumOLED, lumLCD);
     else
         error('What ?');
     end
-    
-    
-    
     
     
     fprintf('Loading an ensemble of blobbie images to compute the ensemble key and cumulative histogram.\n');
@@ -97,6 +82,7 @@ function GenerateStimulusCacheDifferentAlphas
                 for alphaIndex = 1:numel(alphasExamined)
 
                     blobbieFileName = sprintf('%sShadowed_Samsung_FlatSpecularReflectance_%s.spd___Samsung_NeutralDay_BlueGreen_0.60.spd___alpha_%s___Lights_%s_rotationAngle_0.mat',shapesExamined{shapeIndex}, specularStrengthsExamined{specularReflectionIndex}, alphasExamined{alphaIndex}, lightingConditionsExamined{lightingIndex});
+                    blobbieFileName = sprintf('%s_SpecularReflectance_%s_alpha_%s.mat',shapesExamined{shapeIndex}, specularStrengthsExamined{specularReflectionIndex}, alphasExamined{alphaIndex});
                     fprintf('\t%s\n', blobbieFileName);
                     linearSRGBimage = ConvertRT3scene(multiSpectralBlobbieFolder,blobbieFileName);
                     % To calFormat
@@ -146,17 +132,7 @@ function GenerateStimulusCacheDifferentAlphas
     end
     
     % Tone mapping methods to examine
-    tonemappingMethods = {'REINHARDT'}; %, 'LINEAR_SATURATING', 'LINEAR_MAPPING_TO_GAMUT', 'CUMULATIVE_LOG_HISTOGRAM_BASED'};
-    
-    % Blobbie subset for the cache
-%     shapesExamined              = {shapesExamined{ [1] }}
-%     alphasExamined              = {alphasExamined{ [1 4] }}
-%     specularStrengthsExamined   = {specularStrengthsExamined{ [1 3] }}
-%     lightingConditionsExamined  = {lightingConditionsExamined{ [1] }}
-    
-    
-    
-    
+    tonemappingMethods = {'REINHARDT'}; %, 'LINEAR_SATURATING', 'LINEAR_MAPPING_TO_GAMUT', 'CUMULATIVE_LOG_HISTOGRAM_BASED'}
 
        
     % Set up the figure arrangment
@@ -198,6 +174,7 @@ function GenerateStimulusCacheDifferentAlphas
                 for alphaIndex = 1:numel(alphasExamined)
 
                     blobbieFileName = sprintf('%sShadowed_Samsung_FlatSpecularReflectance_%s.spd___Samsung_NeutralDay_BlueGreen_0.60.spd___alpha_%s___Lights_%s_rotationAngle_0.mat', shapesExamined{shapeIndex}, specularStrengthsExamined{specularReflectionIndex}, alphasExamined{alphaIndex}, lightingConditionsExamined{lightingIndex});
+                    blobbieFileName = sprintf('%s_SpecularReflectance_%s_alpha_%s.mat',shapesExamined{shapeIndex}, specularStrengthsExamined{specularReflectionIndex}, alphasExamined{alphaIndex});
                     fprintf('\t%s\n', blobbieFileName);
                     linearSRGBimage = ConvertRT3scene(multiSpectralBlobbieFolder,blobbieFileName);
 
@@ -248,6 +225,8 @@ function GenerateStimulusCacheDifferentAlphas
                             end
 
 
+                            toneMappingParams.mappingFunctionLowRes = generateLowResMappingFunction(toneMappingParams.mappingFunction);
+                            
                             % Update cache with settings images for all emulated displays
                             for emulatedDisplayName = emulatedDisplayNames
                                 emulatedDisplayCal = displayCal(char(emulatedDisplayName));
@@ -278,8 +257,9 @@ function GenerateStimulusCacheDifferentAlphas
 
                             subplot('Position', subplotPosVectors(2,imIndex+1).v);
                             [s.counts, s.centers] = hist(inputLuminance, ensembleCenters); 
-                            cachedData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex).histogram = s;
-                             cachedData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex).toneMappingParams = toneMappingParams;
+                            cachedData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex).histogramFullRes = s;
+                            cachedData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex).histogramLowRes = generateLowResHistogram(s);
+                            cachedData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex).toneMappingParams = toneMappingParams;
                             bar(s.centers, s.counts, 'FaceColor', [1.0 0.1 0.5], 'EdgeColor', 'none');
                             maxHistogramCount = min(s.counts(s.counts>0))*histogramCountHeight;
                             
@@ -313,8 +293,53 @@ function GenerateStimulusCacheDifferentAlphas
     orderedIndicesNames = {'shapeIndex', 'specularReflectionIndex', 'alphaIndex', 'lightingIndex', 'toneMappingMethodIndex', 'toneMappingParamIndex'};
 
     save(cacheFileName, 'cachedData', 'orderedIndicesNames', 'shapesExamined', 'specularStrengthsExamined', 'alphasExamined', 'lightingConditionsExamined', 'tonemappingMethods', 'ReinhardtAlphas', 'comparisonMode');
+    fprintf(2,'\n\nNew stimulus cache was generated and saved in ''%s''.\n\n', cacheFileName);
+end
+
+
+function mappingFunction =  generateLowResMappingFunction(originalMappingFunction)
+
+    input  = originalMappingFunction.input;
+    output = originalMappingFunction.output;
+    
+    newBinsNum  = 255;
+    newBinSize  = round(numel(input)/(newBinsNum+1));
+    mappingFunction.input  = zeros(newBinsNum,1);
+    mappingFunction.output = zeros(newBinsNum,1);
+    
+    for binIndex = 1:newBinsNum
+        indices = ((binIndex-1)*newBinSize+1:1:binIndex*newBinSize);
+        mappingFunction.input(binIndex)  = mean(input(indices));
+        mappingFunction.output(binIndex) = mean(output(indices));
+    end    
     
 end
+
+
+function s = generateLowResHistogram(originalS)
+
+    centers = originalS.centers;
+    counts = originalS.counts;
+    
+    newBinsNum  = 255;
+    newBinSize  = round(numel(counts)/(newBinsNum+1));
+    s.counts    = zeros(newBinsNum,1);
+    s.centers   = zeros(newBinsNum,1);
+    
+    for binIndex = 1:newBinsNum
+        indices = ((binIndex-1)*newBinSize+1:1:binIndex*newBinSize);
+        s.counts(binIndex) = sum(counts(indices));
+        s.centers(binIndex) = mean(centers(indices));
+    end        
+    
+    % clamp to 200 count
+    maxHistogramCountHeight = 200;
+    maxHistogramCount = min(s.counts(s.counts>0))*maxHistogramCountHeight;
+    s.counts(s.counts>maxHistogramCount) = maxHistogramCount;
+    s.counts = s.counts/maxHistogramCount;
+                                    
+end
+
 
 function PlotCumulativeToneMapFunction(cumulativeHistogram, luminanceEnsembleCalFormat, ensembleCenters)
     hh = figure(99);

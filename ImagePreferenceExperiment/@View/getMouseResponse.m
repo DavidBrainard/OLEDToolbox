@@ -96,7 +96,8 @@ function response = getMouseResponse(obj)
             end
 
             if ( clickedMouse)
-                response.begin = GetSecs;
+                response.end = GetSecs;
+                response.actualTime = response.end;
                 
                 % See if the mouse cursor is inside the square
                 if (IsInRect(mx, my, obj.currentHDRStimRect))    

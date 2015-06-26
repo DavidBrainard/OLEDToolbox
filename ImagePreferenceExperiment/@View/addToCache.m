@@ -2,7 +2,7 @@
 % The stimIndex entry of the stimCache contains 2 pointers, one pointing to the texture
 % corresponding to the left stimulus and one pointing to the texture
 % correspond to the right stimulus. The data should be RGB settings values.
-function addToCache(obj, stimIndex, hdrStimRGBdata, ldrStimRGBdata)
+function addToCache(obj, stimIndex, hdrStimRGBdata, ldrStimRGBdata, mappingFunction, sceneHistogram)
     
     if (obj.stimCache.entries > 0) && (any(size(hdrStimRGBdata) ~= obj.stimCache.stimSize))
         error('addToCache: hdrStimRGBdata and cacheData have inconsistent sizes.');
@@ -53,6 +53,38 @@ function addToCache(obj, stimIndex, hdrStimRGBdata, ldrStimRGBdata)
         % save stim textures in cache    
         obj.stimCache.textures{stimIndex} = struct('hdr', hdrStimTextures, 'ldr', ldrStimTextures);
        
+        
+        % The histogram and tone mapping function data
+        deltaX = 3; deltaY = 180;
+        
+        % The histogram rects
+        xCoords = []; yCoords = [];
+        for k = 1:numel(sceneHistogram.counts)
+            xCoords = [xCoords (k-1)*deltaX (k-1)*deltaX];
+            yCoords = [yCoords deltaY deltaY-sceneHistogram.counts(k)*deltaY];
+        end
+        
+        obj.stimCache.histogramData{stimIndex} = struct(...
+            'xyCoords', [xCoords; yCoords], ...
+            'center', [100 10], ...
+            'smooth', [], ...
+            'lineWidthPix', 3 ...
+        );
+        
+        % The tonemapping line
+        xCoords = []; yCoords = [];
+        for k = 1:numel(sceneHistogram.counts)-1
+            xCoords = [xCoords (k-1)*deltaX     k*deltaX];
+            yCoords = [yCoords deltaY-mappingFunction.output(k)*deltaY   deltaY-mappingFunction.output(k+1)*deltaY];
+        end
+        
+        obj.stimCache.tomeMappingData{stimIndex} = struct(...
+            'xyCoords', [xCoords; yCoords], ...
+            'center', [100 10], ...
+            'smooth', [], ...
+            'lineWidthPix', 2 ...
+        );
+    
     catch err
         obj.shutDown();
         rethrow(err);

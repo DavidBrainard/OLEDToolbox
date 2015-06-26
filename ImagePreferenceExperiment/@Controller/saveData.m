@@ -6,7 +6,8 @@ function saveData(obj)
     comparisonMode      = obj.comparisonMode;
     conditionsData      = obj.conditionsData;
     thumbnailStimImages = obj.thumbnailStimImages;
-    histograms          = obj.histograms;
+    histogramsFullRes   = obj.histogramsFullRes;
+    histogramsLowRes    = obj.histogramsLowRes;
     tonemappingMethods  = obj.tonemappingMethods;
     toneMappingParams   = obj.toneMappingParams;
     
@@ -17,7 +18,7 @@ function saveData(obj)
     runParams = obj.runParams;
         
     % Save everything
-    save(runParams.dataFileName, 'cacheFileNameList', 'comparisonMode', 'conditionsData', 'thumbnailStimImages', 'stimPreferenceMatrices', 'runParams', 'histograms', 'tonemappingMethods', 'toneMappingParams');
+    save(runParams.dataFileName, 'cacheFileNameList', 'comparisonMode', 'conditionsData', 'thumbnailStimImages', 'stimPreferenceMatrices', 'runParams', 'histogramsLowRes', 'histogramsFullRes', 'tonemappingMethods', 'toneMappingParams');
 	fprintf('Data saved in ''%s'',\n', runParams.dataFileName);
     Speak(sprintf('Data were saved. All done.'));
 end

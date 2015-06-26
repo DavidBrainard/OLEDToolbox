@@ -14,7 +14,8 @@ classdef Controller < handle
         comparisonMode;
         conditionsData;
         thumbnailStimImages;
-        histograms;
+        histogramsLowRes;
+        histogramsFullRes;
         tonemappingMethods;
         toneMappingParams;
         

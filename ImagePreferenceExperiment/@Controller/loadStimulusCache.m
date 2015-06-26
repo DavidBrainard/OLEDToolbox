@@ -91,14 +91,40 @@ function loadStimulusCache(obj, cacheFileNameList)
                                         Speak(sprintf('Loading %d of %d images', stimIndex, prod(size(cachedData))));
                                     end
                                     fprintf('Loading stimulus #%d/%d\n', stimIndex, prod(size(cachedData)));
+                                    
                                     hdrStimRGBdata = cachedData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex).hdrSettingsImage;
                                     ldrStimRGBdata = cachedData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex).ldrSettingsImage;
+                                    
                                     obj.toneMappingParams{shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex} = cachedData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex).toneMappingParams;
-                                    obj.histograms{shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex} = cachedData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex).histogram;
+                                    obj.histogramsLowRes{shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex} = cachedData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex).histogramLowRes;
+                                    obj.histogramsFullRes{shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex} = cachedData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex).histogramFullRes;
                                     obj.conditionsData(shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex) = stimIndex;
                                     obj.thumbnailStimImages(stimIndex,1,:,:,:) = uint8(255.0*hdrStimRGBdata(1:4:end, 1:4:end,:));
                                     obj.thumbnailStimImages(stimIndex,2,:,:,:) = uint8(255.0*ldrStimRGBdata(1:4:end, 1:4:end,:));
-                                    obj.viewOutlet.addToCache(stimIndex, double(hdrStimRGBdata), double(ldrStimRGBdata));
+                                    
+                                    
+                                    mappingFunctionLowRes = obj.toneMappingParams{shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex}.mappingFunctionLowRes;
+                                    histogramLowRes = obj.histogramsLowRes{shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex}; 
+                                    obj.viewOutlet.addToCache(stimIndex, double(hdrStimRGBdata), double(ldrStimRGBdata), mappingFunctionLowRes, histogramLowRes);
+                                    
+                                    if (1==2)
+                                        figure(100);
+                                        clf;
+                                        mappingFunctionLowRes = obj.toneMappingParams{shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex}.mappingFunctionLowRes;
+                                        histogramLowRes = obj.histogramsLowRes{shapeIndex, specularReflectionIndex, alphaIndex, lightingIndex, toneMappingMethodIndex, toneMappingParamIndex};
+                                        maxHistogramCountHeight = 200;
+                                        maxHistogramCount = min(histogramLowRes.counts(histogramLowRes.counts>0))*maxHistogramCountHeight;
+                                        histogramLowRes.counts(histogramLowRes.counts>maxHistogramCount) = maxHistogramCount;
+                                        histogramLowRes.counts = histogramLowRes.counts/maxHistogramCount;
+
+                                        bar(histogramLowRes.centers, histogramLowRes.counts);
+                                        hold on;
+                                        plot(mappingFunctionLowRes.input, mappingFunctionLowRes.output, 'r-');
+                                        set(gca, 'YLim', [0 1]);
+                                        drawnow
+                                        pause;
+                                    end
+                                    
                                 end
                             end
                             
