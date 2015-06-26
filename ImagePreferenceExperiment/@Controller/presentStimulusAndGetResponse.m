@@ -2,14 +2,14 @@ function response = presentStimulusAndGetResponse(obj, stimIndex, HDRposition)
 
     if (strcmp(obj.comparisonMode, 'HDR_vs_LDR'))
         if (strcmp(HDRposition, 'LEFT'))
-            obj.viewOutlet.showStimulus(stimIndex, obj.targetLocations.left, obj.targetLocations.right);
+            obj.viewOutlet.showStimulus(stimIndex, obj.targetLocations.left, obj.targetLocations.right, obj.initParams.histogramIsVisible);
         elseif (strcmp(HDRposition, 'RIGHT'))
-            obj.viewOutlet.showStimulus(stimIndex, obj.targetLocations.right, obj.targetLocations.left);
+            obj.viewOutlet.showStimulus(stimIndex, obj.targetLocations.right, obj.targetLocations.left, obj.initParams.histogramIsVisible);
         else
             error('Unknown position ''%s''.', HDRposition);
         end
     elseif (strcmp(obj.comparisonMode, 'Best_tonemapping_parameter_HDR_and_LDR'))
-        obj.viewOutlet.showStimulus(stimIndex, obj.targetLocations.left, obj.targetLocations.right);
+        obj.viewOutlet.showStimulus(stimIndex, obj.targetLocations.left, obj.targetLocations.right, obj.initParams.histogramIsVisible);
     else
          error('Dont know how to present stimuli for comparison mode: %s', obj.comparisonMode);
     end

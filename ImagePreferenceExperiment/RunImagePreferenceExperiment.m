@@ -3,16 +3,24 @@ function RunImagePreferenceExperiment
     [rootDir,~] = fileparts(which(mfilename))
     cd(rootDir);
     
-    runningOnSamsung = input('Running on the Samsung [y/n] : ', 's');
+    runningOnSamsung = input('Running on the Samsung [y/n] [default=n]: ', 's');
     if (isempty(runningOnSamsung)) || (~strcmp(runningOnSamsung, 'y'))
         debugMode = true;
     else
         debugMode = false;
     end
     
+    makeHistogramVisible = input('Visualize image histogram and tone mapping function [y/n] [default=n]: ', 's');
+    if (isempty(makeHistogramVisible)) || (~strcmp(makeHistogramVisible, 'y'))
+        histogramIsVisible = false;
+    else
+        histogramIsVisible = true;
+    end
+        
     % use debugMode = false, when running on the Samsung
     experimentController = Controller('debugMode', debugMode, ...
                                       'giveVerbalFeedback', false, ...
+                                      'histogramIsVisible', histogramIsVisible, ...
                                       'visualizeResultsOnLine', false );
     
     % Select a stimulus cache file(s)

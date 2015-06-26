@@ -77,7 +77,7 @@ classdef View < handle
         end
         
         % Method to present a stimulus (hdr, ldr) pair at specific destination rects
-        showStimulus(obj, stimIndex, hdrDestRect, ldrDestRect);
+        showStimulus(obj, stimIndex, hdrDestRect, ldrDestRect, histogramIsVisible);
         
         % Method to add a pair of left, right RGB data to the stimCache.
         % The stimIndex entry of the stimCache contains 2 pointers, one pointing to the texture

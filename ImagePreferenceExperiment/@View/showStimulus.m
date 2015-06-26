@@ -1,5 +1,5 @@
  % Method to present a stimulus (hdr, ldr) pair at specific destination rects
-function showStimulus(obj,stimIndex, hdrDestRect, ldrDestRect)
+function showStimulus(obj,stimIndex, hdrDestRect, ldrDestRect, histogramIsVisible)
 
     obj.currentHDRStimRect = hdrDestRect;
     obj.currentLDRStimRect = ldrDestRect;
@@ -25,8 +25,10 @@ function showStimulus(obj,stimIndex, hdrDestRect, ldrDestRect)
                 sourceRect, hdrDestRect, rotationAngle, filterMode, globalAlpha); 
             Screen('DrawTexture', obj.psychImagingEngine.masterWindowPtr, s.ldr(frameIndex), ...
                 sourceRect, ldrDestRect, rotationAngle, filterMode, globalAlpha); 
-            Screen('DrawLines', obj.psychImagingEngine.masterWindowPtr, hData.xyCoords, hData.lineWidthPix, mediumGray, hData.center, hData.smooth);
-        
+            
+            if (histogramIsVisible)
+                Screen('DrawLines', obj.psychImagingEngine.masterWindowPtr, hData.xyCoords, hData.lineWidthPix, mediumGray, hData.center, hData.smooth);
+            end
             
             % --- SCREEN 2  ---
             frameIndex = 2;
@@ -35,7 +37,10 @@ function showStimulus(obj,stimIndex, hdrDestRect, ldrDestRect)
                 sourceRect, hdrDestRect, rotationAngle, filterMode, globalAlpha); 
             Screen('DrawTexture', obj.psychImagingEngine.masterWindowPtr, s.ldr(frameIndex), ...
                 sourceRect, ldrDestRect, rotationAngle, filterMode, globalAlpha); 
-            Screen('DrawLines', obj.psychImagingEngine.masterWindowPtr, hData.xyCoords, hData.lineWidthPix, mediumGray, hData.center, hData.smooth);
+            
+            if (histogramIsVisible)
+                Screen('DrawLines', obj.psychImagingEngine.masterWindowPtr, hData.xyCoords, hData.lineWidthPix, mediumGray, hData.center, hData.smooth);
+            end
             
             if (~isempty(obj.psychImagingEngine.slaveWindowPtr))
                 % --- SCREEN 3  ---
@@ -45,7 +50,10 @@ function showStimulus(obj,stimIndex, hdrDestRect, ldrDestRect)
                 sourceRect, hdrDestRect, rotationAngle, filterMode, globalAlpha); 
                 Screen('DrawTexture', obj.psychImagingEngine.slaveWindowPtr, s.ldr(frameIndex), ...
                 sourceRect, ldrDestRect, rotationAngle, filterMode, globalAlpha);
-                Screen('DrawLines', obj.psychImagingEngine.slaveWindowPtr, hData.xyCoords, hData.lineWidthPix, mediumGray, hData.center, hData.smooth);
+            
+                if (histogramIsVisible)
+                    Screen('DrawLines', obj.psychImagingEngine.slaveWindowPtr, hData.xyCoords, hData.lineWidthPix, mediumGray, hData.center, hData.smooth);
+                end
                 
                 % --- SCREEN 4  ---
                 frameIndex = 4;
@@ -54,7 +62,10 @@ function showStimulus(obj,stimIndex, hdrDestRect, ldrDestRect)
                 sourceRect, hdrDestRect, rotationAngle, filterMode, globalAlpha); 
                 Screen('DrawTexture', obj.psychImagingEngine.slaveWindowPtr, s.ldr(frameIndex), ...
                 sourceRect, ldrDestRect, rotationAngle, filterMode, globalAlpha);
-                Screen('DrawLines', obj.psychImagingEngine.slaveWindowPtr, hData.xyCoords, hData.lineWidthPix, mediumGray, hData.center, hData.smooth);
+            
+                if (histogramIsVisible)
+                    Screen('DrawLines', obj.psychImagingEngine.slaveWindowPtr, hData.xyCoords, hData.lineWidthPix, mediumGray, hData.center, hData.smooth);
+                end
             end
 
             % Flip all 4 buffers to show the stimulus
@@ -117,13 +128,15 @@ function showStimulus(obj,stimIndex, hdrDestRect, ldrDestRect)
             Screen('DrawTexture', obj.psychImagingEngine.masterWindowPtr, s2(frameIndex), ...
                 sourceRect, rightRect, rotationAngle, filterMode, globalAlpha); 
             
-            % The histograms
-            Screen('DrawLines', obj.psychImagingEngine.masterWindowPtr, h1.xyCoords, h1.lineWidthPix, mediumGray, h1.center, h1.smooth);
-            Screen('DrawLines', obj.psychImagingEngine.masterWindowPtr, h2.xyCoords, h2.lineWidthPix, mediumGray, h2.center+[960 0], h2.smooth);
-            
-            % The tonemapping functions
-            Screen('DrawLines', obj.psychImagingEngine.masterWindowPtr, tm1.xyCoords, tm1.lineWidthPix, red, tm1.center, tm1.smooth);
-            Screen('DrawLines', obj.psychImagingEngine.masterWindowPtr, tm2.xyCoords, tm2.lineWidthPix, red, tm2.center+[960 0], tm2.smooth);
+            if (histogramIsVisible)
+                % The histograms
+                Screen('DrawLines', obj.psychImagingEngine.masterWindowPtr, h1.xyCoords, h1.lineWidthPix, mediumGray, h1.center, h1.smooth);
+                Screen('DrawLines', obj.psychImagingEngine.masterWindowPtr, h2.xyCoords, h2.lineWidthPix, mediumGray, h2.center+[960 0], h2.smooth);
+
+                % The tonemapping functions
+                Screen('DrawLines', obj.psychImagingEngine.masterWindowPtr, tm1.xyCoords, tm1.lineWidthPix, red, tm1.center, tm1.smooth);
+                Screen('DrawLines', obj.psychImagingEngine.masterWindowPtr, tm2.xyCoords, tm2.lineWidthPix, red, tm2.center+[960 0], tm2.smooth);
+            end
             
             % --- SCREEN 2  ---
             frameIndex = 2;
@@ -133,13 +146,16 @@ function showStimulus(obj,stimIndex, hdrDestRect, ldrDestRect)
             Screen('DrawTexture', obj.psychImagingEngine.masterWindowPtr, s2(frameIndex), ...
                 sourceRect, rightRect, rotationAngle, filterMode, globalAlpha);
             
-            % The histograms
-            Screen('DrawLines', obj.psychImagingEngine.masterWindowPtr, h1.xyCoords, h1.lineWidthPix, mediumGray, h1.center, h1.smooth);
-            Screen('DrawLines', obj.psychImagingEngine.masterWindowPtr, h2.xyCoords, h2.lineWidthPix, mediumGray, h2.center+[960 0], h2.smooth);
+            if (histogramIsVisible)
+                % The histograms
+                Screen('DrawLines', obj.psychImagingEngine.masterWindowPtr, h1.xyCoords, h1.lineWidthPix, mediumGray, h1.center, h1.smooth);
+                Screen('DrawLines', obj.psychImagingEngine.masterWindowPtr, h2.xyCoords, h2.lineWidthPix, mediumGray, h2.center+[960 0], h2.smooth);
+
+                % The tonemapping functions
+                Screen('DrawLines', obj.psychImagingEngine.masterWindowPtr, tm1.xyCoords, tm1.lineWidthPix, red, tm1.center, tm1.smooth);
+                Screen('DrawLines', obj.psychImagingEngine.masterWindowPtr, tm2.xyCoords, tm2.lineWidthPix, red, tm2.center+[960 0], tm2.smooth);
+            end
             
-            % The tonemapping functions
-            Screen('DrawLines', obj.psychImagingEngine.masterWindowPtr, tm1.xyCoords, tm1.lineWidthPix, red, tm1.center, tm1.smooth);
-            Screen('DrawLines', obj.psychImagingEngine.masterWindowPtr, tm2.xyCoords, tm2.lineWidthPix, red, tm2.center+[960 0], tm2.smooth);
             
             if (~isempty(obj.psychImagingEngine.slaveWindowPtr))
                 % --- SCREEN 3  ---
@@ -150,13 +166,15 @@ function showStimulus(obj,stimIndex, hdrDestRect, ldrDestRect)
                 Screen('DrawTexture', obj.psychImagingEngine.slaveWindowPtr, s2(frameIndex), ...
                 sourceRect, rightRect, rotationAngle, filterMode, globalAlpha);
             
-                % The histograms
-                Screen('DrawLines', obj.psychImagingEngine.slaveWindowPtr, h1.xyCoords, h1.lineWidthPix, mediumGray, h1.center, h1.smooth);
-                Screen('DrawLines', obj.psychImagingEngine.slaveWindowPtr, h2.xyCoords, h2.lineWidthPix, mediumGray, h2.center+[960 0], h2.smooth);
-            
-                % The tonemapping functions
-                Screen('DrawLines', obj.psychImagingEngine.slaveWindowPtr, tm1.xyCoords, tm1.lineWidthPix, red, tm1.center, tm1.smooth);
-                Screen('DrawLines', obj.psychImagingEngine.slaveWindowPtr, tm2.xyCoords, tm2.lineWidthPix, red, tm2.center+[960 0], tm2.smooth);
+                if (histogramIsVisible)
+                    % The histograms
+                    Screen('DrawLines', obj.psychImagingEngine.slaveWindowPtr, h1.xyCoords, h1.lineWidthPix, mediumGray, h1.center, h1.smooth);
+                    Screen('DrawLines', obj.psychImagingEngine.slaveWindowPtr, h2.xyCoords, h2.lineWidthPix, mediumGray, h2.center+[960 0], h2.smooth);
+
+                    % The tonemapping functions
+                    Screen('DrawLines', obj.psychImagingEngine.slaveWindowPtr, tm1.xyCoords, tm1.lineWidthPix, red, tm1.center, tm1.smooth);
+                    Screen('DrawLines', obj.psychImagingEngine.slaveWindowPtr, tm2.xyCoords, tm2.lineWidthPix, red, tm2.center+[960 0], tm2.smooth);
+                end
             
                 % --- SCREEN 4  ---
                 frameIndex = 4;
@@ -166,13 +184,15 @@ function showStimulus(obj,stimIndex, hdrDestRect, ldrDestRect)
                 Screen('DrawTexture', obj.psychImagingEngine.slaveWindowPtr, s2(frameIndex), ...
                 sourceRect, rightRect, rotationAngle, filterMode, globalAlpha);
             
-                % The histograms
-                Screen('DrawLines', obj.psychImagingEngine.slaveWindowPtr, h1.xyCoords, h1.lineWidthPix, mediumGray, h1.center, h1.smooth);
-                Screen('DrawLines', obj.psychImagingEngine.slaveWindowPtr, h2.xyCoords, h2.lineWidthPix, mediumGray, h2.center+[960 0], h2.smooth);
-                
-                % The tonemapping functions
-                Screen('DrawLines', obj.psychImagingEngine.slaveWindowPtr, tm1.xyCoords, tm1.lineWidthPix, red, tm1.center, tm1.smooth);
-                Screen('DrawLines', obj.psychImagingEngine.slaveWindowPtr, tm2.xyCoords, tm2.lineWidthPix, red, tm2.center+[960 0], tm2.smooth);
+                if (histogramIsVisible)
+                    % The histograms
+                    Screen('DrawLines', obj.psychImagingEngine.slaveWindowPtr, h1.xyCoords, h1.lineWidthPix, mediumGray, h1.center, h1.smooth);
+                    Screen('DrawLines', obj.psychImagingEngine.slaveWindowPtr, h2.xyCoords, h2.lineWidthPix, mediumGray, h2.center+[960 0], h2.smooth);
+
+                    % The tonemapping functions
+                    Screen('DrawLines', obj.psychImagingEngine.slaveWindowPtr, tm1.xyCoords, tm1.lineWidthPix, red, tm1.center, tm1.smooth);
+                    Screen('DrawLines', obj.psychImagingEngine.slaveWindowPtr, tm2.xyCoords, tm2.lineWidthPix, red, tm2.center+[960 0], tm2.smooth);
+                end
             end
 
             % Flip all 4 buffers to show the stimulus
