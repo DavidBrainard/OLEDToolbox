@@ -156,7 +156,7 @@ function showStimulus(obj,stimIndex, hdrDestRect, ldrDestRect)
             
                 % The tonemapping functions
                 Screen('DrawLines', obj.psychImagingEngine.slaveWindowPtr, tm1.xyCoords, tm1.lineWidthPix, red, tm1.center, tm1.smooth);
-                Screen('DrawLines', obj.psychImagingEngine.slaverWindowPtr, tm2.xyCoords, tm2.lineWidthPix, red, tm2.center+[960 0], tm2.smooth);
+                Screen('DrawLines', obj.psychImagingEngine.slaveWindowPtr, tm2.xyCoords, tm2.lineWidthPix, red, tm2.center+[960 0], tm2.smooth);
             
                 % --- SCREEN 4  ---
                 frameIndex = 4;
@@ -172,7 +172,7 @@ function showStimulus(obj,stimIndex, hdrDestRect, ldrDestRect)
                 
                 % The tonemapping functions
                 Screen('DrawLines', obj.psychImagingEngine.slaveWindowPtr, tm1.xyCoords, tm1.lineWidthPix, red, tm1.center, tm1.smooth);
-                Screen('DrawLines', obj.psychImagingEngine.slaverWindowPtr, tm2.xyCoords, tm2.lineWidthPix, red, tm2.center+[960 0], tm2.smooth);
+                Screen('DrawLines', obj.psychImagingEngine.slaveWindowPtr, tm2.xyCoords, tm2.lineWidthPix, red, tm2.center+[960 0], tm2.smooth);
             end
 
             % Flip all 4 buffers to show the stimulus
