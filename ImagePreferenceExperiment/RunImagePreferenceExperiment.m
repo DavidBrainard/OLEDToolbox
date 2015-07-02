@@ -31,6 +31,9 @@ function RunImagePreferenceExperiment
         'BlobbieMacBeth_AreaLights_ReinhardtVaryingAlpha_OLEDlum_572_LCDlum_171.mat' ...
         };
     
+    cacheFileNameList = {...
+        'Blobbie_SunRoomSideLight_ReinhardtVaryingAlpha_OLEDlum_572_LCDlum_171' ...
+        };
     
     % Load the stimulus cache
     experimentController.loadStimulusCache(cacheFileNameList);
