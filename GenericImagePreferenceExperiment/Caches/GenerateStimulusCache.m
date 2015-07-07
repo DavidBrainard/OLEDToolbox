@@ -15,8 +15,8 @@ function GenerateStimulusCache
 
     luminanceOverdrive(1) = 0.97;   % overdrive for LCD (adjust so at to have a rendered output luminance that is similar to the intended output luminance)
     luminanceOverdrive(2) = 0.87;   % overdrive for OLED (adjust so at to have a rendered output luminance that is similar to the intended output luminance)
-    aboveGamutOperation = 'Clip Individual Primaries';
-    %aboveGamutOperation = 'Scale RGBPrimary Triplet';
+    %aboveGamutOperation = 'Clip Individual Primaries';
+    aboveGamutOperation = 'Scale RGBPrimary Triplet';
 
     wattsToLumens = 683;
     renderingDisplayCal = displayCalDictionary('OLED');
@@ -138,7 +138,7 @@ function GenerateStimulusCache
     end % sceneIndex
     
     
-    cacheDirectory = '/Users/Shared/Matlab/Toolboxes/OLEDToolbox/GenericImagePreferenceExperiment';
+    cacheDirectory = '/Users/Shared/Matlab/Toolboxes/OLEDToolbox/GenericImagePreferenceExperiment/Caches';
     cacheFileName = sprintf('Blobbie_SunRoomSideLight_Cache');
     
     save(fullfile(cacheDirectory, cacheFileName), 'cachedData', 'sceneFileNames', 'toneMappingEnsemble');
