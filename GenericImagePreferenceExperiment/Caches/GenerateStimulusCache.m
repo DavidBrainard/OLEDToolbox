@@ -5,133 +5,386 @@ function GenerateStimulusCache
     emulatedDisplayNames = keys(displayCalDictionary);
     
     % Load the RT3 scenes
-    [sceneEnsemble, ensembleLuminances] = loadRT3Scenes();         
+    [sceneEnsemble, ensembleLuminances, sceneFileNames] = loadRT3Scenes();         
             
     % Generate toneMapping ensemble
-    toneMappingEnsemble = generateToneMappingEnsemble(ensembleLuminances);
- 
-    luminanceOverdrive = 1.0;
-    %                 aboveGamutOperation = 'Clip Individual Primaries';
-    aboveGamutOperation = 'Scale RGBPrimary Triplet';
+    testLinearMapping          = false;
+    testHistogramBasedSequence = true;
+    testReinhardtSequence      = true;
+    [toneMappingEnsemble, ensembleCenters] = generateToneMappingEnsemble(ensembleLuminances, testLinearMapping, testHistogramBasedSequence, testReinhardtSequence);
 
-    for emulatedDisplayIndex = 1:numel(emulatedDisplayNames)
+    luminanceOverdrive(1) = 0.97;   % overdrive for LCD (adjust so at to have a rendered output luminance that is similar to the intended output luminance)
+    luminanceOverdrive(2) = 0.87;   % overdrive for OLED (adjust so at to have a rendered output luminance that is similar to the intended output luminance)
+    aboveGamutOperation = 'Clip Individual Primaries';
+    %aboveGamutOperation = 'Scale RGBPrimary Triplet';
+
+    wattsToLumens = 683;
+    renderingDisplayCal = displayCalDictionary('OLED');
+    
+    
+    subplotPosVectors = NicePlot.getSubPlotPosVectors(...
+        'rowsNum',      numel(sceneEnsemble)+1, ...
+        'colsNum',      numel(toneMappingEnsemble), ...
+        'widthMargin',  0.005, ...
+        'leftMargin',   0.01, ...
+        'bottomMargin', 0.01, ...
+        'topMargin',    0.01);
+    
+    h1 = figure(1);
+    clf;
+    set(h1, 'Position', [10 10 2453 1340], 'Name', 'LCD');
+    
+    h2 = figure(2);
+    clf;
+    set(h2, 'Position', [10 400 2453 1340], 'Name', 'OLED');
+    
+    
+    for sceneIndex = 1:numel(sceneEnsemble)     
+        inputSRGBimage    = sceneEnsemble{sceneIndex}.linearSRGB;
+        xyYcalFormat      = sceneEnsemble{sceneIndex}.xyYcalFormat;
+        inputLuminance    = xyYcalFormat(3,:)*wattsToLumens;
+
+        lowResBinsNum = 200;
+        [sceneHistogramFullRes, sceneHistogramLowRes] = generateLowAndFullResSceneHistograms(inputLuminance, ensembleCenters, lowResBinsNum);
         
-        % Extract the emulated display cal
-        emulatedDisplayName = emulatedDisplayNames{emulatedDisplayIndex};
-        emulatedDisplayCal  = displayCalDictionary(char(emulatedDisplayName));
-        
-        renderingDisplayCal = displayCalDictionary('OLED');
-        maxRenderingDisplaySRGB = max(renderingDisplayCal.maxSRGB(:));
-        
-        for sceneIndex = 1:numel(sceneEnsemble)
+        for toneMappingIndex = 1:numel(toneMappingEnsemble)
+            toneMappingParams = toneMappingEnsemble{toneMappingIndex}; 
             
-            inputSRGBimage    = sceneEnsemble{sceneIndex}.linearSRGB;
-            xyYcalFormat      = sceneEnsemble{sceneIndex}.xyYcalFormat;
-            inputLuminance    = xyYcalFormat(3,:);
-
-            for toneMappingIndex = 1:numel(toneMappingEnsemble)
+            cachedData(sceneIndex, toneMappingIndex).toneMappingParams     = toneMappingParams;
+            cachedData(sceneIndex, toneMappingIndex).sceneHistogramFullRes = sceneHistogramFullRes;
+            cachedData(sceneIndex, toneMappingIndex).sceneHistogramLowRes  = sceneHistogramLowRes;
+            
+            for emulatedDisplayIndex = 1:numel(emulatedDisplayNames)  
+                % Extract the emulated display cal
+                emulatedDisplayName = emulatedDisplayNames{emulatedDisplayIndex};
+                emulatedDisplayCal  = displayCalDictionary(char(emulatedDisplayName));
                 
-                toneMappingParams = toneMappingEnsemble{toneMappingIndex}; 
-                xyYcalFormat(3,:) = ToneMapLuminance(inputLuminance, toneMappingParams, emulatedDisplayCal.maxLuminance * luminanceOverdrive);
-
-                figure(1001);
-                clf;
-                plot(inputLuminance*683, squeeze(xyYcalFormat(3,:))*683, 'r.');
-                hold on;
-                plot(inputLuminance*683, 0*inputLuminance + emulatedDisplayCal.maxLuminance, 'k-');
-                hold off
-                drawnow;
-
-                % to XYZ
-                XYZcalFormat = xyYToXYZ(xyYcalFormat);
+                % Extract the xyY data
+                xyYcalFormat = sceneEnsemble{sceneIndex}.xyYcalFormat;
                 
-                % to RGB primaries of the emulated display
-                emulatedDisplayRGBPrimariesCalFormat = SensorToPrimary(emulatedDisplayCal.cal, XYZcalFormat);
-    
-                % 
                 aboveGamutOperation = 'Scale RGBPrimary Triplet';
-                [emulatedDisplayRGBPrimariesCalFormat, s] = mapToGamut(emulatedDisplayRGBPrimariesCalFormat, aboveGamutOperation);
-                
-                % to RGB settings of the emulated display - out of gamut here get mapped to 0
-                emulatedDisplayRGBsettingsCalFormat = PrimaryToSettings(emulatedDisplayCal.cal, emulatedDisplayRGBPrimariesCalFormat);
-    
-                % to realizable RGB primaries of the emulated display
-                realizableEmulatedDisplayRGBPrimariesCalFormat = SettingsToPrimary(emulatedDisplayCal.cal, emulatedDisplayRGBsettingsCalFormat);
-    
-                % to realizable (for the emulated display) XYZ 
-                realizableEmulatedDisplayXYZcalFormat = PrimaryToSensor(emulatedDisplayCal.cal, realizableEmulatedDisplayRGBPrimariesCalFormat);
-    
-                % to RGB primaries of the **rendering** display
-                RGBPrimariesCalFormat = SensorToPrimary(renderingDisplayCal.cal, realizableEmulatedDisplayXYZcalFormat);   
-                
-%               % to RGB settings of the **rendering** display - out of gamut here get mapped to 0
-                [RGBPrimariesCalFormat, s] = mapToGamut(RGBPrimariesCalFormat, aboveGamutOperation);
-                s
-                
-                RGBsettingsCalFormat = PrimaryToSettings(renderingDisplayCal.cal, RGBPrimariesCalFormat);
-    
+                [settingsCalFormat, inputLuminance, intendedOutputLuminance, renderedOutputLuminance] = ...
+                    generateToneMappedSettingsForEmulatedDisplayAndRenderingDisplay(xyYcalFormat, toneMappingParams, emulatedDisplayCal, renderingDisplayCal, luminanceOverdrive(emulatedDisplayIndex), aboveGamutOperation);
                 
                 % to settings image
-                settingsImage = CalFormatToImage(RGBsettingsCalFormat, sceneEnsemble{sceneIndex}.imageSize(1), sceneEnsemble{sceneIndex}.imageSize(2));
-    
-                if strcmp(char(emulatedDisplayName), 'LCD')
-                    cachedData(sceneIndex, toneMappingIndex).ldrSettingsImage = single(settingsImage);
+                settingsImage = CalFormatToImage(settingsCalFormat, sceneEnsemble{sceneIndex}.imageSize(1), sceneEnsemble{sceneIndex}.imageSize(2));
+                      
+                subSampleFactor = 16;
+                [lowResInputLuminance, lowResRenderedLuminance] = subSampleToneMappingFunction(inputLuminance, renderedOutputLuminance, subSampleFactor);
+                
+                % add  information in cache
+                % (i) the settings images
+                if strcmp(char(emulatedDisplayName), 'LCD')  
+                    cachedData(sceneIndex, toneMappingIndex).ldrSettingsImage                 = single(settingsImage);
+                    cachedData(sceneIndex, toneMappingIndex).ldrMappingFunctionFullRes.input  = inputLuminance;
+                    cachedData(sceneIndex, toneMappingIndex).ldrMappingFunctionFullRes.output = renderedOutputLuminance;
+                    cachedData(sceneIndex, toneMappingIndex).ldrMappingFunctionLowRes.input   = lowResInputLuminance;
+                    cachedData(sceneIndex, toneMappingIndex).ldrMappingFunctionLowRes.output  = lowResRenderedLuminance;
                 elseif strcmp(char(emulatedDisplayName), 'OLED')
-                    cachedData(sceneIndex, toneMappingIndex).hdrSettingsImage = single(settingsImage);
+                    cachedData(sceneIndex, toneMappingIndex).hdrSettingsImage                 = single(settingsImage);
+                    cachedData(sceneIndex, toneMappingIndex).hdrMappingFunctionFullRes.input  = inputLuminance;
+                    cachedData(sceneIndex, toneMappingIndex).hdrMappingFunctionFullRes.output = renderedOutputLuminance;
+                    cachedData(sceneIndex, toneMappingIndex).hdrMappingFunctionLowRes.input   = lowResInputLuminance;
+                    cachedData(sceneIndex, toneMappingIndex).hdrMappingFunctionLowRes.output  = lowResRenderedLuminance;
                 else
                     error('Unknown emulatedDisplayName', char(emulatedDisplayName));
                 end
                 
-                % also generate SRGB version for visualization
-                realizableRGBprimariesCalFormat = SettingsToPrimary(renderingDisplayCal.cal, RGBsettingsCalFormat);
-                realizableXYZcalFormat          = PrimaryToSensor(renderingDisplayCal.cal, realizableRGBprimariesCalFormat);
-                realizableSRGBPrimaryCalFormat  = XYZToSRGBPrimary(realizableXYZcalFormat);
-                realizableToneMappedSRGBimage   = CalFormatToImage(realizableSRGBPrimaryCalFormat, sceneEnsemble{sceneIndex}.imageSize(1), sceneEnsemble{sceneIndex}.imageSize(2));
-
-                indices = find(realizableToneMappedSRGBimage > maxRenderingDisplaySRGB);
-                fprintf(2,'pixels > maxRendeing display SRGB: %d, maxImageSRGB= [%2.3f %2.3f %2.3f] maxDisplaysRGB = [[%2.3f %2.3f %2.3f]] \n', numel(indices), max(realizableSRGBPrimaryCalFormat,[],2), renderingDisplayCal.maxSRGB(1), renderingDisplayCal.maxSRGB(2), renderingDisplayCal.maxSRGB(3));
+               
+                if strcmp(char(emulatedDisplayName), 'LCD') 
+                    figure(h1);
+                    set(h1, 'Color', [0 0 0]);
+                end
+                if strcmp(char(emulatedDisplayName), 'OLED')
+                    figure(h2);
+                    set(h2, 'Color', [0 0 0]);
+                end
                 
-                h = figure(toneMappingIndex*10+emulatedDisplayIndex);
-                set(h, 'Name',  emulatedDisplayName);
+               
+                subplot('Position', subplotPosVectors(1, toneMappingIndex).v);
                 
-                subplot(1,2,1);
-                scaleToDisplaySRGBrange = true;
-                displaySRGBimage(inputSRGBimage, renderingDisplayCal.maxSRGB, scaleToDisplaySRGBrange, 'input SRGB image (clipped to rendering display max)');
+                % Plot the scene luminance histogram
+                bar(sceneHistogramLowRes.centers, sceneHistogramLowRes.counts/max(sceneHistogramLowRes.counts)*max(intendedOutputLuminance), 'FaceColor', [0.6 0.4 0.99], 'EdgeColor', 'none');
                 
-                subplot(1,2,2);
-                scaleToDisplaySRGBrange = false;
-                displaySRGBimage(realizableToneMappedSRGBimage, renderingDisplayCal.maxSRGB, scaleToDisplaySRGBrange, 'tonemapped SRGB image');
-                drawnow;
+                % Plot the input/output luminance (tone mapping function)
+                hold on
+                plot(inputLuminance, intendedOutputLuminance, 'g.');
+                %plot(inputLuminance, renderedOutputLuminance, 'y.');
+                plot(lowResInputLuminance, lowResRenderedLuminance, 'r.');
+                legend('scene', 'image (intended)', 'image (rendered)', 'Location','southeast');
+                % Plot the max luminanance
+                if strcmp(char(emulatedDisplayName), 'LCD')  
+                    plot([min(inputLuminance) max(inputLuminance)], emulatedDisplayCal.maxLuminance*[1 1], 'w-');
+                end
+                if strcmp(char(emulatedDisplayName), 'OLED')
+                    plot([min(inputLuminance) max(inputLuminance)], renderingDisplayCal.maxLuminance*[1 1], 'w-');
+                end
                 
+                if (toneMappingIndex > 1)
+                    set(gca, 'YTickLabel', {});
+                end
+                set(gca, 'Color', [0 0 0], 'XLim', [0 max(ensembleCenters)], 'XColor', [1 1 1], 'YColor', [1 1 1]);
+                grid on;
+                title(toneMappingParams.name, 'Color', [0.8 0.8 0.7]);
                 
-                h = figure(toneMappingIndex*10000+emulatedDisplayIndex);
-                set(h, 'Name',  emulatedDisplayName);
-                displaySettingsImage(settingsImage, 'SettingsImage')
+                % Plot the tonemapped image
+                subplot('Position', subplotPosVectors(sceneIndex+1, toneMappingIndex).v);
+                %displaySettingsImage(settingsImage(1:2:end, 1:2:end,:), '');
+                displaySRGBImage(settingsImage(1:2:end, 1:2:end,:), '', renderingDisplayCal);
                 drawnow
                 
+            end % emulatedDisplayIndex 
+        end % toneMappingParamIndex
+    end % sceneIndex
+    
+    
+    cacheDirectory = '/Users/Shared/Matlab/Toolboxes/OLEDToolbox/GenericImagePreferenceExperiment';
+    cacheFileName = sprintf('Blobbie_SunRoomSideLight_Cache');
+    
+    save(fullfile(cacheDirectory, cacheFileName), 'cachedData', 'sceneFileNames', 'toneMappingEnsemble');
+    fprintf(2,'\n\nNew stimulus cache was generated and saved in ''%s'' (dir = ''%s'').\n\n', cacheFileName, cacheDirectory);
+end
+
+
+
+function [settingsCalFormat, inputLuminance, intendedOutputLuminance, renderedOutputLuminance] = generateToneMappedSettingsForEmulatedDisplayAndRenderingDisplay(xyYcalFormat, toneMappingParams, emulatedDisplayCal, renderingDisplayCal, luminanceOverdriveForEmulatedDisplay, aboveGamutOperation)               
+
+    wattsToLumens = 683;
+    
+    % extract input luminance
+    inputLuminance = xyYcalFormat(3,:)*wattsToLumens;
+                         
+    % tonemap luminance to emulated display range
+    xyYcalFormat(3,:) = ToneMapLuminance(inputLuminance, toneMappingParams, emulatedDisplayCal.maxLuminance * luminanceOverdriveForEmulatedDisplay) / wattsToLumens;
+    intendedOutputLuminance = xyYcalFormat(3,:)*wattsToLumens;
                 
-            end % toneMappingParamIndex
-            
+    % to XYZ
+    XYZcalFormat = xyYToXYZ(xyYcalFormat);
+
+    % to RGB primaries of the emulated display
+    emulatedDisplayRGBPrimariesCalFormat = SensorToPrimary(emulatedDisplayCal.cal, XYZcalFormat);
+    
+    % 
+    [emulatedDisplayRGBPrimariesCalFormat, s] = mapToGamut(emulatedDisplayRGBPrimariesCalFormat, aboveGamutOperation);
+
+    % to RGB settings of the emulated display - out of gamut here get mapped to 0
+    emulatedDisplayRGBsettingsCalFormat = PrimaryToSettings(emulatedDisplayCal.cal, emulatedDisplayRGBPrimariesCalFormat);
+
+    % to realizable RGB primaries of the emulated display
+    realizableEmulatedDisplayRGBPrimariesCalFormat = SettingsToPrimary(emulatedDisplayCal.cal, emulatedDisplayRGBsettingsCalFormat);
+
+    % to realizable (for the emulated display) XYZ 
+    realizableEmulatedDisplayXYZcalFormat = PrimaryToSensor(emulatedDisplayCal.cal, realizableEmulatedDisplayRGBPrimariesCalFormat);
+    
+    % to RGB primaries of the **rendering** display
+    primariesCalFormat = SensorToPrimary(renderingDisplayCal.cal, realizableEmulatedDisplayXYZcalFormat);   
+
+    % to RGB settings of the **rendering** display - out of gamut here get mapped to 0
+    [primariesCalFormat, s] = mapToGamut(primariesCalFormat, aboveGamutOperation);
+                
+    settingsCalFormat = PrimaryToSettings(renderingDisplayCal.cal, primariesCalFormat);
+    
+     % extract the actual luminance
+    tmp = XYZToxyY(PrimaryToSensor(renderingDisplayCal.cal, SettingsToPrimary(renderingDisplayCal.cal, settingsCalFormat)));
+    renderedOutputLuminance = squeeze(tmp(3,:))*wattsToLumens;
+end
+  
+
+
+function [sceneEnsemble, ensembleLuminances, sceneFileNames] = loadRT3Scenes()
+
+    sceneDirectory = '/Users1/Shared/Matlab/RT3scenes/Blobbies/HighDynamicRange/';
+    shapesExamined = {'Blobbie8SubsHighFreqMultipleBlobbiesOpenRoof'};
+    lightingConditionsExamined  = {'area1_front0_ceiling0'};
+    alphasExamined              = {'0.025', '0.320'};
+    specularStrengthsExamined   = {'0.60', '0.15'};   
+    
+    % load XYZ CMFs
+    sensorXYZ = loadXYZCMFs();
+    
+    sceneNo = 0;
+    ensembleLuminances = [];
+    wattsToLumens = 683;
+    
+    for shapeIndex = 1:numel(shapesExamined)
+        for lightingIndex = 1:numel(lightingConditionsExamined)
+            for specularReflectionIndex = 1:numel(specularStrengthsExamined)
+                for alphaIndex = 1:numel(alphasExamined)
+                    sceneNo = sceneNo + 1;
+                    sceneFileName = sprintf('%s_Samsung_FlatSpecularReflectance_%s.spd___Samsung_NeutralDay_BlueGreen_0.60.spd___alpha_%s___Lights_%s_rotationAngle_0.mat',shapesExamined{shapeIndex}, specularStrengthsExamined{specularReflectionIndex}, alphasExamined{alphaIndex}, lightingConditionsExamined{lightingIndex});
+                    fprintf('Loading %s\n', sceneFileName);
+                    
+                    % convert to linear SRGB
+                    load(fullfile(sceneDirectory, sceneFileName), 'S', 'multispectralImage');
+    
+                    % compute XYZimage
+                    XYZimage = MultispectralToSensorImage(multispectralImage, S, sensorXYZ.T, sensorXYZ.S);
+
+                    % to cal format
+                    [XYZcalFormat, nCols, mRows] = ImageToCalFormat(XYZimage);
+    
+                    % to linear sRGB
+                    linearSRGBcalFormat = XYZToSRGBPrimary(XYZcalFormat);
+                    % no negative sRGB values
+                    linearSRGBcalFormat(linearSRGBcalFormat<0) = 0;
+    
+                    XYZcalFormat = SRGBPrimaryToXYZ(linearSRGBcalFormat);
+                    xyYcalFormat = XYZToxyY(XYZcalFormat);
+                    
+                    % update the ensemble luminances
+                    ensembleLuminances = [ensembleLuminances squeeze(xyYcalFormat(3,:))*wattsToLumens];
+                    
+                    % save data
+                    sceneEnsemble{sceneNo} = struct(...
+                        'linearSRGB',   CalFormatToImage(linearSRGBcalFormat,nCols, mRows), ...
+                        'xyYcalFormat', xyYcalFormat, ...
+                        'imageSize',   [nCols mRows] ...
+                    );
+                
+                    sceneFileNames{sceneNo} = sceneFileName;
+                end
+            end
         end
-        
-    end % emulatedDisplayIndex
+    end
+end
+
+
+function [toneMappingEnsemble, ensembleCenters] = generateToneMappingEnsemble(ensembleLuminances, testLinearMapping, testHistogramBasedSequence, testReinhardtSequence)
+     
+    ensembleLuminances = ensembleLuminances(:);
+    minEnsembleLum = min(ensembleLuminances);
+    maxEnsembleLum = max(ensembleLuminances);
+    Nbins = 30000;
+    ensembleCenters = linspace(minEnsembleLum, maxEnsembleLum, Nbins);
+    
+    toneMappingIndex = 0;
+    
+    if (testHistogramBasedSequence)
+        % Cumulative histogram based
+        kFraction = 0.049; % input('Enter threshold as fraction of max difference, [e.g. 0.8, <= 1.0] : ');
+        minAlpha = 0.1;
+        maxAlpha = 0.7;
+        alphasNum = 5;
+        exponentAlphas = [0.01 0.25 0.4 0.55 0.7];
+        kFractions = [0.4]; %  0.1 0.25 0.5 1.0];  % 0.01 gives linear mapping
+
+        for kIndex = 1:numel(kFractions)
+            kFraction = kFractions(kIndex);
+            for alphaIndex = 1: numel(exponentAlphas)
+                alpha = exponentAlphas(alphaIndex);
+
+                toneMappingIndex = toneMappingIndex + 1;
+                cumulativeHistogramMappingFunction = computeCumulativeHistogramBasedToneMappingFunction(ensembleLuminances, ensembleCenters, kFraction, alpha);
+                %plotCumulativeToneMapFunction(cumulativeHistogramMappingFunction, ensembleLuminances, ensembleCenters);
+                toneMappingEnsemble{toneMappingIndex} = struct(...
+                    'name', sprintf('Cumulative Histogram (a=%2.2f, k = %2.2f)', alpha, kFraction), ...
+                    'mappingFunction', cumulativeHistogramMappingFunction, ...
+                    'alphaValue', alpha ...
+                );
+            end
+        end
+    end
+    
+    
+    if (testLinearMapping)
+        % Linear luminance mapping
+        toneMappingIndex = toneMappingIndex + 1;
+        linearMappingFunction.input = ensembleCenters;
+        linearMappingFunction.output = linspace(0,1,Nbins);
+
+        toneMappingEnsemble{toneMappingIndex} = struct(...
+            'name', 'Linear mapping', ...
+            'mappingFunction', linearMappingFunction ...
+        );
+    end
+    
+    
+    if (testReinhardtSequence)
+        % Reinhardt luminance mappings
+        minAlpha = 1.0; maxAlpha = 200.0; alphasNum = 5;
+        ReinhardtAlphas = logspace(log10(minAlpha),log10(maxAlpha),alphasNum);
+
+        delta = 0.0001; % small delta to avoid taking log(0) when encountering pixels with zero luminance
+        format long g
+        sceneKey = exp((1/numel(ensembleCenters))*sum(log(ensembleCenters + delta)));
+
+        for alphaIndex = 1:numel(ReinhardtAlphas);
+            toneMappingIndex = toneMappingIndex + 1;
+            alpha = ReinhardtAlphas(alphaIndex);
+
+            scaledInputLuminance = alpha / sceneKey * ensembleCenters;
+            outputLuminance = scaledInputLuminance ./ (1.0+scaledInputLuminance);
+            minToneMappedSceneLum = min(outputLuminance(:));
+            maxToneMappedSceneLum = max(outputLuminance(:));
+            toneMappedLuminance = (outputLuminance-minToneMappedSceneLum)/(maxToneMappedSceneLum-minToneMappedSceneLum);
+
+            ReinhardtMappingFunction.input = ensembleCenters;
+            ReinhardtMappingFunction.output =  toneMappedLuminance;
+
+            toneMappingEnsemble{toneMappingIndex} = struct(...
+                'name', sprintf('Reinhardt mapping (a=%2.2f)', alpha), ...
+                'mappingFunction', ReinhardtMappingFunction, ...
+                'alphaValue', alpha ...
+            );
+        end
+    end
     
 end
 
+
+
+
+
+
+function [lowResInput, lowResOutput]  = subSampleToneMappingFunction(inputLuminance, outputLuminance, subSampleFactor)
+    [~,indices] = sort(inputLuminance);
+    inputLuminance  = round(inputLuminance(indices));
+    outputLuminance = round(outputLuminance(indices));
+    
+    [~,ia,~] = unique(inputLuminance);
+
+    lowResInput  = inputLuminance(ia(1:subSampleFactor:end));
+    lowResOutput = outputLuminance(ia(1:subSampleFactor:end));
+end
+
+                 
+
+function [sceneHistogramFullRes, sceneHistogramLowRes] = generateLowAndFullResSceneHistograms(inputLuminance, centers, newBinsNum)
+
+    [sceneHistogramFullRes.counts, sceneHistogramFullRes.centers] = hist(inputLuminance, centers);
+    
+    [counts, centers] = hist(inputLuminance, newBinsNum);
+    maxHistogramCountHeight = 300;
+    counts = counts/maxHistogramCountHeight;
+    counts(counts>1) = 1;
+    counts = counts * maxHistogramCountHeight;
+   
+    sceneHistogramLowRes.centers = centers;
+    sceneHistogramLowRes.counts  = counts;
+end
 
 
 
 function displaySettingsImage(settingsImage, titleText)
-
     imshow(settingsImage);
     title(titleText);
     set(gca, 'CLim', [0 1]);
-    
 end
 
+function displaySRGBImage(settingsImageForEmulatedDisplay, titleText, renderingDisplayCal)
+    [settingsCalFormat, n,m] = ImageToCalFormat(settingsImageForEmulatedDisplay);
+    primaryCalFormat = SettingsToPrimary(renderingDisplayCal.cal, settingsCalFormat);
+    XYZcalFormat = PrimaryToSensor(renderingDisplayCal.cal, primaryCalFormat);
+    sRGBcalFormat = XYZToSRGBPrimary(XYZcalFormat);
+    sRGBImage = CalFormatToImage(sRGBcalFormat, n,m);
+    sRGBImage = sRGBImage / max(renderingDisplayCal.maxSRGB(:));
+    imshow(sRGB.gammaCorrect(sRGBImage));
+    title(titleText);
+    set(gca, 'CLim', [0 1]);
+end
+                
 
 function displaySRGBimage(sRGBImage, maxRenderingDisplaySRGB, scaleToDisplaySRGBrange, titleText)
- 
     if (scaleToDisplaySRGBrange)
         % scale to display SRGB
         sRGBImage = sRGBImage / max(sRGBImage(:)) * max(maxRenderingDisplaySRGB);
@@ -151,17 +404,15 @@ end
 
 function mappedLuminance = ToneMapLuminance(inputLuminance, toneMappingParams, maxLuminance)
 
-    wattsToLumens = 683;
     inputLuminance = squeeze(inputLuminance);
     
     toneMappingFunction = toneMappingParams.mappingFunction;
-     
     deltaLum = toneMappingFunction.input(2)-toneMappingFunction.input(1);
     Nbins = numel(toneMappingFunction.input);
     indices = ceil(inputLuminance/deltaLum);
     indices(indices == 0) = 1;
     indices(indices > Nbins) = Nbins;
-    mappedLuminance = toneMappingFunction.output(indices) * maxLuminance / wattsToLumens;
+    mappedLuminance = toneMappingFunction.output(indices) * maxLuminance;
 end
 
 
@@ -214,114 +465,6 @@ function [inGamutPrimaries, s] = mapToGamut(primaries, aboveGamutOperation)
 end
 
 
-function toneMappingEnsemble = generateToneMappingEnsemble(ensembleLuminances)
-     
-    ensembleLuminances = ensembleLuminances(:);
-    minEnsembleLum = min(ensembleLuminances);
-    maxEnsembleLum = max(ensembleLuminances);
-    Nbins = 30000;
-    ensembleCenters = linspace(minEnsembleLum, maxEnsembleLum, Nbins);
-    
-
-    kFraction = 0.9; % input('Enter threshold as fraction of max difference, [e.g. 0.8, <= 1.0] : ');
-    cumulativeHistogramMappingFunction = computeCumulativeHistogramBasedToneMappingFunction(ensembleLuminances, ensembleCenters, kFraction);
-    plotCumulativeToneMapFunction(cumulativeHistogramMappingFunction, ensembleLuminances, ensembleCenters);
-                                 
-    toneMappingIndex = 1;
-    toneMappingEnsemble{toneMappingIndex} = struct(...
-        'name', 'Cumulative Histogram', ...
-        'mappingFunction', cumulativeHistogramMappingFunction ...
-    );
-
-    
-    toneMappingIndex = toneMappingIndex + 1;
-    linearMappingFunction.input = ensembleCenters;
-    linearMappingFunction.output = linspace(0,1,Nbins);
-
-    toneMappingEnsemble{toneMappingIndex} = struct(...
-        'name', 'Linear mapping', ...
-        'mappingFunction', linearMappingFunction ...
-    );
-
-    
-    toneMappingIndex = toneMappingIndex + 1;
-    alpha = 10;
-    delta = 0.0001; % small delta to avoid taking log(0) when encountering pixels with zero luminance
-    format long g
-    sceneKey = exp((1/numel(ensembleCenters))*sum(log(ensembleCenters + delta)));
-
-    scaledInputLuminance = alpha / sceneKey * ensembleCenters;
-    outputLuminance = scaledInputLuminance ./ (1.0+scaledInputLuminance);
-    minToneMappedSceneLum = min(outputLuminance(:));
-    maxToneMappedSceneLum = max(outputLuminance(:));
-    toneMappedLuminance = (outputLuminance-minToneMappedSceneLum)/(maxToneMappedSceneLum-minToneMappedSceneLum);
-
-    ReinhardtMappingFunction.input = ensembleCenters;
-    ReinhardtMappingFunction.output =  toneMappedLuminance;
-
-    toneMappingEnsemble{toneMappingIndex} = struct(...
-        'name', 'Linear mapping', ...
-        'mappingFunction', ReinhardtMappingFunction ...
-    );
-    
-
-end
-
-
-function [sceneEnsemble, ensembleLuminances] = loadRT3Scenes()
-
-    sceneDirectory = '/Users1/Shared/Matlab/RT3scenes/Blobbies/HighDynamicRange/';
-    shapesExamined = {'Blobbie8SubsHighFreqMultipleBlobbiesOpenRoof'};
-    lightingConditionsExamined  = {'area1_front0_ceiling0'};
-    alphasExamined              = {'0.025'};
-    specularStrengthsExamined   = {'0.60'};   
-    
-    % load XYZ CMFs
-    sensorXYZ = loadXYZCMFs();
-    
-    sceneNo = 0;
-    ensembleLuminances = [];
-    
-    for shapeIndex = 1:numel(shapesExamined)
-        for lightingIndex = 1:numel(lightingConditionsExamined)
-            for specularReflectionIndex = 1:numel(specularStrengthsExamined)
-                for alphaIndex = 1:numel(alphasExamined)
-                    sceneNo = sceneNo + 1;
-                    sceneFileName = sprintf('%s_Samsung_FlatSpecularReflectance_%s.spd___Samsung_NeutralDay_BlueGreen_0.60.spd___alpha_%s___Lights_%s_rotationAngle_0.mat',shapesExamined{shapeIndex}, specularStrengthsExamined{specularReflectionIndex}, alphasExamined{alphaIndex}, lightingConditionsExamined{lightingIndex});
-                    fprintf('Loading %s\n', sceneFileName);
-                    
-                    % convert to linear SRGB
-                    load(fullfile(sceneDirectory, sceneFileName), 'S', 'multispectralImage');
-    
-                    % compute XYZimage
-                    XYZimage = MultispectralToSensorImage(multispectralImage, S, sensorXYZ.T, sensorXYZ.S);
-
-                    % to cal format
-                    [XYZcalFormat, nCols, mRows] = ImageToCalFormat(XYZimage);
-    
-                    % to linear sRGB
-                    linearSRGBcalFormat = XYZToSRGBPrimary(XYZcalFormat);
-                    % no negative sRGB values
-                    linearSRGBcalFormat(linearSRGBcalFormat<0) = 0;
-    
-                    XYZcalFormat = SRGBPrimaryToXYZ(linearSRGBcalFormat);
-                    xyYcalFormat = XYZToxyY(XYZcalFormat);
-                    
-                    % update the ensemble luminances
-                    ensembleLuminances = [ensembleLuminances squeeze(xyYcalFormat(3,:))];
-                    
-                    % save data
-                    sceneEnsemble{sceneNo} = struct(...
-                        'linearSRGB',   CalFormatToImage(linearSRGBcalFormat,nCols, mRows), ...
-                        'xyYcalFormat', xyYcalFormat, ...
-                        'imageSize',   [nCols mRows] ...
-                    );
-                end
-            end
-        end
-    end
-end
-
 
 function dataStruct = prepareCal(cal, desiredMaxLuminance)
 
@@ -353,7 +496,6 @@ function dataStruct = prepareCal(cal, desiredMaxLuminance)
     % gammaMode == 1 - search table using linear interpolation
     cal = SetGammaMethod(cal, 0);
     
-    wattsToLumens = 683;
     XYZ = SettingsToSensor(cal, [1 1 1]');
     maxLuminance = XYZ(2) * wattsToLumens;
     
@@ -401,7 +543,7 @@ function sensorXYZ = loadXYZCMFs()
 end
 
 
-function toneMappingFunction = computeCumulativeHistogramBasedToneMappingFunction(ensembleLuminances, ensembleCenters, kFraction)
+function toneMappingFunction = computeCumulativeHistogramBasedToneMappingFunction(ensembleLuminances, ensembleCenters, kFraction, exponent)
     
     fprintf('Computing histogram - based tone mapping function\n');
     
@@ -410,8 +552,8 @@ function toneMappingFunction = computeCumulativeHistogramBasedToneMappingFunctio
     [ensembleCounts, ensembleCenters] = hist(ensembleLuminances, ensembleCenters);
     
     % Operate on the log of the cumulative histogram
-    ensembleCounts = log(1+ensembleCounts);
-    %ensembleCounts = ensembleCounts.^0.6;
+    %ensembleCounts = log(1+ensembleCounts);
+    ensembleCounts = ensembleCounts.^exponent;
     ensembleCountsExp = ensembleCounts/max(ensembleCounts);
 
     % determine threshold for cumulative histogram jumps
@@ -428,7 +570,7 @@ function toneMappingFunction = computeCumulativeHistogramBasedToneMappingFunctio
     %betaThreshold = prctile(deltasInOriginalCumulativeHistogram, k);
         
     
-    betaThreshold = kFraction*max(deltasInOriginalCumulativeHistogram );
+    betaThreshold = kFraction*max(deltasInOriginalCumulativeHistogram);
         
     cumHistogram = zeros(1,numel(ensembleCountsExp));
     for k = 1:numel(cumHistogram)
@@ -460,28 +602,17 @@ function plotCumulativeToneMapFunction(cumulativeHistogram, luminanceEnsembleCal
     hold on;
     ensembleLuminances = luminanceEnsembleCalFormat(:);
     Nbins = numel(ensembleCenters);
-    [ensembleCounts, ensembleCenters] = hist(ensembleLuminances, ensembleCenters);
-    
-    newBinsNum  = 350;
-    newBinSize  = round(numel(ensembleCounts)/(newBinsNum+1));
-    histCount   = zeros(newBinsNum,1);
-    histCenters = zeros(newBinsNum,1);
-    for binIndex = 1:newBinsNum
-        indices = ((binIndex-1)*newBinSize+1:1:binIndex*newBinSize);
-        histCount(binIndex) = sum(ensembleCounts(indices));
-        histCenters(binIndex) = mean(ensembleCenters(indices));
-    end
-    ensembleCounts = histCount;           
-    ensembleCenters = histCenters;
+    newBinsNum  = 255;
+    [fullResHistogram, lowResHistogram] = generateLowAndFullResSceneHistograms(ensembleLuminances, ensembleCenters, newBinsNum);
     
     maxHistCount = 3000;
-    ensembleCounts(ensembleCounts > maxHistCount) = maxHistCount;
+    lowResHistogram.counts(lowResHistogram.counts > maxHistCount) = maxHistCount;
     
     
-    ensembleCenters = [ensembleCenters(1) ensembleCenters' ensembleCenters(end)];
-    ensembleCounts  = [0                  ensembleCounts'  0];
+    ensembleCenters = [lowResHistogram.centers(1) lowResHistogram.centers lowResHistogram.centers(end)];
+    ensembleCounts  = [0                  lowResHistogram.counts  0];
     
-    [ensembleCenters, ensembleCounts] = stairs(ensembleCenters, ensembleCounts);
+    [ensembleCenters, ensembleCounts] = stairs(lowResHistogram.centers, lowResHistogram.counts);
     patch('XData',ensembleCenters,'YData',ensembleCounts(:)/max(ensembleCounts(:)), 'FaceColor', [0.65 0.75 0.65], 'EdgeColor', [0 1 0], 'LineWidth', 2.0);
     
     for k = 10:-1:4
