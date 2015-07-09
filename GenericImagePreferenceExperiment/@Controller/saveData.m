@@ -4,7 +4,7 @@ function saveData(obj)
     cacheFileNameList   = obj.cacheFileNameList;
 
     conditionsData      = obj.conditionsData;
-    thumbnailStimImages = obj.thumbnailStimImages;
+    thumbnailStimImages = single(obj.thumbnailStimImages);
     histogramsFullRes   = obj.histogramsFullRes;
     histogramsLowRes    = obj.histogramsLowRes;
     toneMappingParams   = obj.toneMappingParams;

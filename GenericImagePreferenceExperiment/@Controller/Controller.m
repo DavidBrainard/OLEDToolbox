@@ -65,7 +65,7 @@ classdef Controller < handle
         end
         
         % Method to load the stimulus cache
-        loadStimulusCache(obj, cacheFileName,  grainMagnitude);
+        loadStimulusCache(obj, cacheFileName);
         
         % Method to run the experiment
         abnormalTermination = runExperiment(obj, params);

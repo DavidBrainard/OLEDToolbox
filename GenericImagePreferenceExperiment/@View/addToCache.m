@@ -1,4 +1,4 @@
-function addToCache(obj, stimIndex, hdrStimRGBdata, ldrStimRGBdata, grainMagnitude, sceneHistogram, hdrMappingFunction, ldrMappingFunction, maxEnsembleLuminance)
+function addToCache(obj, stimIndex, hdrStimRGBdata, ldrStimRGBdata, sceneHistogram, hdrMappingFunction, ldrMappingFunction, maxEnsembleLuminance)
 
     if (obj.stimCache.entries == 0)
         obj.stimCache.stimSize = size(hdrStimRGBdata);

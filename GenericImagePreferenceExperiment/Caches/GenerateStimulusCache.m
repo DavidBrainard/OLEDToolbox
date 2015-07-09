@@ -15,8 +15,8 @@ function GenerateStimulusCache
     
     % The higher the dynamic range of the ensemble of the images, the
     % higher the histogram bins must be to avoid severe banding at hightly
-    % saturating tone mappings
-    histogramBins = 500*1000;
+    % saturating tone mappings. To cover all posibilities, set the histogram bins = image size
+    histogramBins = size(sceneEnsemble{1}.linearSRGB,1)*size(sceneEnsemble{1}.linearSRGB,2);
     [toneMappingEnsemble, ensembleCenters] = generateToneMappingEnsemble(ensembleLuminances, testLinearMapping, testHistogramBasedSequence, testReinhardtSequence, histogramBins);
 
     luminanceOverdrive(1) = 0.97;   % overdrive for LCD (adjust so at to have a rendered output luminance that is similar to the intended output luminance)
@@ -56,11 +56,7 @@ function GenerateStimulusCache
         
         for toneMappingIndex = 1:numel(toneMappingEnsemble)
             toneMappingParams = toneMappingEnsemble{toneMappingIndex}; 
-            
-            cachedData(sceneIndex, toneMappingIndex).toneMappingParams     = toneMappingParams;
-            cachedData(sceneIndex, toneMappingIndex).sceneHistogramFullRes = sceneHistogramFullRes;
-            cachedData(sceneIndex, toneMappingIndex).sceneHistogramLowRes  = sceneHistogramLowRes;
-            
+
             for emulatedDisplayIndex = 1:numel(emulatedDisplayNames)  
                 % Extract the emulated display cal
                 emulatedDisplayName = emulatedDisplayNames{emulatedDisplayIndex};
@@ -149,15 +145,24 @@ function GenerateStimulusCache
                 drawnow
                 
             end % emulatedDisplayIndex 
+            
+            % Rm the mapping function data in toneMappingEnsemble.
+            % These are stored in the hdrMappingFunctionFullRes, ldrMappingFunctionFullRes
+            toneMappingParams = rmfield(toneMappingParams, 'mappingFunction');
+            
+            cachedData(sceneIndex, toneMappingIndex).toneMappingParams     = toneMappingParams;
+            cachedData(sceneIndex, toneMappingIndex).sceneHistogramFullRes = sceneHistogramFullRes;
+            cachedData(sceneIndex, toneMappingIndex).sceneHistogramLowRes  = sceneHistogramLowRes;
+            
         end % toneMappingParamIndex
     end % sceneIndex
     
-    
+
     cacheDirectory = '/Users/Shared/Matlab/Toolboxes/OLEDToolbox/GenericImagePreferenceExperiment/Caches';
     cacheFileName = sprintf('Blobbie_SunRoomSideLight_Cache.mat');
     
     
-    save(fullfile(cacheDirectory, cacheFileName), 'cachedData', 'sceneFileNames', 'toneMappingEnsemble', 'maxEnsembleLuminance');
+    save(fullfile(cacheDirectory, cacheFileName), 'cachedData', 'sceneFileNames', 'maxEnsembleLuminance');
     fprintf(2,'\n\nNew stimulus cache was generated and saved in ''%s'' (dir = ''%s'').\n\n', cacheFileName, cacheDirectory);
 end
 
@@ -282,7 +287,7 @@ function [toneMappingEnsemble, ensembleCenters] = generateToneMappingEnsemble(en
         kFraction = 0.049; % input('Enter threshold as fraction of max difference, [e.g. 0.8, <= 1.0] : ');
         minAlpha = 0.3;
         maxAlpha = 1.0;
-        alphasNum = 5;
+        alphasNum = 6;
         exponentAlphas = logspace(log10(minAlpha),log10(maxAlpha),alphasNum);
         %exponentAlphas = [0.1 0.17 0.3 0.45 0.7];
         kFractions = [0.15]; % [0.4]; %  0.1 0.25 0.5 1.0];  % 0.01 gives linear mapping
@@ -321,7 +326,7 @@ function [toneMappingEnsemble, ensembleCenters] = generateToneMappingEnsemble(en
     
     if (testReinhardtSequence)
         % Reinhardt luminance mappings
-        minAlpha = 1.0; maxAlpha = 200.0; alphasNum = 5;
+        minAlpha = 1.0; maxAlpha = 200.0; alphasNum = 6;
         ReinhardtAlphas = logspace(log10(minAlpha),log10(maxAlpha),alphasNum);
 
         delta = 0.0001; % small delta to avoid taking log(0) when encountering pixels with zero luminance

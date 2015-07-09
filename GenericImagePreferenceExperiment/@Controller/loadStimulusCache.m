@@ -1,14 +1,17 @@
-function loadStimulusCache(obj, cacheFileNameList, grainMagnitude)
+function loadStimulusCache(obj, cacheFileNameList)
 
     % Empty the cache
     obj.viewOutlet.emptyCache();
+    
+    % Save the cache file name list
+    obj.cacheFileNameList = cacheFileNameList;
     
     fprintf('Loading stimulus cache. Please wait ...\n');
     
     stimIndex = 0;
     for k = 1:numel(cacheFileNameList)
 
-        load(cacheFileNameList{k}, 'cachedData', 'sceneFileNames', 'toneMappingEnsemble', 'maxEnsembleLuminance');
+        load(cacheFileNameList{k}, 'cachedData', 'sceneFileNames', 'maxEnsembleLuminance');
         
         % Set the scenesNum, toneMappingsNum
         [obj.scenesNum, obj.toneMappingsNum] = size(cachedData);
@@ -54,7 +57,6 @@ function loadStimulusCache(obj, cacheFileNameList, grainMagnitude)
                     stimIndex, ...
                     double(cachedData(sceneIndex, toneMappingIndex).hdrSettingsImage), ...
                     double(cachedData(sceneIndex, toneMappingIndex).ldrSettingsImage), ...
-                    grainMagnitude, ...
                     cachedData(sceneIndex, toneMappingIndex).sceneHistogramLowRes, ...
                     cachedData(sceneIndex, toneMappingIndex).hdrMappingFunctionLowRes,...
                     cachedData(sceneIndex, toneMappingIndex).ldrMappingFunctionLowRes,...

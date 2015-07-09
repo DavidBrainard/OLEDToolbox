@@ -79,7 +79,7 @@ classdef View < handle
         end
         
         % Method to add data to the stimulus cache
-        addToCache(obj, stimIndex, hdrStimRGBdata, ldrStimRGBdata, grainMagnitude, sceneHistogram, hdrToneMappingFunction, ldrToneMappingFunction, maxEnsembleLuminance);
+        addToCache(obj, stimIndex, hdrStimRGBdata, ldrStimRGBdata, sceneHistogram, hdrToneMappingFunction, ldrToneMappingFunction, maxEnsembleLuminance);
         
         % Method to empty the cache, so that new data can be reloaded.
         emptyCache(obj);
