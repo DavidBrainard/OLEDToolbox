@@ -1,47 +1,39 @@
 function RunImagePreferenceExperiment
 
-    [rootDir,~] = fileparts(which(mfilename))
+    [rootDir,~] = fileparts(which(mfilename)); 
+    [repsNum, dataDir, datafileName, debugMode, histogramIsVisible, visualizeResultsOnline, whichDisplay] = Controller.ConfigureExperiment(rootDir);
     cd(rootDir);
-    
-    runningOnSamsung = input('Running on the Samsung [y/n] [default=n]: ', 's');
-    if (isempty(runningOnSamsung)) || (~strcmp(runningOnSamsung, 'y'))
-        debugMode = true;
-    else
-        debugMode = false;
-    end
-    
-    makeHistogramVisible = input('Visualize image histogram and tone mapping function [y/n] [default=n]: ', 's');
-    if (isempty(makeHistogramVisible)) || (~strcmp(makeHistogramVisible, 'y'))
-        histogramIsVisible = false;
-    else
-        histogramIsVisible = true;
-    end
-        
+
     % use debugMode = false, when running on the Samsung
     experimentController = Controller('debugMode', debugMode, ...
                                       'giveVerbalFeedback', false, ...
                                       'histogramIsVisible', histogramIsVisible, ...
-                                      'visualizeResultsOnLine', false );
+                                      'visualizeResultsOnLine', visualizeResultsOnline);
     
     % Select a stimulus cache file(s)
     cacheFileNameList = {...
-        'Blobbie_SunRoomSideLight_Cache' ...
+        fullfile(rootDir,'Caches', 'Blobbie_SunRoomSideLight_Reinhardt_Cache.mat') ...
         };
     
-    % Load the stimulus cache
-    experimentController.loadStimulusCache(cacheFileNameList);
-    
+
     % Specify experiment params
     params = struct(...
-        'repsNum', 1, ...
-        'varyToneMappingParamsInBlockDesign', false, ...   % set to true to do comparisons of tone mapping param value within blocks
-        'whichDisplay', 'HDR',...
-        'dataFileName', 'tmp.mat'... % 'nicolasSecondData.mat'...
+        'repsNum', repsNum, ...
+        'varyToneMappingParamsInBlockDesign', visualizeResultsOnline, ...   % set to true to do comparisons of tone mapping param value within blocks
+        'whichDisplay', whichDisplay,...
+        'grainMagnitude', 0.06, ... 
+        'dataFileName', fullfile(dataDir,datafileName)... ..
     );
+    
+    % Load the stimulus cache
+    experimentController.loadStimulusCache(cacheFileNameList, params.grainMagnitude);
     
     % Run the experiment
     abnormalTermination = experimentController.runExperiment(params);
     
     % Shutdown
     experimentController.shutDown();
+    
+    % Return to rootDir
+    cd(rootDir);
 end
