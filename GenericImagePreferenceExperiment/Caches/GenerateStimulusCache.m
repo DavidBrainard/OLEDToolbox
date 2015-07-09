@@ -10,8 +10,8 @@ function GenerateStimulusCache
     
     % Generate toneMapping ensemble
     testLinearMapping          = false;
-    testHistogramBasedSequence = false;
-    testReinhardtSequence      = true;
+    testHistogramBasedSequence = true;
+    testReinhardtSequence      = false;
     
     % The higher the dynamic range of the ensemble of the images, the
     % higher the histogram bins must be to avoid severe banding at hightly
