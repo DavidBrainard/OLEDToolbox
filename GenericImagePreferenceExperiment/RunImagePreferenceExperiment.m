@@ -15,18 +15,22 @@ function RunImagePreferenceExperiment
         fullfile(rootDir,'Caches', 'Blobbie_SunRoomSideLight_Reinhardt_Cache.mat') ...
         };
     
+    % Select a stimulus cache file(s)
+    cacheFileNameList = {...
+        fullfile(rootDir,'Caches', 'Blobbie_SunRoomSideLight_Cache.mat') ...
+        };
+    
 
     % Specify experiment params
     params = struct(...
         'repsNum', repsNum, ...
         'varyToneMappingParamsInBlockDesign', visualizeResultsOnline, ...   % set to true to do comparisons of tone mapping param value within blocks
         'whichDisplay', whichDisplay,...
-        'grainMagnitude', 0.06, ... 
         'dataFileName', fullfile(dataDir,datafileName)... ..
     );
     
     % Load the stimulus cache
-    experimentController.loadStimulusCache(cacheFileNameList, params.grainMagnitude);
+    experimentController.loadStimulusCache(cacheFileNameList);
     
     % Run the experiment
     abnormalTermination = experimentController.runExperiment(params);
