@@ -106,7 +106,7 @@ function AnalyzeImagePreferenceExperiment
         stimIndices =  conditionsData(sceneIndex, :);
         if strcmp(runParams.whichDisplay, 'HDR')
             imagePics = squeeze(thumbnailStimImages(stimIndices,1,:,:,:));
-        elseif strcmp(runParams.whichDisplay, 'HDR')
+        elseif strcmp(runParams.whichDisplay, 'LDR')
              imagePics = squeeze(thumbnailStimImages(stimIndices,2,:,:,:));
         else
             error('runParams.whichDisplay');
