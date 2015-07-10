@@ -4,25 +4,75 @@ function GenerateStimulusCache
     displayCalDictionary = generateDisplayCalDictionary('calLCD.mat', 'calOLED.mat');
     emulatedDisplayNames = keys(displayCalDictionary);
     
+    sceneFamily = 'RT3Scenes';
+   % sceneFamily = 'Samsung';
+    
+    cacheDirectory = '/Users/Shared/Matlab/Toolboxes/OLEDToolbox/GenericImagePreferenceExperiment/Caches';
+    if strcmp(sceneFamily, 'RT3Scenes')
     % Load the RT3 scenes
-    [sceneEnsemble, ensembleLuminances, sceneFileNames] = loadRT3Scenes();         
-    maxEnsembleLuminance = max(ensembleLuminances(:));
+        [sceneEnsemble, ensembleLuminances, sceneFileNames] = loadRT3Scenes();
+        cacheFileName = sprintf('Blobbie_SunRoomSideLight_Cache.mat');
+        luminanceOverdrive(1) = 0.97;   % overdrive for LCD (adjust so at to have a rendered output luminance that is similar to the intended output luminance)
+        luminanceOverdrive(2) = 0.87;   % overdrive for OLED (adjust so at to have a rendered output luminance that is similar to the intended output luminance)
+        
+        % Reinhardt luminance mappings
+        minAlpha = 1.0; maxAlpha = 200.0; alphasNum = 6;
+        ReinhardtParams.alphas = logspace(log10(minAlpha),log10(maxAlpha),alphasNum);
+        
+        minAlpha = 0.1;
+        maxAlpha = 1.0;
+        alphasNum = 6;
+        histogramParams.alphas = logspace(log10(minAlpha),log10(maxAlpha),alphasNum);
+        histogramParams.kFractions = [0.15]; % [0.4]; %  0.1 0.25 0.5 1.0];  % 0.01 gives linear mapping
+        
+    else
+        % Load Samsung scenes
+        
+        sceneSelection = 'Dark Scenes';
+       % sceneSelection = 'Bright Scenes';
+        [sceneEnsemble, ensembleLuminances, sceneFileNames] = loadSamsungScenes(sceneSelection); 
+        cacheFileName = sprintf('Samsung_Cache.mat');
+        if strcmp(sceneSelection, 'Dark Scenes')
+            luminanceOverdrive(1) = 0.97;   % overdrive for LCD (adjust so at to have a rendered output luminance that is similar to the intended output luminance)
+            luminanceOverdrive(2) = 0.87;   % overdrive for OLED (adjust so at to have a rendered output luminance that is similar to the intended output luminance)
+        elseif strcmp(sceneSelection, 'Bright Scenes')
+            luminanceOverdrive(1) = 0.97;   % overdrive for LCD (adjust so at to have a rendered output luminance that is similar to the intended output luminance)
+            luminanceOverdrive(2) = 0.87;
+        end
+        
+        % Reinhardt luminance mappings
+        minAlpha = 0.35; maxAlpha = 24; alphasNum = 6;
+        ReinhardtParams.alphas = logspace(log10(minAlpha),log10(maxAlpha),alphasNum);
+        
+        minAlpha = 0.3; maxAlpha = 1.0; alphasNum = 6;
+        histogramParams.alphas = logspace(log10(minAlpha),log10(maxAlpha),alphasNum);
+        histogramParams.kFractions = [0.15]; % [0.4]; %  0.1 0.25 0.5 1.0];  % 0.01 gives linear mapping
+    end
+     
+    %aboveGamutOperation = 'Clip Individual Primaries';
+    aboveGamutOperation = 'Scale RGBPrimary Triplet';
+    
+    
+    
     
     % Generate toneMapping ensemble
     testLinearMapping          = false;
     testHistogramBasedSequence = true;
     testReinhardtSequence      = false;
     
+    
+    
+    
+    
     % The higher the dynamic range of the ensemble of the images, the
     % higher the histogram bins must be to avoid severe banding at hightly
     % saturating tone mappings. To cover all posibilities, set the histogram bins = image size
     histogramBins = size(sceneEnsemble{1}.linearSRGB,1)*size(sceneEnsemble{1}.linearSRGB,2);
-    [toneMappingEnsemble, ensembleCenters] = generateToneMappingEnsemble(ensembleLuminances, testLinearMapping, testHistogramBasedSequence, testReinhardtSequence, histogramBins);
+    [toneMappingEnsemble, ensembleCenters] = generateToneMappingEnsemble(ensembleLuminances, testLinearMapping, testHistogramBasedSequence, testReinhardtSequence, ReinhardtParams, histogramParams, histogramBins);
 
-    luminanceOverdrive(1) = 0.97;   % overdrive for LCD (adjust so at to have a rendered output luminance that is similar to the intended output luminance)
-    luminanceOverdrive(2) = 0.87;   % overdrive for OLED (adjust so at to have a rendered output luminance that is similar to the intended output luminance)
-    %aboveGamutOperation = 'Clip Individual Primaries';
-    aboveGamutOperation = 'Scale RGBPrimary Triplet';
+    
+   
+
 
     wattsToLumens = 683;
     renderingDisplayCal = displayCalDictionary('OLED');
@@ -45,6 +95,7 @@ function GenerateStimulusCache
     set(h2, 'Position', [10 400 2453 1340], 'Name', 'OLED');
     
     cachedData = [];
+    maxEnsembleLuminance = max(ensembleLuminances(:));
     
     for sceneIndex = 1:numel(sceneEnsemble)     
         inputSRGBimage    = sceneEnsemble{sceneIndex}.linearSRGB;
@@ -157,12 +208,8 @@ function GenerateStimulusCache
         end % toneMappingParamIndex
     end % sceneIndex
     
-
-    cacheDirectory = '/Users/Shared/Matlab/Toolboxes/OLEDToolbox/GenericImagePreferenceExperiment/Caches';
-    cacheFileName = sprintf('Blobbie_SunRoomSideLight_Cache.mat');
-    
-    
-    save(fullfile(cacheDirectory, cacheFileName), 'cachedData', 'sceneFileNames', 'maxEnsembleLuminance');
+ 
+    save(fullfile(cacheDirectory, cacheFileName), 'cachedData', 'sceneFileNames', 'maxEnsembleLuminance', 'luminanceOverdrive', 'aboveGamutOperation', 'ReinhardtParams', 'histogramParams');
     fprintf(2,'\n\nNew stimulus cache was generated and saved in ''%s'' (dir = ''%s'').\n\n', cacheFileName, cacheDirectory);
 end
 
@@ -211,6 +258,74 @@ function [settingsCalFormat, inputLuminance, intendedOutputLuminance, renderedOu
 end
   
 
+function [sceneEnsemble, ensembleLuminances, sceneFileNames] = loadSamsungScenes(sceneSelection)
+    sceneDirectory = '/Users/Shared/Matlab/Toolboxes/OLEDToolbox/ToneMappingApp/SRGBimages';
+    
+    if strcmp(sceneSelection, 'Dark Scenes')
+        % Dark scenes
+        scenesExamined = {...
+            'Candles.mat' ...
+        %    'DarkCity' ...
+        %    'Cyborg' ...
+        %    'NeonPeople' ...
+            };
+    elseif strcmp(sceneSelection, 'Bright Scenes')
+        scenesExamined = {...
+            'Geek', ...
+            'Lamps', ... 
+            'Sun',...
+            'Zap' ...
+            };
+    end
+    
+    
+    % load XYZ CMFs
+    sensorXYZ = loadXYZCMFs();
+    
+    sceneNo = 0;
+    ensembleLuminances = [];
+    wattsToLumens = 683;
+    
+    marginBetweenImages = 20;
+    
+    for sceneIndex = 1:numel(scenesExamined)
+        sceneNo = sceneNo + 1;
+        sceneFileName = fullfile(sceneDirectory, scenesExamined{sceneIndex});
+        fprintf('Loading %s\n', sceneFileName);
+                    
+        % load linear SRGB
+        load(sceneFileName, 'linearSRGBimage');
+        [imRows, imCols,~] = size(linearSRGBimage);
+        
+        % trim size so that two of these images fit side by side on a 1920x1080 display
+        imageWidth = (1920-marginBetweenImages)/2;
+        colIndices = imageWidth/2 + (-imageWidth/2:imageWidth/2) + 1;
+        linearSRGBimage = linearSRGBimage(1:2:end,1:2:end,:);
+        
+        % to calFormat
+        [linearSRGBcalFormat, nCols, mRows] = ImageToCalFormat(linearSRGBimage);
+        
+        % no negative sRGB values
+        linearSRGBcalFormat(linearSRGBcalFormat<0) = 0;
+
+        XYZcalFormat = SRGBPrimaryToXYZ(linearSRGBcalFormat);
+        xyYcalFormat = XYZToxyY(XYZcalFormat);
+
+        % update the ensemble luminances
+        ensembleLuminances = [ensembleLuminances squeeze(xyYcalFormat(3,:))*wattsToLumens];
+
+        % save data
+        sceneEnsemble{sceneNo} = struct(...
+            'linearSRGB',   CalFormatToImage(linearSRGBcalFormat,nCols, mRows), ...
+            'xyYcalFormat', xyYcalFormat, ...
+            'imageSize',   [nCols mRows] ...
+        );
+
+        sceneFileNames{sceneNo} = sceneFileName;
+    end
+    
+end
+
 
 function [sceneEnsemble, ensembleLuminances, sceneFileNames] = loadRT3Scenes()
 
@@ -222,6 +337,7 @@ function [sceneEnsemble, ensembleLuminances, sceneFileNames] = loadRT3Scenes()
     lightingConditionsExamined  = {'area1_front0_ceiling0'};
     alphasExamined              = {'0.025', '0.320'};
     specularStrengthsExamined   = {'0.60', '0.15'};   
+   
     
     % load XYZ CMFs
     sensorXYZ = loadXYZCMFs();
@@ -243,7 +359,7 @@ function [sceneEnsemble, ensembleLuminances, sceneFileNames] = loadRT3Scenes()
     
                     % compute XYZimage
                     XYZimage = MultispectralToSensorImage(multispectralImage, S, sensorXYZ.T, sensorXYZ.S);
-
+                    
                     % to cal format
                     [XYZcalFormat, nCols, mRows] = ImageToCalFormat(XYZimage);
     
@@ -272,8 +388,9 @@ function [sceneEnsemble, ensembleLuminances, sceneFileNames] = loadRT3Scenes()
     end
 end
 
-
-function [toneMappingEnsemble, ensembleCenters] = generateToneMappingEnsemble(ensembleLuminances, testLinearMapping, testHistogramBasedSequence, testReinhardtSequence, histogramBins)
+        
+        
+function [toneMappingEnsemble, ensembleCenters] = generateToneMappingEnsemble(ensembleLuminances, testLinearMapping, testHistogramBasedSequence, testReinhardtSequence, ReinhardtParams, histogramParams, histogramBins)
      
     ensembleLuminances = ensembleLuminances(:);
     minEnsembleLum = min(ensembleLuminances);
@@ -284,18 +401,19 @@ function [toneMappingEnsemble, ensembleCenters] = generateToneMappingEnsemble(en
     
     if (testHistogramBasedSequence)
         % Cumulative histogram based
-        kFraction = 0.049; % input('Enter threshold as fraction of max difference, [e.g. 0.8, <= 1.0] : ');
         minAlpha = 0.3;
         maxAlpha = 1.0;
         alphasNum = 6;
-        exponentAlphas = logspace(log10(minAlpha),log10(maxAlpha),alphasNum);
+        histogramAlphas = logspace(log10(minAlpha),log10(maxAlpha),alphasNum);
+        exponentAlphas = histogramAlphas; 
         %exponentAlphas = [0.1 0.17 0.3 0.45 0.7];
         kFractions = [0.15]; % [0.4]; %  0.1 0.25 0.5 1.0];  % 0.01 gives linear mapping
 
-        for kIndex = 1:numel(kFractions)
-            kFraction = kFractions(kIndex);
-            for alphaIndex = 1: numel(exponentAlphas)
-                alpha = exponentAlphas(alphaIndex);
+        for kIndex = 1:numel(histogramParams.kFractions)
+            kFraction = histogramParams.kFractions(kIndex);
+            
+            for alphaIndex = 1: numel(histogramParams.alphas)
+                alpha = histogramParams.alphas(alphaIndex);
 
                 toneMappingIndex = toneMappingIndex + 1;
                 cumulativeHistogramMappingFunction = computeCumulativeHistogramBasedToneMappingFunction(ensembleLuminances, ensembleCenters, kFraction, alpha);
@@ -325,17 +443,14 @@ function [toneMappingEnsemble, ensembleCenters] = generateToneMappingEnsemble(en
     
     
     if (testReinhardtSequence)
-        % Reinhardt luminance mappings
-        minAlpha = 1.0; maxAlpha = 200.0; alphasNum = 6;
-        ReinhardtAlphas = logspace(log10(minAlpha),log10(maxAlpha),alphasNum);
 
         delta = 0.0001; % small delta to avoid taking log(0) when encountering pixels with zero luminance
         format long g
         sceneKey = exp((1/numel(ensembleCenters))*sum(log(ensembleCenters + delta)));
 
-        for alphaIndex = 1:numel(ReinhardtAlphas);
+        for alphaIndex = 1:numel(ReinhardtParams.alphas);
             toneMappingIndex = toneMappingIndex + 1;
-            alpha = ReinhardtAlphas(alphaIndex);
+            alpha = ReinhardtParams.alphas(alphaIndex);
 
             scaledInputLuminance = alpha / sceneKey * ensembleCenters;
             outputLuminance = scaledInputLuminance ./ (1.0+scaledInputLuminance);

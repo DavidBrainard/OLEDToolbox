@@ -5,6 +5,7 @@ function [repsNum, dataDir, datafileName, debugMode, histogramIsVisible, visuali
     dataDir = fullfile(rootDir,'Data'); 
     if (~exist(dataDir, 'dir'))
         mkdir(dataDir);
+        pause(0.2);
     end
     cd (dataDir);
     
@@ -12,8 +13,9 @@ function [repsNum, dataDir, datafileName, debugMode, histogramIsVisible, visuali
     while isempty(experimentName)
         experimentName = lower(input('Enter experiment name [e.g. Blobbie_Reinhardt] ', 's'));
     end
-    if (~exist(experimentName, 'dir'))
+    if (~exist(fullfile(dataDir,experimentName), 'dir'))
         mkdir(experimentName);
+        pause(1);
     end
     cd(experimentName);
     
@@ -21,8 +23,9 @@ function [repsNum, dataDir, datafileName, debugMode, histogramIsVisible, visuali
     while isempty(subjectName)
         subjectName = lower(input('Enter subject''s initials [e.g. NC] ', 's'));
     end
-    if (~exist(subjectName, 'dir'))
+    if (~exist(fullfile(dataDir,experimentName,subjectName), 'dir'))
         mkdir(subjectName);
+        pause(1);
     end
     cd(subjectName);
     
