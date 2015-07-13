@@ -5,12 +5,50 @@ function AnalyzeImagePreferenceExperiment
     
     dataFileName = GetDataFile(rootDir);
     whos('-file',dataFileName)
-    load(dataFileName, 'conditionsData', 'runParams', 'stimPreferenceMatrices', 'thumbnailStimImages', 'hdrMappingFunctionLowRes', 'toneMappingParams');
+    load(dataFileName, ...
+        'cacheFileNameList', ...
+        'conditionsData', ...
+        'thumbnailStimImages', ...
+        'histogramsLowRes', 'histogramsFullRes', ...
+        'hdrMappingFunctionLowRes', 'hdrMappingFunctionFullRes', ...
+        'ldrMappingFunctionLowRes', 'ldrMappingFunctionFullRes', ...
+        'toneMappingParams', ...
+        'stimPreferenceMatrices', ...
+        'runParams');
     
-    scenesNum       = size(conditionsData,1)
-    toneMappingsNum = size(conditionsData,2)
-    size(stimPreferenceMatrices)
-
+   
+    scenesNum       = size(conditionsData,1);
+    toneMappingsNum = size(conditionsData,2);
+    
+    maxSceneLum = 0; maxImageLum = 0;
+    for toneMappingIndex = 1:toneMappingsNum
+        allScenesLum{toneMappingIndex} = []; allImagesLum{toneMappingIndex} = [];
+         for sceneIndex = 1:scenesNum
+            sceneLum = max(hdrMappingFunctionLowRes{sceneIndex, toneMappingIndex}.input);
+            
+            if (maxSceneLum < sceneLum)
+                maxSceneLum = sceneLum;
+            end
+            imageLum = max(hdrMappingFunctionLowRes{sceneIndex, toneMappingIndex}.output);
+            if (maxImageLum < imageLum)
+                maxImageLum = imageLum;
+            end
+            
+            allScenesLum{toneMappingIndex}  = [allScenesLum{toneMappingIndex}; hdrMappingFunctionLowRes{sceneIndex, toneMappingIndex}.input(:)];
+            allImagesLum{toneMappingIndex}  = [allImagesLum{toneMappingIndex}; hdrMappingFunctionLowRes{sceneIndex, toneMappingIndex}.output(:)];
+        end
+    end
+   
+    
+    for toneMappingIndex = 1:toneMappingsNum 
+        tmp = allScenesLum{toneMappingIndex};
+        [~,indices,~] = unique(round(tmp));
+        allScenesLum{toneMappingIndex} = tmp(indices);
+        
+        tmp = allImagesLum{toneMappingIndex};
+        allImagesLum{toneMappingIndex} = tmp(indices);
+    end
+    
     
     showIndividualTrialData = false;
     repsNum = runParams.repsNum;
@@ -96,8 +134,7 @@ function AnalyzeImagePreferenceExperiment
         %plot2DCondProbabilityHistogram(99,prefStatsStruct.stimulusPreferenceRate2D);
 
         % save averaged data
-        preferenceDataStats{sceneIndex} = prefStatsStruct;
-                        
+        preferenceDataStats{sceneIndex} = prefStatsStruct;        
     end % sceneIndex
     
 
@@ -112,12 +149,13 @@ function AnalyzeImagePreferenceExperiment
             error('runParams.whichDisplay');
         end
                 
-%         for toneMappingIndex = 1:numel(stimIndices)
-%             toneMapping{toneMappingIndex} = toneMappingParams{shapeIndex, specularReflectionIndex, roughnessIndex, lightingIndex, toneMappingMethodIndex,toneMappingParamIndex};   
-%         end
+        for toneMappingIndex = 1:toneMappingsNum
+            mappingFunctions{toneMappingIndex}.input  = hdrMappingFunctionLowRes{sceneIndex, toneMappingIndex}.input;
+            mappingFunctions{toneMappingIndex}.output = hdrMappingFunctionLowRes{sceneIndex, toneMappingIndex}.output;
+        end
                 
 %        histCounts = squeeze(histCount(:,shapeIndex,specularReflectionIndex,roughnessIndex));
-        plotSelectionProbabilityMatrix(figNum, preferenceDataStats{sceneIndex}.stimulusPreferenceRate2D, imagePics);
+        plotSelectionProbabilityMatrix(figNum, preferenceDataStats{sceneIndex}.stimulusPreferenceRate2D, imagePics, mappingFunctions, allScenesLum, allImagesLum, maxSceneLum, maxImageLum);
         figNum = figNum + 1;
     end
     
@@ -131,7 +169,7 @@ function AnalyzeImagePreferenceExperiment
 
 end
 
-function plotSelectionProbabilityMatrix(figNum, ProwGivenRowColUnorderedPair, imagePics)
+function plotSelectionProbabilityMatrix(figNum, ProwGivenRowColUnorderedPair, imagePics, mappingFunctions, allScenesLum, allImagesLum, maxSceneLum, maxImageLum)
 
     % probabilty of occurence of the (row,col) pair (unordered, i.e, row-on-left, col-on-right OR col-on-left, row-on-right)
     % uniform, since all pairs were presented an equal number of times
@@ -161,6 +199,23 @@ function plotSelectionProbabilityMatrix(figNum, ProwGivenRowColUnorderedPair, im
   %          title(sprintf('DR=%2.1f',lumDynamicRange), 'Color', [0.7 0.7 0.0], 'FontSize', 18, 'FontWeight', 'bold');
   %      end
     end
+    
+    % Plot the histograms
+    subplot(7,10, [1 11 21 31 41 51]+1);
+    hold on;
+    
+    for k = 1:numel(mappingFunctions)
+      %  X = [histCenters(:)          histCenters(:)];
+      %  Y = [k-1+0*(histCounts) k-1+0.9*histCounts];
+      %  line(X',Y', 'Color', [0.7 1.0 0.8]);
+        plot(allScenesLum{k}, k-1 + 0.85*allImagesLum{k}/maxImageLum, 'b-', 'LineWidth', 1.0);
+        plot(mappingFunctions{k}.input, k-1 + 0.85*mappingFunctions{k}.output/maxImageLum, 'r-', 'LineWidth', 2.0);
+    end
+    
+    set(gca, 'XLim', [0 maxSceneLum], 'YLim', [0 6], 'XTick', [], 'YTick', []);
+    box off; axis off
+    
+    
     
     subplot(7,10,[2 3 4 5  12 13 14 15  22 23 24 25 32 33 34 35  42 43 44 45  52 53 54 55 ]+1)
     imagesc(ProwGivenRowColUnorderedPair, [0 1.2]);
