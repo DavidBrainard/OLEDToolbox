@@ -57,8 +57,8 @@ function GenerateStimulusCache
     
     % Generate toneMapping ensemble
     testLinearMapping          = false;
-    testHistogramBasedSequence = true;
-    testReinhardtSequence      = false;
+    testHistogramBasedSequence = false;
+    testReinhardtSequence      = true;
     
     
     
@@ -192,7 +192,7 @@ function GenerateStimulusCache
                 % Plot the tonemapped image
                 subplot('Position', subplotPosVectors(sceneIndex+1, toneMappingIndex).v);
                 %displaySettingsImage(settingsImage(1:2:end, 1:2:end,:), '');
-                displaySRGBImage(settingsImage(1:2:end, 1:2:end,:), '', renderingDisplayCal);
+                displaySettingsImageInSRGBFormat(settingsImage(1:2:end, 1:2:end,:), '', renderingDisplayCal);
                 drawnow
                 
             end % emulatedDisplayIndex 
@@ -513,37 +513,8 @@ function displaySettingsImage(settingsImage, titleText)
     title(titleText);
     set(gca, 'CLim', [0 1]);
 end
-
-function displaySRGBImage(settingsImageForEmulatedDisplay, titleText, renderingDisplayCal)
-    [settingsCalFormat, n,m] = ImageToCalFormat(settingsImageForEmulatedDisplay);
-    primaryCalFormat = SettingsToPrimary(renderingDisplayCal.cal, settingsCalFormat);
-    XYZcalFormat = PrimaryToSensor(renderingDisplayCal.cal, primaryCalFormat);
-    sRGBcalFormat = XYZToSRGBPrimary(XYZcalFormat);
-    sRGBImage = CalFormatToImage(sRGBcalFormat, n,m);
-    sRGBImage = sRGBImage / max(renderingDisplayCal.maxSRGB(:));
-    imshow(sRGB.gammaCorrect(sRGBImage));
-    title(titleText);
-    set(gca, 'CLim', [0 1]);
-end
                 
 
-function displaySRGBimage(sRGBImage, maxRenderingDisplaySRGB, scaleToDisplaySRGBrange, titleText)
-    if (scaleToDisplaySRGBrange)
-        % scale to display SRGB
-        sRGBImage = sRGBImage / max(sRGBImage(:)) * max(maxRenderingDisplaySRGB);
-    end
-    
-    % normalize so that we can use the [0..1] range
-    sRGBImage = sRGBImage / max(maxRenderingDisplaySRGB);
-    
-    indices = find(sRGBImage > 1);
-    if (numel(indices) > 0)
-        fprintf(2,'>>>>> %d pixels above 1 <<<< \n', numel(indices));
-    end
-    imshow(sRGB.gammaCorrect(sRGBImage));
-    title(titleText);
-    set(gca, 'CLim', [0 1]);
-end
 
 function mappedLuminance = ToneMapLuminance(inputLuminance, toneMappingParams, maxLuminance)
 
@@ -558,136 +529,6 @@ function mappedLuminance = ToneMapLuminance(inputLuminance, toneMappingParams, m
     mappedLuminance = toneMappingFunction.output(indices) * maxLuminance;
 end
 
-
-
-function [inGamutPrimaries, s] = mapToGamut(primaries, aboveGamutOperation)
-
-    totalSubPixelsBelowGamut = 0;
-    totalSubPixelsAboveGamut = 0;
-    
-    for channel = 1:3
-        p = find(primaries(channel,:) < eps);
-        primaries(channel, p) = 0;
-        if (channel == 1)
-            s.belowGamutRedPrimaryIndices = p;
-        elseif (channel == 2)
-            s.belowGamutGreenPrimaryIndices = p;
-        else
-            s.belowGamutBluePrimaryIndices = p;
-        end
-        totalSubPixelsBelowGamut = totalSubPixelsBelowGamut + numel(p);
-        
-        p = find(primaries(channel,:) > 1);
-        if (strcmp(aboveGamutOperation, 'Clip Individual Primaries'))
-            primaries(channel,p) = 1;
-        end
-        
-        if (channel == 1)
-            s.aboveGamutRedPrimaryIndices = p;
-        elseif (channel == 2)
-            s.aboveGamutGreenPrimaryIndices = p;
-        else
-            s.aboveGamutBluePrimaryIndices = p;
-        end
-        totalSubPixelsAboveGamut = totalSubPixelsAboveGamut + numel(p);
-    end
-    
-    if (strcmp(aboveGamutOperation, 'Scale RGBPrimary Triplet'))
-        aboveGamutPixels = unique([s.aboveGamutRedPrimaryIndices s.aboveGamutGreenPrimaryIndices s.aboveGamutBluePrimaryIndices]);  
-        for k = 1:numel(aboveGamutPixels)
-            RGB = primaries(:,aboveGamutPixels(k));
-            RGB = RGB/max(RGB);
-            primaries(:,aboveGamutPixels(k)) = RGB;
-        end
-    end
-    
-    s.totalSubPixelsAboveGamut = totalSubPixelsAboveGamut;
-    s.totalSubPixelsBelowGamut = totalSubPixelsBelowGamut;
-    
-    inGamutPrimaries = primaries;
-end
-
-
-
-function dataStruct = prepareCal(cal, desiredMaxLuminance)
-
-    % load XYZ CMFs
-    sensorXYZ = loadXYZCMFs();
-    
-    cal.nPrimaryBases = 3;
-    cal = CalibrateFitLinMod(cal);
-    
-    % set sensor to XYZ
-    cal  = SetSensorColorSpace(cal, sensorXYZ.T,  sensorXYZ.S);
-
-    % compute native max luminance
-    wattsToLumens = 683;
-    XYZ = SettingsToSensor(cal, [1 1 1]');
-    maxLuminance = XYZ(2) * wattsToLumens;
-    
-    XYZ = SettingsToSensor(cal, [0 0 0]');
-    minLuminance = XYZ(2) * wattsToLumens;
-    
-    if (~isempty(desiredMaxLuminance))
-        scalingFactor = desiredMaxLuminance/maxLuminance;
-        cal.P_device = cal.P_device * scalingFactor;
-    end
-    cal = SetSensorColorSpace(cal, sensorXYZ.T,  sensorXYZ.S);
-    
-    % Generate 1024-level LUTs 
-    nInputLevels = 1024;
-    cal  = CalibrateFitGamma(cal, nInputLevels);
-    
-    % Set the gamma correction mode to be used. 
-    % gammaMode == 1 - search table using linear interpolation
-    cal = SetGammaMethod(cal, 0);
-    
-    XYZ = SettingsToSensor(cal, [1 1 1]');
-    maxLuminance = XYZ(2) * wattsToLumens;
-    
-    XYZ = SettingsToSensor(cal, [1 0 0]');
-    maxSRGB(1) = max(XYZToSRGBPrimary(XYZ));
-    
-    XYZ = SettingsToSensor(cal, [0 1 0]');
-    maxSRGB(2) = max(XYZToSRGBPrimary(XYZ));
-    
-    XYZ = SettingsToSensor(cal, [0 0 1]');
-    maxSRGB(3) = max(XYZToSRGBPrimary(XYZ));
-    
-    dataStruct.cal = cal;
-    dataStruct.maxLuminance = maxLuminance;
-    dataStruct.minLuminance = minLuminance;
-    dataStruct.maxSRGB = maxSRGB;
-end
-
-
-function displayCalDictionary = generateDisplayCalDictionary(calLCDfile, calOLEDfile)
-    
-    % Load calibration files for LCD and OLED display
-    which(calLCDfile, '-all')
-    which(calOLEDfile, '-all')
-    load(calLCDfile, 'calLCD');
-    load(calOLEDfile,'calOLED');
-    
-    desiredLuminanceForLCD = [];
-    desiredLuminanceForOLED = [];
-    
-    emulatedDisplayNames = {'LCD', 'OLED'};
-    emulatedDisplaySpecs = { ...
-        prepareCal(calLCD, desiredLuminanceForLCD), ...
-        prepareCal(calOLED, desiredLuminanceForOLED) ...
-    };
-    displayCalDictionary = containers.Map(emulatedDisplayNames, emulatedDisplaySpecs);
-end
-
-function sensorXYZ = loadXYZCMFs()
-    % Load XYZ CMFs
-    colorMatchingData = load('T_xyz1931.mat');
-    sensorXYZ = struct;
-    sensorXYZ.S = colorMatchingData.S_xyz1931;
-    sensorXYZ.T = colorMatchingData.T_xyz1931;
-    clear 'colorMatchingData';
-end
 
 
 function toneMappingFunction = computeCumulativeHistogramBasedToneMappingFunction(ensembleLuminances, ensembleCenters, kFraction, exponent)
