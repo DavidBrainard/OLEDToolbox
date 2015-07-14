@@ -1,4 +1,4 @@
-function loadStimulusCache(obj, cacheFileNameList)
+function loadStimulusCache(obj, cacheFileNameList, cartoonImageDirectory)
 
     % Empty the cache
     obj.viewOutlet.emptyCache();
@@ -69,9 +69,31 @@ function loadStimulusCache(obj, cacheFileNameList)
         
         varList = {'cachedData'};
         clear(varList{:});
+    end % for k
+    
+    fprintf('Loading progress images\n');
+    obj.progressImagesNum = 11;
+    
+    for sessionIndex = 1:obj.progressImagesNum
+        imageFileName = sprintf('%s/Session%d.jpg',cartoonImageDirectory,sessionIndex);
+        fprintf('Loading progress image %d of %d\n', sessionIndex, obj.progressImagesNum);
+        [progressImage,~] = imread(imageFileName);
+        obj.progressImageSize.rows = size(progressImage,1);
+        obj.progressImageSize.cols = size(progressImage,2);
+        progressImage = (double(progressImage))/255.0;
+        obj.viewOutlet.addProgressImageToCache(sessionIndex, progressImage);
     end
+    
+    imageFileName = sprintf('%s/AllDone.jpg',cartoonImageDirectory);
+    fprintf('Loading all done image\n');
+    [progressImage,~] = imread(imageFileName);
+
+    progressImage = (double(progressImage))/255.0;
+    obj.viewOutlet.addProgressImageToCache(obj.progressImagesNum+1, progressImage);
+        
     
     % Configure the target locations
     obj.viewOutlet.configureTargets(obj.stimulusSize);
+    obj.viewOutlet.configureProgressImageTarget(obj.progressImageSize);
 end
 

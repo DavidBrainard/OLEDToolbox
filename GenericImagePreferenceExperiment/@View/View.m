@@ -27,6 +27,9 @@ classdef View < handle
         % Cache with stimulus pointers
         stimCache;
         
+        % Cache with progress image pointers
+        progressImageCache;
+        
         % Bounds of screen
         screenRect;
         
@@ -35,6 +38,9 @@ classdef View < handle
         
         % left and right target locations
         targetLocations;
+        
+        % target location for progress images
+        progressImageTargetLocation;
                 
         % locations for the HDR and the LDR stimuli during the current
         % presentation. These change all the time.
@@ -81,6 +87,9 @@ classdef View < handle
         % Method to add data to the stimulus cache
         addToCache(obj, stimIndex, hdrStimRGBdata, ldrStimRGBdata, sceneHistogram, hdrToneMappingFunction, ldrToneMappingFunction, maxEnsembleLuminance);
         
+        % Method to add a progress image to the stimulus cache
+        addProgressImageToCache(obj, sessionIndex, progressImage);
+        
         % Method to empty the cache, so that new data can be reloaded.
         emptyCache(obj);
         
@@ -89,6 +98,9 @@ classdef View < handle
         
         % Method to present a stimulus (hdr, ldr) pair at specific destination rects
         showStimulus(obj, stimIndex, histogramIsVisible);
+        
+        % Method to present a session completed image
+        showProgressImage(obj, sessionIndex);
         
         % Method to get user response via mouse/gamepad
         response = getUserResponse(obj);

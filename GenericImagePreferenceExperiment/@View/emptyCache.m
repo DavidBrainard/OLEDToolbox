@@ -7,5 +7,13 @@ function emptyCache(obj)
             Screen('Close', s.hdr(:));
         end
     end
+    
+    % delete all sprogress textures
+    if (isfield(obj.progressImageCache, 'textures'))
+        for k = 1:numel(obj.progressImageCache.textures)
+            Screen('Close',obj.stimCache.textures{k});
+        end
+    end
+    
     obj.initializeCache();
 end

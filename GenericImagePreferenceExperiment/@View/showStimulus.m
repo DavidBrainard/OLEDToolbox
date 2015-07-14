@@ -22,7 +22,6 @@ function showStimulus(obj,stimIndex, histogramIsVisible)
     hDataTwo  = obj.stimCache.histogramData{stimIndex2};
     tmDataTwo = obj.stimCache.hdrTomeMappingData{stimIndex2};
         
-    stimIndex{3}
     if (strcmp(stimIndex{3}, 'LDR'))
         s1 = sOne.ldr;  
         s2 = sTwo.ldr;  

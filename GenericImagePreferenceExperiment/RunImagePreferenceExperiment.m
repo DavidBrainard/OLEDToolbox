@@ -15,11 +15,6 @@ function RunImagePreferenceExperiment
         fullfile(rootDir,'Caches', 'Blobbie_SunRoomSideLight_Reinhardt_Cache.mat') ...
         };
     
-    % Select a stimulus cache file(s)
-    cacheFileNameList = {...
-        fullfile(rootDir,'Caches', 'Samsung_Reinhardt_Cache.mat') ...
-        };
-    
 
     % Specify experiment params
     params = struct(...
@@ -30,7 +25,8 @@ function RunImagePreferenceExperiment
     );
     
     % Load the stimulus cache
-    experimentController.loadStimulusCache(cacheFileNameList);
+    cartoonImageDirectory = fullfile(rootDir, 'CartoonImages');
+    experimentController.loadStimulusCache(cacheFileNameList, cartoonImageDirectory);
     
     % Run the experiment
     abnormalTermination = experimentController.runExperiment(params);

@@ -5,17 +5,21 @@ function AnalyzeImagePreferenceExperiment
     
     dataFileName = GetDataFile(rootDir);
     whos('-file',dataFileName)
-    load(dataFileName, ...
-        'cacheFileNameList', ...
-        'conditionsData', ...
-        'thumbnailStimImages', ...
-        'histogramsLowRes', 'histogramsFullRes', ...
-        'hdrMappingFunctionLowRes', 'hdrMappingFunctionFullRes', ...
-        'ldrMappingFunctionLowRes', 'ldrMappingFunctionFullRes', ...
-        'toneMappingParams', ...
-        'stimPreferenceMatrices', ...
-        'runParams');
+    load(dataFileName);
     
+    
+    repsNum = runParams.repsNum;
+    if exist('runAbortedAtRepetition', 'var') 
+        if (strcmp(runAbortionStatus,'AbortAtEndOfSession'))
+            fprintf(2,'Run was supposed to have %d reps, but it was aborted after completion of the %d run\n', repsNum, runAbortedAtRepetition);
+            repsNum = runAbortedAtRepetition;
+        elseif (strcmp(runAbortionStatus, 'AbortDuringMiddleOfSession'))
+            fprintf(2,'Run was supposed to have %d reps, but it was aborted during the %d run\n', repsNum, runAbortedAtRepetition);
+            repsNum = runAbortedAtRepetition;
+        elseif (strcmp(runAbortionStatus, 'none'))
+            fprintf('Run was completed normally.');
+        end
+    end
     
     
     scenesNum       = size(conditionsData,1);
@@ -64,7 +68,7 @@ function AnalyzeImagePreferenceExperiment
     
     
     showIndividualTrialData = false;
-    repsNum = runParams.repsNum;
+    
     
     
     for sceneIndex = 1:scenesNum

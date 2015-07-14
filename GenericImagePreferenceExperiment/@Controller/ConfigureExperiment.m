@@ -47,8 +47,7 @@ function [repsNum, dataDir, datafileName, debugMode, histogramIsVisible, visuali
     else
         demoMode = true;
     end
-    demoMode
-    pause
+
     if (demoMode)  
         runningOnSamsung = input('\nRunning on the Samsung [y/n] [default=n]: ', 's');
         if (isempty(runningOnSamsung)) || (~strcmp(runningOnSamsung, 'y'))

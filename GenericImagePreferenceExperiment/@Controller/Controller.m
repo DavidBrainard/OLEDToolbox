@@ -22,8 +22,10 @@ classdef Controller < handle
        
         cacheFileNameList;
         stimulusSize;
+        progressImageSize;
         
         scenesNum;
+        progressImagesNum;
         toneMappingsNum;
         
         conditionsData;
@@ -37,6 +39,8 @@ classdef Controller < handle
         histogramsLowRes;
         histogramsFullRes;
         
+        runAbortionStatus;
+        runAbortedAtRepetition;
     end
     
     % Public method
@@ -65,10 +69,14 @@ classdef Controller < handle
         end
         
         % Method to load the stimulus cache
-        loadStimulusCache(obj, cacheFileName);
+        loadStimulusCache(obj, cacheFileName, cartoonImageDirectory);
         
         % Method to run the experiment
         abnormalTermination = runExperiment(obj, params);
+        
+        % Method to ask the user if he wants to save data after aborting
+        % the run
+        dealWithAbnormalTermination(obj, status, repIndex);
         
         % Method to shutdown
         shutDown(obj);
@@ -83,6 +91,9 @@ classdef Controller < handle
 
         % Method to present a stimulus pair and obtain a response
         response = presentStimulusAndGetResponse(obj, stimIndex);
+        
+        % Method to present a session complete image and obtain a response
+        response = presentSessionCompletionImageAndGetResponse(obj, sessionIndex, totalSessionsNum);
         
         % Method to visualize the current preference matrix with the corresponding stimuli
         visualizePreferenceMatrix(obj, stimPreferenceData, whichDisplay);

@@ -4,6 +4,7 @@ function abnormalTermination = runExperiment(obj, params)
     obj.runParams = params;
     
     abnormalTermination = false;
+    obj.runAbortionStatus = 'none';
     
     % reset stimPreferenceMatrices
     emptyStruct = struct(...
@@ -62,10 +63,12 @@ function abnormalTermination = runExperiment(obj, params)
                 testSinglePair = [];
                 % Show stimuli and collect responses
                 [stimPreferenceData, abnormalTermination] = obj.doPairwiseStimulusComparison(stimPreferenceData, testSinglePair, params.whichDisplay);
+
                 if (abnormalTermination)
+                    obj.dealWithAbnormalTermination('AbortDuringMiddleOfSession', repIndex);
                     return;
                 end
-                   
+                
                 % Update stimPreferenceMatrices
                 obj.stimPreferenceMatrices{sceneIndex, repIndex} = stimPreferenceData;
 
@@ -106,6 +109,7 @@ function abnormalTermination = runExperiment(obj, params)
                 % Show stimuli and collect responses
                 [stimPreferenceData, abnormalTermination] = obj.doPairwiseStimulusComparison(stimPreferenceData, testSinglePair, params.whichDisplay);
                 if (abnormalTermination)
+                    obj.dealWithAbnormalTermination('AbortDuringMiddleOfSession', repIndex);
                     return;
                 end
                     
@@ -122,18 +126,19 @@ function abnormalTermination = runExperiment(obj, params)
         
 
         if (repIndex < params.repsNum)
-            Speak(sprintf('Finished block %d of %d', repIndex, params.repsNum));
-            Speak('Hit enter for next block');
-            fprintf(2,'Hit enter for next block\n');
-            pause
+            abnormalTermination = obj.presentSessionCompletionImageAndGetResponse(repIndex, params.repsNum);
+            if (abnormalTermination)
+                obj.dealWithAbnormalTermination('AbortAtEndOfSession', repIndex);
+                return;
+            end
         else
-            Speak('All done.');
-            fprintf('All done.\n');
+            obj.presentSessionCompletionImageAndGetResponse(repIndex, params.repsNum);
         end
     end % repIndex
 
     % save the collected data together with other data from the cache file
     obj.saveData();
 end
+
 
 
