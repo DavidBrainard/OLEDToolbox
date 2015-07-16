@@ -227,12 +227,12 @@ function AnalyzeImagePreferenceExperiment
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
         'rowsNum',      2, ...
         'colsNum',      scenesNum, ...
-        'widthMargin',  0.02, ...
+        'widthMargin',  0.01, ...
         'leftMargin',   0.03, ...
-        'bottomMargin', 0.13, ...
+        'bottomMargin', 0.1, ...
         'topMargin',    0.03);
     
-    set(hFig, 'Position', [10 10 2464 535], 'Color', [0 0 0]);
+    set(hFig, 'Position', [10 10 2600 535], 'Color', [0 0 0]);
     
 
     for sceneIndex = 1:scenesNum
@@ -294,13 +294,18 @@ function AnalyzeImagePreferenceExperiment
         hold off;
         
         xlabel('Reinhardt alpha', 'Color', [0.7 0.7 0.7], 'FontSize', 16);
-        ylabel('probability', 'Color', [0.7 0.7 0.7], 'FontSize', 16);
-        
+        if (sceneIndex == 1)
+            ylabel('probability', 'Color', [0.7 0.7 0.7], 'FontSize', 16);
+        end
         
         set(gca, 'FontSize', 14, 'Color', [0 0 0], 'XColor', [0.7 0.7 0.7], 'YColor', [0.7 0.7 0.7]);
         set(gca, 'XLim',[0.5 size(stimulusPreference1D,2)+0.5], 'YLim', [0 1], 'XTick', [1:toneMappingsNum], 'XTickLabel', xTickLabels);
+        if (sceneIndex > 1)
+           set(gca, 'YTickLabel', {}); 
+        end
+        grid on;
         text(0.6, 0.9, sprintf('a = %2.1f', exp(fittedParams(2))), 'FontSize', 16, 'FontWeight', 'bold', 'Color', 'c');
-        axis 'square';
+        
     end
     
     NicePlot.exportFigToPDF(sprintf('Summary_%s.pdf',runParams.whichDisplay),hFig,300);
