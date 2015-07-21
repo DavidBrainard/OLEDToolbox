@@ -2,8 +2,8 @@ function PlotSummaryResults
 
     %[dynamicRange, alphaHDR, alphaLDR, pdfFileName] = GetNicolasData();
     %[dynamicRange, alphaHDR, alphaLDR, pdfFileName] = GetDHBData();
-    [dynamicRange, alphaHDRnicolas, alphaLDRnicolas, alphaHDRdavid, alphaLDRdavid, pdfFileName] = GetNicolasAndDHBData();
-    
+    [indices, dynamicRange, alphaHDRnicolas, alphaLDRnicolas, alphaHDRdavid, alphaLDRdavid, pdfFileName] = GetNicolasAndDHBData();
+    indices
     % Fit a line through the combo points
     x = [alphaHDRnicolas(:); alphaHDRdavid(:)];
     y = [alphaLDRnicolas(:); alphaLDRdavid(:)];
@@ -17,6 +17,12 @@ function PlotSummaryResults
     for k = 1:numel(alphaHDRdavid)
         pointQ(:,k) = [alphaHDRdavid(k); alphaLDRdavid(k)];
         [pointQproj(:,k), length_q] = ProjectPointToVector(vector, pointQ(:,k));
+        alphaHDRdavidFit(k) = pointQproj(1,k);
+        alphaLDRdavidFit(k) = pointQproj(2,k);
+    end
+    
+    for k = 1:numel(indices)
+        [k dynamicRange(k)/1000 alphaHDRdavid(k) alphaLDRdavid(k) alphaHDRdavidFit(k) alphaLDRdavidFit(k)]
     end
     
     h = figure(1);
@@ -64,7 +70,7 @@ function PlotSummaryResults
     
 end
 
-function [dynamicRange, alphaHDR, alphaLDR, pdfFileName] = GetDHBData()
+function [ix,dynamicRange, alphaHDR, alphaLDR, pdfFileName] = GetDHBData()
     dynamicRange = [54848 2806 15814 1079 19581 2789 6061 1110];
     [s,ix] = sort(dynamicRange);
     alphaHDR = [40.1 39.6 55.1 56.4 56.9 57.7 60.7 65.0];
@@ -75,7 +81,7 @@ function [dynamicRange, alphaHDR, alphaLDR, pdfFileName] = GetDHBData()
     pdfFileName = 'SummaryAlphasDavid.pdf';
 end
 
-function [dynamicRange, alphaHDR, alphaLDR, pdfFileName] = GetNicolasData()
+function [ix,dynamicRange, alphaHDR, alphaLDR, pdfFileName] = GetNicolasData()
     dynamicRange = [54848 2806 15814 1079 19581 2789 6061 1110];
     [s,ix] = sort(dynamicRange);
     alphaHDR = [12.9 19.7 16.3 27.4 16.7 23.6 21.5 35];
@@ -86,7 +92,7 @@ function [dynamicRange, alphaHDR, alphaLDR, pdfFileName] = GetNicolasData()
     pdfFileName = 'SummaryAlphasNicolas.pdf';
 end
 
-function[dynamicRange, alphaHDRnicolas, alphaLDRnicolas, alphaHDRdavid, alphaLDRdavid, pdfFileName] = GetNicolasAndDHBData()
+function[ix,dynamicRange, alphaHDRnicolas, alphaLDRnicolas, alphaHDRdavid, alphaLDRdavid, pdfFileName] = GetNicolasAndDHBData()
     dynamicRange = [54848 2806 15814 1079 19581 2789 6061 1110];
     alphaHDRnicolas = [12.9 19.7 16.3 27.4 16.7 23.6 21.5 35];
     alphaLDRnicolas = [23.3 33.3 31.5 54.6 30.7 47.3 35.3  65.8];

@@ -30,6 +30,8 @@ function [stimPreferenceData, abnormalTermination] = doPairwiseStimulusCompariso
             swapLeftAndRight = false;
         end
         
+        swapLeftAndRight = false
+        
         if (swapLeftAndRight)
             stimIndexForLeftRect  = combinations(comboIndex,2);   % will go to left rect
             stimIndexForRightRect = combinations(comboIndex,1);   % will go to right rect
@@ -38,12 +40,31 @@ function [stimPreferenceData, abnormalTermination] = doPairwiseStimulusCompariso
             stimIndexForRightRect = combinations(comboIndex,2);   % will go to right rect
         end
         
-        stimIndexInfo = {stimIndexForLeftRect stimIndexForRightRect whichDisplay};
+        if strcmp(whichDisplay, 'fixOptimalLDR_varyHDR')
+            if (swapLeftAndRight)
+                % combinations(comboIndex,1).hdr -> LEFT
+                % combinations(comboIndex,2).ldr -> RIGHT
+                stimIndexInfo = {stimIndexForLeftRect stimIndexForRightRect 'HDRleft_LDRright'};
+            else
+                % combinations(comboIndex,2).ldr -> LEFT
+                % combinations(comboIndex,1).hdr -> RIGHT
+                stimIndexInfo = {stimIndexForLeftRect stimIndexForRightRect 'LDRleft_HDRright'};
+            end
+        else
+            stimIndexInfo = {stimIndexForLeftRect stimIndexForRightRect whichDisplay};
+        end
+        
         visStim = {stimIndexForLeftRect stimIndexForRightRect swapLeftAndRight}
         
         % Present stimulus and get response
         response = obj.presentStimulusAndGetResponse(stimIndexInfo);
 
+        if (strcmp(response.selectedStimulus, 'UserTerminated'))
+            fprintf('\nEarly termination by user (ESCAPE).\n');
+            abnormalTermination = true;
+            return;
+        end
+    
         responseMatrixRowIndex = find(stimIndices==stimIndexForLeftRect);
         responseMatrixColIndex = find(stimIndices==stimIndexForRightRect);
         
@@ -61,10 +82,6 @@ function [stimPreferenceData, abnormalTermination] = doPairwiseStimulusCompariso
                 Speak('Right');
             end
             stimPreferenceData.stimulusChosen(responseMatrixRowIndex, responseMatrixColIndex) = stimIndices(responseMatrixColIndex);
-        elseif (strcmp(response.selectedStimulus, 'UserTerminated'))
-            fprintf('\nEarly termination by user (ESCAPE).\n');
-            abnormalTermination = true;
-            return;
         else
             error('unknown selectedStimulus value: ''%s''.', response.selectedStimulus);
         end

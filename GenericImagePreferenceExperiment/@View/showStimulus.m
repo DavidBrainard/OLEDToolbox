@@ -36,6 +36,21 @@ function showStimulus(obj,stimIndex, histogramIsVisible)
         h2 = hDataTwo;
         tm1 = tmDataOne;
         tm2 = tmDataTwo;
+    elseif (strcmp(stimIndex{3}, 'LDRleft_HDRright'))
+        s1 = sOne.ldr;
+        s2 = sTwo.hdr;
+        h1 = hDataOne;  % not sure about this
+        h2 = hDataTwo;   % not sure about this
+        tm1 = tmDataOne; % not sure about this
+        tm2 = tmDataTwo; % not sure about this
+     elseif (strcmp(stimIndex{3}, 'HDRleft_LDRright'))
+        s1 = sOne.hdr;
+        s2 = sTwo.ldr;
+        h1 = hDataOne;  % not sure about this
+        h2 = hDataTwo;   % not sure about this
+        tm1 = tmDataOne; % not sure about this
+        tm2 = tmDataTwo; % not sure about this
+        
     else
         stimIndex(3)
         error('3rd entry must be set to ''LDR'' or ''HDR''.');

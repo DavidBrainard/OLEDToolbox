@@ -76,8 +76,8 @@ function [repsNum, dataDir, datafileName, debugMode, histogramIsVisible, visuali
     end
     
     whichDisplay = '';
-    while ((~strcmp(whichDisplay, 'HDR') && (~strcmp(whichDisplay, 'LDR'))))
-        whichDisplay = input('\nWhich display to emulate ? [HDR/LDR] : ', 's');
+    while ((~strcmp(whichDisplay, 'HDR') && (~strcmp(whichDisplay, 'LDR'))  && (~strcmp(whichDisplay,'fixOptimalLDR_varyHDR'))))
+        whichDisplay = input('\nWhich display to emulate ? [HDR/LDR/fixOptimalLDR_varyHDR] : ', 's');
     end
 end
 
