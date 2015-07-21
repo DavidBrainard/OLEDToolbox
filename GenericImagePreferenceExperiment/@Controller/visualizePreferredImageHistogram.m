@@ -9,8 +9,14 @@ function visualizePreferredImageHistogram(obj, stimPreferenceData)
     hold on;
     for rowIndex = 1:numel(stimIndices)
         for colIndex = 1:numel(stimIndices)
-            if (~isnan(stimPreferenceData.stimulusChosen(rowIndex, colIndex)))
-                text(colIndex-0.2, rowIndex-0.05, sprintf('%d', stimPreferenceData.stimulusChosen(rowIndex, colIndex)), 'FontSize', 20, 'FontWeight', 'bold', 'Color', [.8 0.7 0.1]);
+            if (~isnan(stimPreferenceData.stimulusChosen(rowIndex, colIndex)))  
+                if (stimPreferenceData.stimulusChosen(rowIndex, colIndex) > 10000)
+                    text(colIndex-0.2, rowIndex-0.05, sprintf('%d (H)', stimPreferenceData.stimulusChosen(rowIndex, colIndex)-10000), 'FontSize', 20, 'FontWeight', 'bold', 'Color', [.8 0.7 0.1]);
+                elseif (stimPreferenceData.stimulusChosen(rowIndex, colIndex) > 1000)
+                    text(colIndex-0.2, rowIndex-0.05, sprintf('%d (L)', stimPreferenceData.stimulusChosen(rowIndex, colIndex)-1000), 'FontSize', 20, 'FontWeight', 'bold', 'Color', [.8 0.7 0.1]);
+                else
+                    text(colIndex-0.2, rowIndex-0.05, sprintf('%d', stimPreferenceData.stimulusChosen(rowIndex, colIndex)), 'FontSize', 20, 'FontWeight', 'bold', 'Color', [.8 0.7 0.1]);
+                end
             end
         end
     end % rowIndex

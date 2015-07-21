@@ -30,8 +30,6 @@ function [stimPreferenceData, abnormalTermination] = doPairwiseStimulusCompariso
             swapLeftAndRight = false;
         end
         
-        swapLeftAndRight = false
-        
         if (swapLeftAndRight)
             stimIndexForLeftRect  = combinations(comboIndex,2);   % will go to left rect
             stimIndexForRightRect = combinations(comboIndex,1);   % will go to right rect
@@ -71,20 +69,39 @@ function [stimPreferenceData, abnormalTermination] = doPairwiseStimulusCompariso
         stimPreferenceData.reactionTimeInMilliseconds(responseMatrixRowIndex, responseMatrixColIndex) = round(response.elapsedTime*1000);
         stimPreferenceData.actualTime{responseMatrixRowIndex, responseMatrixColIndex} = response.actualTime;
         
-         
-        if (strcmp(response.selectedStimulus,'HDR'))
-            if (obj.initParams.giveVerbalFeedback)
-                Speak('Left');
+        if strcmp(whichDisplay, 'fixOptimalLDR_varyHDR')
+            if ((strcmp(response.selectedStimulus,'HDR')) && (swapLeftAndRight))
+                stimPreferenceData.stimulusChosen(responseMatrixRowIndex, responseMatrixColIndex) = stimIndices(responseMatrixRowIndex)+10000;
             end
-            stimPreferenceData.stimulusChosen(responseMatrixRowIndex, responseMatrixColIndex) = stimIndices(responseMatrixRowIndex);
-        elseif (strcmp(response.selectedStimulus,'LDR'))
-            if (obj.initParams.giveVerbalFeedback)
-                Speak('Right');
+            
+            if ((strcmp(response.selectedStimulus,'HDR')) && (~swapLeftAndRight))
+                stimPreferenceData.stimulusChosen(responseMatrixRowIndex, responseMatrixColIndex) = stimIndices(responseMatrixColIndex)+1000;
             end
-            stimPreferenceData.stimulusChosen(responseMatrixRowIndex, responseMatrixColIndex) = stimIndices(responseMatrixColIndex);
+            
+            if ((strcmp(response.selectedStimulus,'LDR')) && (swapLeftAndRight))
+                stimPreferenceData.stimulusChosen(responseMatrixRowIndex, responseMatrixColIndex) = stimIndices(responseMatrixColIndex)+1000;
+            end
+            
+            if ((strcmp(response.selectedStimulus,'LDR')) && (~swapLeftAndRight))
+                stimPreferenceData.stimulusChosen(responseMatrixRowIndex, responseMatrixColIndex) = stimIndices(responseMatrixRowIndex)+10000;
+            end 
         else
-            error('unknown selectedStimulus value: ''%s''.', response.selectedStimulus);
+            if (strcmp(response.selectedStimulus,'HDR'))
+                if (obj.initParams.giveVerbalFeedback)
+                    Speak('Left');
+                end
+                stimPreferenceData.stimulusChosen(responseMatrixRowIndex, responseMatrixColIndex) = stimIndices(responseMatrixRowIndex);
+            elseif (strcmp(response.selectedStimulus,'LDR'))
+                if (obj.initParams.giveVerbalFeedback)
+                    Speak('Right');
+                end
+                stimPreferenceData.stimulusChosen(responseMatrixRowIndex, responseMatrixColIndex) = stimIndices(responseMatrixColIndex);
+            else
+                error('unknown selectedStimulus value: ''%s''.', response.selectedStimulus);
+            end
         end
+        
+        
         
         if (isempty(testSinglePair))
             % Visualize current data  in a block

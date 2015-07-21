@@ -21,6 +21,8 @@ function visualizePreferenceMatrix(obj, stimPreferenceData, whichDisplay)
             imageRGBdata = squeeze(obj.thumbnailStimImages(stimIndex,1,:,:,:));
         elseif (strcmp(whichDisplay,'LDR'))
             imageRGBdata = squeeze(obj.thumbnailStimImages(stimIndex,2,:,:,:));
+        elseif (strcmp(whichDisplay,'fixOptimalLDR_varyHDR'))
+            imageRGBdata = squeeze(obj.thumbnailStimImages(stimIndex,1,:,:,:));
         end
         imshow(double(imageRGBdata)/255.0);
         axis 'image';
@@ -34,6 +36,8 @@ function visualizePreferenceMatrix(obj, stimPreferenceData, whichDisplay)
         if (strcmp(whichDisplay,'HDR'))
             imageRGBdata = squeeze(obj.thumbnailStimImages(stimIndex,1,:,:,:));
         elseif (strcmp(whichDisplay,'LDR'))
+            imageRGBdata = squeeze(obj.thumbnailStimImages(stimIndex,2,:,:,:));
+        elseif (strcmp(whichDisplay,'fixOptimalLDR_varyHDR'))
             imageRGBdata = squeeze(obj.thumbnailStimImages(stimIndex,2,:,:,:));
         end
         imshow(double(imageRGBdata)/255.0);
@@ -50,7 +54,14 @@ function visualizePreferenceMatrix(obj, stimPreferenceData, whichDisplay)
             if (~isnan(stimPreferenceData.stimulusChosen(rowIndex, colIndex)))
                 
                 stimIndex = stimPreferenceData.stimulusChosen(rowIndex, colIndex);
+                if (stimIndex > 10000)
+                    stimIndex = stimIndex - 10000;
+                elseif (stimIndex > 1000)
+                    stimIndex = stimIndex - 1000;
+                end
+                
                 stimRowIndex = find(stimPreferenceData.rowStimIndices == stimIndex);
+                
                 preferenceCounter(stimRowIndex) = preferenceCounter(stimRowIndex) + 1;
                     
                 % The measured point
@@ -59,6 +70,8 @@ function visualizePreferenceMatrix(obj, stimPreferenceData, whichDisplay)
                     imageRGBdata = squeeze(obj.thumbnailStimImages(stimIndex,1,:,:,:));
                 elseif (strcmp(whichDisplay,'LDR'))
                     imageRGBdata = squeeze(obj.thumbnailStimImages(stimIndex,2,:,:,:));
+                elseif (strcmp(whichDisplay,'fixOptimalLDR_varyHDR'))
+                    imageRGBdata = squeeze(obj.thumbnailStimImages(stimIndex,1,:,:,:));
                 end
                 imshow(double(imageRGBdata)/255.0);
                 axis 'image';
@@ -71,6 +84,8 @@ function visualizePreferenceMatrix(obj, stimPreferenceData, whichDisplay)
                 if (strcmp(whichDisplay,'HDR'))
                     imageRGBdata = squeeze(obj.thumbnailStimImages(stimIndex,1,:,:,:));
                 elseif (strcmp(whichDisplay,'LDR'))
+                    imageRGBdata = squeeze(obj.thumbnailStimImages(stimIndex,2,:,:,:));
+                elseif (strcmp(whichDisplay,'fixOptimalLDR_varyHDR'))
                     imageRGBdata = squeeze(obj.thumbnailStimImages(stimIndex,2,:,:,:));
                 end
                 imshow(double(imageRGBdata)/255.0);
@@ -118,6 +133,8 @@ function visualizePreferenceMatrix(obj, stimPreferenceData, whichDisplay)
             imageRGBdata = squeeze(obj.thumbnailStimImages(stimIndex,1,:,:,:));
         elseif (strcmp(whichDisplay,'LDR'))
             imageRGBdata = squeeze(obj.thumbnailStimImages(stimIndex,2,:,:,:));
+        elseif (strcmp(whichDisplay,'fixOptimalLDR_varyHDR'))
+            imageRGBdata = squeeze(obj.thumbnailStimImages(stimIndex,1,:,:,:));
         end
         imshow(double(imageRGBdata)/255.0);
         axis 'image';
