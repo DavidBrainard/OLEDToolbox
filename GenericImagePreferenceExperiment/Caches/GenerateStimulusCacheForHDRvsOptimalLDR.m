@@ -11,7 +11,7 @@ function GenerateStimulusCacheForHDRvsOptimalLDR
     if strcmp(sceneFamily, 'RT3Scenes')
     % Load the RT3 scenes
         [sceneEnsemble, ensembleLuminances, sceneFileNames] = loadRT3Scenes();
-        cacheFileName = sprintf('Blobbie_SunRoomSideLight_Cache_HDR_vs_optimalLDR.mat');
+        cacheFileName = sprintf('Blobbie_SunRoomSideLight_Cache_HDR_vs_optimalLDR_David.mat');
         luminanceOverdrive(1) = 0.97;   % overdrive for LCD (adjust so at to have a rendered output luminance that is similar to the intended output luminance)
         luminanceOverdrive(2) = 0.87;   % overdrive for OLED (adjust so at to have a rendered output luminance that is similar to the intended output luminance)
         
@@ -37,12 +37,16 @@ function GenerateStimulusCacheForHDRvsOptimalLDR
         LDRalphas(sceneIndex, 3) = optimalLDRalphas(sceneIndices(sceneIndex));
         LDRalphas(sceneIndex, 4) = optimalLDRalphas(sceneIndices(sceneIndex));
         LDRalphas(sceneIndex, 5) = optimalLDRalphas(sceneIndices(sceneIndex));
+        LDRalphas(sceneIndex, 6) = optimalLDRalphas(sceneIndices(sceneIndex));
+        LDRalphas(sceneIndex, 7) = optimalLDRalphas(sceneIndices(sceneIndex));
         
-        HDRalphas(sceneIndex, 1) = optimalHDRalphas(sceneIndices(sceneIndex))*degradationFactor*degradationFactor;
-        HDRalphas(sceneIndex, 2) = optimalHDRalphas(sceneIndices(sceneIndex))*degradationFactor;
-        HDRalphas(sceneIndex, 3) = optimalHDRalphas(sceneIndices(sceneIndex))*1.0;
-        HDRalphas(sceneIndex, 4) = optimalHDRalphas(sceneIndices(sceneIndex))/degradationFactor;
-        HDRalphas(sceneIndex, 5) = optimalHDRalphas(sceneIndices(sceneIndex))/degradationFactor/degradationFactor;
+        HDRalphas(sceneIndex, 1) = optimalHDRalphas(sceneIndices(sceneIndex))*degradationFactor*degradationFactor*degradationFactor;
+        HDRalphas(sceneIndex, 2) = optimalHDRalphas(sceneIndices(sceneIndex))*degradationFactor*degradationFactor;
+        HDRalphas(sceneIndex, 3) = optimalHDRalphas(sceneIndices(sceneIndex))*degradationFactor;
+        HDRalphas(sceneIndex, 4) = optimalHDRalphas(sceneIndices(sceneIndex))*1.0;
+        HDRalphas(sceneIndex, 5) = optimalHDRalphas(sceneIndices(sceneIndex))/degradationFactor;
+        HDRalphas(sceneIndex, 6) = optimalHDRalphas(sceneIndices(sceneIndex))/degradationFactor/degradationFactor;
+        HDRalphas(sceneIndex, 7) = optimalHDRalphas(sceneIndices(sceneIndex))/degradationFactor/degradationFactor/degradationFactor;
     end
     
     [toneMappingEnsemble, ensembleCenters] = generateToneMappingEnsemble(ensembleLuminances,  LDRalphas, HDRalphas, histogramBins);
@@ -241,12 +245,13 @@ function [sceneEnsemble, ensembleLuminances, sceneFileNames] = loadRT3Scenes()
     sceneDirectory = '/Users1/Shared/Matlab/RT3scenes/Blobbies/HighDynamicRange/';
     shapesExamined = {...
         'Blobbie8SubsHighFreqMultipleBlobbiesOpenRoof'...
-      %  'Blobbie8SubsVeryLowFreqMultipleBlobbiesOpenRoof'...
+        'Blobbie8SubsVeryLowFreqMultipleBlobbiesOpenRoof'...
         };
     lightingConditionsExamined  = {'area1_front0_ceiling0'};
     alphasExamined              = {'0.025', '0.320'};
     specularStrengthsExamined   = {'0.60', '0.15'};   
    
+    
     
     % load XYZ CMFs
     sensorXYZ = loadXYZCMFs();
