@@ -72,6 +72,8 @@ function visualizePreferenceMatrix(obj, stimPreferenceData, whichDisplay)
                     imageRGBdata = squeeze(obj.thumbnailStimImages(stimIndex,2,:,:,:));
                 elseif (strcmp(whichDisplay,'fixOptimalLDR_varyHDR'))
                     imageRGBdata = squeeze(obj.thumbnailStimImages(stimIndex,1,:,:,:));
+                else
+                    error('unknown whichDisplay');
                 end
                 imshow(double(imageRGBdata)/255.0);
                 axis 'image';

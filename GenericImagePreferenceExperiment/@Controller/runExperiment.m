@@ -32,8 +32,8 @@ function abnormalTermination = runExperiment(obj, params)
     else
         % Form N-dimensional grid for all variables
         toneMappingParamPairs = nchoosek(toneMappingIndicesArray, 2);
-        toneMappingParamValue1IndicesArray = squeeze(toneMappingParamPairs(:,1))
-        toneMappingParamValue2IndicesArray = squeeze(toneMappingParamPairs(:,2))
+        toneMappingParamValue1IndicesArray = squeeze(toneMappingParamPairs(:,1));
+        toneMappingParamValue2IndicesArray = squeeze(toneMappingParamPairs(:,2));
         toneMappingParamMultiplexedValueIndicesArray = toneMappingParamValue1IndicesArray*100 + toneMappingParamValue2IndicesArray;
         [DD1, DD2] = ndgrid(sceneIndicesArray, toneMappingParamMultiplexedValueIndicesArray);
         conditionTuplets = [DD1(:) DD2(:)];
