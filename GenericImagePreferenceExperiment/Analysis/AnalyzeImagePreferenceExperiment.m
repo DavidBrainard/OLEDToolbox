@@ -80,9 +80,6 @@ function AnalyzeImagePreferenceExperiment
     
     showIndividualTrialData = false;
     
-    
-    
-    
     for sceneIndex = 1:scenesNum
         for repIndex = 1:repsNum
             
@@ -103,7 +100,6 @@ function AnalyzeImagePreferenceExperiment
                         'meanResponseLatency2D',    nan(numel(stimPreferenceData.rowStimIndices), numel(stimPreferenceData.colStimIndices)) ... 
                     );
                 end
-                
             end % repIndex == 1
                       
              
@@ -194,12 +190,18 @@ function AnalyzeImagePreferenceExperiment
                     visualizePreferenceMatrix(stimPreferenceData, thumbnailStimImages, repIndex);
                     visualizePreferredImageHistogram(stimPreferenceData, repIndex);
                 end
-            end
-            
-                            
+            end                  
         end % repIndex
         
-        if (~strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
+        if (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
+            % average over reps
+           for rowIndex = 1:numel(stimPreferenceData.rowStimIndices)
+               if (prefStatsStruct.visited(rowIndex,1)>1)
+                    prefStatsStruct.LDRmap(rowIndex,1) = prefStatsStruct.LDRmap(rowIndex,1) / prefStatsStruct.visited(rowIndex,1);
+                    prefStatsStruct.HDRmap(rowIndex,1) = prefStatsStruct.HDRmap(rowIndex,1) / prefStatsStruct.visited(rowIndex,1);
+               end
+           end  
+        else
             % average over reps
             % mean response latency for the paired comparison (row,col)
             prefStatsStruct.meanResponseLatency2D = round(prefStatsStruct.meanResponseLatency2D / repsNum);   
@@ -210,16 +212,6 @@ function AnalyzeImagePreferenceExperiment
             % Note that stimulusPreferenceRate2D(row,col) + stimulusPreferenceRate2D(col,row) will always equal 1.0
             prefStatsStruct.stimulusPreferenceRate2D = prefStatsStruct.stimulusPreferenceRate2D / repsNum;                      
             %plot2DCondProbabilityHistogram(99,prefStatsStruct.stimulusPreferenceRate2D);
-
-            
-        else
-           % average over reps
-           for rowIndex = 1:numel(stimPreferenceData.rowStimIndices)
-               if (prefStatsStruct.visited(rowIndex,1)>1)
-                    prefStatsStruct.LDRmap(rowIndex,1) = prefStatsStruct.LDRmap(rowIndex,1) / prefStatsStruct.visited(rowIndex,1);
-                    prefStatsStruct.HDRmap(rowIndex,1) = prefStatsStruct.HDRmap(rowIndex,1) / prefStatsStruct.visited(rowIndex,1);
-               end
-           end
         end
         
         % save averaged data
@@ -295,50 +287,32 @@ function AnalyzeImagePreferenceExperiment
             end
         end
         
-        if (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
-            
+        if (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))      
             hFig = figure(figNum);
             clf;
-            set(hFig, 'Position', [10 10 899 660], 'Color', [ 0 0 0]);
+            set(hFig, 'Position', [10 10 990 800], 'Color', [ 0 0 0]);
             HDRtoneMapDeviation = [-3 -2 -1 0 1 2 3];
-            subplot(3,2,3);
+            
+            subplot('Position', [0.07 0.72  0.92 0.26]);
+            b = bar(HDRtoneMapDeviation, preferenceDataStats{sceneIndex}.HDRmap(:), 0.6);
             hold on;
+            b(1).LineWidth = 2;
+            b(1).EdgeColor = [1 0 0];
+            b(1).FaceColor = [0.8 0.6 0.6];
+            b = bar(HDRtoneMapDeviation, preferenceDataStats{sceneIndex}.LDRmap(:), 0.4);
+            b(1).LineWidth = 2;
+            b(1).EdgeColor = [0 1 0];
+            b(1).FaceColor = [0.6 0.8 0.6];
             plot([HDRtoneMapDeviation(1)-1 HDRtoneMapDeviation(end)+1], [0.5 0.5], 'w-');
-            bar(HDRtoneMapDeviation, preferenceDataStats{sceneIndex}.HDRmap, 'FaceColor', [0.9 0.7 0.7], 'EdgeColor', [1 0 0]);
             hold off;
-            xlabel('HDR tone mapping index','Color', [0.7 0.7 0.7], 'FontSize', 16);
-            ylabel('P_{HDR}','Color', [0.7 0.7 0.7], 'FontSize', 16);
+            ylabel('P_{choice}','Color', [0.7 0.7 0.7], 'FontSize', 16);
+            hleg = legend('choice = HDR', 'choice = LDR', 'Location','northwest');
+            set(hleg,'FontSize', 14, 'box', 'off', 'TextColor', [0.8 0.8 0.8]);
             set(gca, 'FontSize', 14, 'Color', [0 0 0], 'XColor', [0.7 0.7 0.7], 'YColor', [0.7 0.7 0.7]);
-            set(gca, 'YLim', [0 1.1], 'Xtick', [-10:1:10], 'YTick', [0:0.25:1.0]);
-            box on; grid on
-             
-            subplot(3,2,4);
-            hold on;
-            plot([HDRtoneMapDeviation(1)-1 HDRtoneMapDeviation(end)+1], [0.5 0.5], 'w-');
-            bar(HDRtoneMapDeviation,preferenceDataStats{sceneIndex}.LDRmap, 'FaceColor', [0.7 0.9 0.7], 'EdgeColor', [0 1 0]);
-            hold off
-            xlabel('HDR tone mapping index','Color', [0.7 0.7 0.7], 'FontSize', 16);
-            ylabel('P_{LDR}','Color', [0.7 0.7 0.7], 'FontSize', 16);
-            set(gca, 'YLim', [0 1.1], 'Xtick', [-10:1:10], 'YTick', [0:0.25:1.0]);
-            set(gca, 'FontSize', 14, 'Color', [0 0 0], 'XColor', [0.7 0.7 0.7], 'YColor', [0.7 0.7 0.7]);
+            set(gca, 'XLim', [-3.5 3.5], 'YLim', [0 1.1], 'Xtick', [-10:1:10], 'YTick', [0:0.25:1.0]);
             box on; grid on
             
-            subplot(3,2,2);
-            bar(HDRtoneMapDeviation, preferenceDataStats{sceneIndex}.LDRmap-preferenceDataStats{sceneIndex}.HDRmap, 'FaceColor', [0.8 0.6 0.2], 'EdgeColor', [1 1 0]);
-            xlabel('HDR tone mapping index','Color', [0.7 0.7 0.7], 'FontSize', 16);
-            ylabel('P_{LDR} - P_{HDR}','Color', [0.7 0.7 0.7], 'FontSize', 16);
-            set(gca, 'YLim', 1.1*[-1 1], 'Xtick', [-10:1:10], 'YTick', [-1.0:0.25:1.0]);
-            set(gca, 'FontSize', 14, 'Color', [0 0 0], 'XColor', [0.7 0.7 0.7], 'YColor', [0.7 0.7 0.7]);
-            box on; grid on
-            
-            subplot(3,2,1)
-            selectedToneMappingIndex = 4;
-            stimIndex =  conditionsData(sceneIndex, selectedToneMappingIndex);
-            imagePic = squeeze(thumbnailStimImages(stimIndex,1,:,:,:));
-            % The optimal HDR
-            imshow(imagePic/255);
-            
-            subplot(3,2, [5 6]);
+            subplot('Position', [0.07 0.37 0.92 0.26]);
             hold on
             for toneMappingIndex = 1:toneMappingsNum
                 plot(0.1*max(mappingFunctionsHDR{toneMappingIndex}.input) + mappingFunctionsHDR{toneMappingIndex}.input*0.8 + (toneMappingIndex-1)* max(mappingFunctionsHDR{toneMappingIndex}.input), mappingFunctionsHDR{toneMappingIndex}.output, 'r-', 'LineWidth', 2.);
@@ -355,12 +329,60 @@ function AnalyzeImagePreferenceExperiment
             xlabel('Tone mapping index');
             ylabel('Image luminance');
             box on; grid on;
+            
+            
+            for toneMappingIndex = 1:toneMappingsNum
+                stimIndex =  conditionsData(sceneIndex, toneMappingIndex);
+                
+                subplot('Position', [0.085+(toneMappingIndex-1)*0.13 0.02 0.11 0.12]);
+                imagePic = squeeze(thumbnailStimImages(stimIndex,2,:,:,:));
+                imshow(imagePic/255);
+                
+                subplot('Position', [0.085+(toneMappingIndex-1)*0.13 0.16 0.11 0.12]);
+                imagePic = squeeze(thumbnailStimImages(stimIndex,1,:,:,:));
+                imshow(imagePic/255);
+            end
+            
             drawnow;
-            figNum = figNum + 1;
+            
+            NicePlot.exportFigToPDF(sprintf('LDR_vs_HDR_scene_%d.pdf', sceneIndex),hFig,300);
         else
             plotSelectionProbabilityMatrix(figNum, runParams.whichDisplay, preferenceDataStats{sceneIndex}.stimulusPreferenceRate2D, squeeze(stimulusPreference1D(sceneIndex,:)), imagePics, mappingFunctions, allScenesLum, allImagesLum, maxSceneLum, maxImageLum, DHRpercentileLowEnd, DHRpercentileHighEnd, lumRange);
-            figNum = figNum + 1;
         end
+        
+        if (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR')) 
+            
+            subplotPosVectors = NicePlot.getSubPlotPosVectors(...
+            'rowsNum',      2, ...
+            'colsNum',      toneMappingsNum, ...
+            'widthMargin',  0.01, ...
+            'leftMargin',   0.01, ...
+            'bottomMargin', 0.03, ...
+            'topMargin',    0.03);
+    
+            hFig = figure(figNum+100);
+            set(hFig, 'Position',[30 30 990 198], 'Color', [0 0 0]);
+            clf;
+            
+            for toneMappingIndex = 1:toneMappingsNum
+                stimIndex =  conditionsData(sceneIndex, toneMappingIndex);
+                
+                subplot('Position', subplotPosVectors(1,toneMappingIndex).v);
+                imagePic = squeeze(thumbnailStimImages(stimIndex,1,:,:,:));
+                imshow(imagePic/255);
+                
+                subplot('Position', subplotPosVectors(2,toneMappingIndex).v);
+                imagePic = squeeze(thumbnailStimImages(stimIndex,2,:,:,:));
+                imshow(imagePic/255);
+                
+            end
+            
+            NicePlot.exportFigToPDF(sprintf('LDR_vs_HDR_toneMapIndex%dPics_scene_%d.pdf', toneMappingIndex , sceneIndex),hFig,300); 
+        end
+        
+        
+        figNum = figNum + 1;
+        
     end % sceneIndex
     
     
@@ -409,7 +431,7 @@ function AnalyzeImagePreferenceExperiment
            
             subplot('Position', subplotPosVectors(2,sceneIndex).v);
             bar(HDRtoneMapDeviation, preferenceDataStats{sceneIndex}.LDRmap-preferenceDataStats{sceneIndex}.HDRmap, 'FaceColor', [0.8 0.6 0.2], 'EdgeColor', [1 1 0]);
-            xlabel('HDR tone mapping (deviation from optimal)','Color', [0.7 0.7 0.7], 'FontSize', 16);
+            xlabel('HDR tone mapping index','Color', [0.7 0.7 0.7], 'FontSize', 16);
             if (sceneIndex == 1)
                 ylabel('P_{LDR} - P_{HDR}','Color', [0.7 0.7 0.7], 'FontSize', 16);
             else
@@ -471,7 +493,11 @@ function AnalyzeImagePreferenceExperiment
         
     end
     
-    NicePlot.exportFigToPDF(sprintf('Summary_%s.pdf',runParams.whichDisplay),hFig,300);
+    if (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
+        NicePlot.exportFigToPDF(sprintf('Summary_%s.pdf',runParams.whichDisplay),hFig,300);
+    else
+        NicePlot.exportFigToPDF(sprintf('Summary_HDRvs_LDR.pdf'),hFig,300);
+    end
     
 end
 
