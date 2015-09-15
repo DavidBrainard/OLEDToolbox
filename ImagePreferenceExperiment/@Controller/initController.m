@@ -1,5 +1,0 @@
-function initController(obj)
-
-
-end
-
