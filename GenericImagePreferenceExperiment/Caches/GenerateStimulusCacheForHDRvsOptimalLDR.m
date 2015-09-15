@@ -178,7 +178,7 @@ function GenerateStimulusCacheForHDRvsOptimalLDR
             
             % Rm the mapping function data in toneMappingEnsemble.
             for emulatedDisplayIndex = 1:numel(emulatedDisplayNames)
-                toneMappingParams = toneMappingEnsemble{sceneIndex, 1, toneMappingIndex};
+                toneMappingParams = toneMappingEnsemble{sceneIndex, emulatedDisplayIndex, toneMappingIndex};
                 toneMappingParams = rmfield(toneMappingParams, 'mappingFunction');
                 cachedData(sceneIndex, toneMappingIndex).toneMappingParams{emulatedDisplayIndex}  = toneMappingParams;
             end
