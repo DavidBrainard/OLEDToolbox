@@ -345,7 +345,7 @@ function AnalyzeImagePreferenceExperiment
             
             drawnow;
             
-            NicePlot.exportFigToPDF(sprintf('LDR_vs_HDR_scene_%d.pdf', sceneIndex),hFig,300);
+            NicePlot.exportFigToPDF(sprintf('PDFfigs/LDR_vs_HDR_scene_%d.pdf', sceneIndex),hFig,300);
         else
             plotSelectionProbabilityMatrix(figNum, runParams.whichDisplay, preferenceDataStats{sceneIndex}.stimulusPreferenceRate2D, squeeze(stimulusPreference1D(sceneIndex,:)), imagePics, mappingFunctions, allScenesLum, allImagesLum, maxSceneLum, maxImageLum, DHRpercentileLowEnd, DHRpercentileHighEnd, lumRange);
         end
@@ -377,7 +377,7 @@ function AnalyzeImagePreferenceExperiment
                 
             end
             
-            NicePlot.exportFigToPDF(sprintf('LDR_vs_HDR_toneMapIndex%dPics_scene_%d.pdf', toneMappingIndex , sceneIndex),hFig,300); 
+            NicePlot.exportFigToPDF(sprintf('PDFfigs/LDR_vs_HDR_toneMapIndex%dPics_scene_%d.pdf', toneMappingIndex , sceneIndex),hFig,300); 
         end
         
         
@@ -494,9 +494,9 @@ function AnalyzeImagePreferenceExperiment
     end
     
     if (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
-        NicePlot.exportFigToPDF(sprintf('Summary_%s.pdf',runParams.whichDisplay),hFig,300);
+        NicePlot.exportFigToPDF(sprintf('PDFfigs/Summary_%s.pdf',runParams.whichDisplay),hFig,300);
     else
-        NicePlot.exportFigToPDF(sprintf('Summary_HDRvs_LDR.pdf'),hFig,300);
+        NicePlot.exportFigToPDF(sprintf('PDFfigs/Summary_HDRvs_LDR.pdf'),hFig,300);
     end
     
 end
@@ -616,7 +616,7 @@ function plotSelectionProbabilityMatrix(figNum, whichDisplay, ProwGivenRowColUno
     
     drawnow
     
-    NicePlot.exportFigToPDF(sprintf('Scene_%d_%s.pdf',figNum, whichDisplay),h,300);
+    NicePlot.exportFigToPDF(sprintf('PDFfigs/Scene_%d_%s.pdf',figNum, whichDisplay),h,300);
     
 end
 

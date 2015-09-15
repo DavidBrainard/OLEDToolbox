@@ -24,7 +24,7 @@ function PlotSelectStimuliFromCache
         displaySettingsImageInSRGBFormat(settingsImage, '', renderingDisplayCal);
         truesize
         drawnow;
-        NicePlot.exportFigToPNG(sprintf('Scene_%d_ToneMapping_%d_%s.png',sceneIndex,toneMappingIndex,whichDisplay),h,300);
+        NicePlot.exportFigToPNG(sprintf('PDFfigs/Scene_%d_ToneMapping_%d_%s.png',sceneIndex,toneMappingIndex,whichDisplay),h,300);
     end
 
 end

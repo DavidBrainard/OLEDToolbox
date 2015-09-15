@@ -66,7 +66,8 @@ function PlotSummaryResults
     
     
     drawnow
-    NicePlot.exportFigToPDF(pdfFileName, h, 300);
+    pdfFileName
+    NicePlot.exportFigToPDF(sprintf('PDFfigs/%s',pdfFileName), h, 300);
     
 end
 
