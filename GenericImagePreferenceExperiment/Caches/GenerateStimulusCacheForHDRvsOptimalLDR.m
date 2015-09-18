@@ -7,11 +7,35 @@ function GenerateStimulusCacheForHDRvsOptimalLDR
     sceneFamily = 'RT3Scenes';
    % sceneFamily = 'Samsung';
     
+   
+    whichSubject = 'David_Projected';
+    whichSubject = 'Nicolas_Measured';
+    
+    if (strcmp(whichSubject, 'David_Projected'))
+        % David's projected alpha HDR and LDR
+        optimalLDRalphas = [209.9447 157.2487 109.2906 92.7786  128.2642  209.5529  127.1191  107.4929];
+        optimalHDRalphas = [77.4474  59.7832  59.7832  59.7832  50.0672  77.3161 49.6834 49.6834];
+        sceneIndices     = [4     8     6     2     7     3     5     1];
+        
+    elseif (strcmp(whichSubject,'Nicolas_Measured'))
+        % Nicolas measured optimal HDR and LDR alphas
+        optimalHDRalphas = [12.9 19.7 16.3 27.4 16.7 23.6 21.5  35];
+        optimalLDRalphas = [23.3 33.3 31.5 54.6 30.7 47.3 35.3  65.8];
+        sceneIndices     = [1    2    3    4    5    6    7     8];
+    end
+    
+    
+    
     cacheDirectory = '/Users/Shared/Matlab/Toolboxes/OLEDToolbox/GenericImagePreferenceExperiment/Caches';
     if strcmp(sceneFamily, 'RT3Scenes')
     % Load the RT3 scenes
         [sceneEnsemble, ensembleLuminances, sceneFileNames] = loadRT3Scenes();
-        cacheFileName = sprintf('Blobbie_SunRoomSideLight_Cache_HDR_vs_optimalLDR_David.mat');
+        if (strcmp(whichSubject, 'David_Projected'))
+            cacheFileName = sprintf('Blobbie_SunRoomSideLight_Cache_HDR_vs_optimalLDR_David.mat');
+        elseif (strcmp(whichSubject,'Nicolas_Measured'))
+            cacheFileName = sprintf('Blobbie_SunRoomSideLight_Cache_HDR_vs_optimalLDR_Nicolas.mat');
+        end
+        
         luminanceOverdrive(1) = 0.97;   % overdrive for LCD (adjust so at to have a rendered output luminance that is similar to the intended output luminance)
         luminanceOverdrive(2) = 0.87;   % overdrive for OLED (adjust so at to have a rendered output luminance that is similar to the intended output luminance)
         
@@ -24,12 +48,9 @@ function GenerateStimulusCacheForHDRvsOptimalLDR
     histogramBins = size(sceneEnsemble{1}.linearSRGB,1)*size(sceneEnsemble{1}.linearSRGB,2);
     
     
-    % David's projected alpha HDR and LDR
-    optimalLDRalphas = [209.9447 157.2487 109.2906 92.7786  128.2642  209.5529  127.1191  107.4929];
-    optimalHDRalphas = [77.4474  59.7832  59.7832  59.7832  50.0672  77.3161 49.6834 49.6834];
-    sceneIndices = [4     8     6     2     7     3     5     1];
     
- 
+    
+    
     degradationFactor = 3;
     for sceneIndex = 1:numel(optimalLDRalphas)
         LDRalphas(sceneIndex, 1) = optimalLDRalphas(sceneIndices(sceneIndex));

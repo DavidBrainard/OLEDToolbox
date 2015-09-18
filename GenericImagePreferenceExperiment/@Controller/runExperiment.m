@@ -119,7 +119,7 @@ function abnormalTermination = runExperiment(obj, params)
                 if (obj.initParams.debugMode) && (obj.initParams.visualizeResultsOnLine)
                     % Visualize data
                     obj.visualizePreferenceMatrix(stimPreferenceData, params.whichDisplay);
-                    obj.visualizePreferredImageHistogram(stimPreferenceData);
+                    obj.visualizePreferredImageHistogram(stimPreferenceData, params.whichDisplay);
                 end 
             end % conditionIndex
         end

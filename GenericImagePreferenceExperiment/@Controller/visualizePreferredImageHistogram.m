@@ -1,5 +1,5 @@
 % Method to visualize the current preferred image histogram
-function visualizePreferredImageHistogram(obj, stimPreferenceData)
+function visualizePreferredImageHistogram(obj, stimPreferenceData, whichDisplay)
     h = figure(100);
     set(h, 'Position', [701 73 560 420], 'Color', 'k', 'Name', 'Selection');
     clf;
@@ -32,8 +32,13 @@ function visualizePreferredImageHistogram(obj, stimPreferenceData)
     axis 'xy'
     axis 'square'
 
-    xlabel('right stimulus index', 'Color', [1 1 1], 'FontSize', 16);
-    ylabel('left stimulus index', 'Color', [1 1 1], 'FontSize', 16);
+    if (strcmp(whichDisplay,'HDR')) || (strcmp(whichDisplay,'LDR'))
+        xlabel('right stimulus index', 'Color', [1 1 1], 'FontSize', 16);
+        ylabel('left stimulus index', 'Color', [1 1 1], 'FontSize', 16);
+    elseif (strcmp(whichDisplay,'fixOptimalLDR_varyHDR'))
+        xlabel('LDR stimulus index', 'Color', [1 1 1], 'FontSize', 16);
+        ylabel('HDR stimulus index', 'Color', [1 1 1], 'FontSize', 16);
+    end
     drawnow;     
     
     

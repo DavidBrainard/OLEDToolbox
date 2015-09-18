@@ -78,8 +78,6 @@ function AnalyzeImagePreferenceExperiment
     end
     
     
-    showIndividualTrialData = false;
-    
     for sceneIndex = 1:scenesNum
         for repIndex = 1:repsNum
             
@@ -126,13 +124,15 @@ function AnalyzeImagePreferenceExperiment
                             % LDR version selected
                             selectedStimIndex = selectedStimIndex - 1000;
                             prefStatsStruct.LDRmap(rowIndex,1) =  prefStatsStruct.LDRmap(rowIndex,1) + 1;
+                        else
+                            error('How can this be?');
                         end  
                         
                         prefStatsStruct.visited(rowIndex,1) = prefStatsStruct.visited(rowIndex,1) + 1;
-                    end
+                   
                     
                     % in HDR or LDR mode
-                    if (~strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
+                    elseif (~strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
                         if (selectedStimIndex == stimPreferenceData.rowStimIndices(rowIndex))
                             % when the (row,col) stim pair was presented, the row stimulus was chosen
                             % for fixOptimalLDR_varyHDR, this means when the (row=HDR,col=LDR) stim pair was presented, the row=HDR stimulus was chosen
@@ -185,24 +185,50 @@ function AnalyzeImagePreferenceExperiment
                     end
                 end
                 end
-            
-                if (showIndividualTrialData)
-                    visualizePreferenceMatrix(stimPreferenceData, thumbnailStimImages, repIndex);
-                    visualizePreferredImageHistogram(stimPreferenceData, repIndex);
-                end
             end                  
         end % repIndex
         
+        
+        figure(sceneIndex+500);
+        clf;
+        subplot(2,2,1);
+        plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.visited(:,1), 'r-', 'LineWidth', 4);
+        hold on;
+        plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.HDRmap(:,1), 'k-');
+        legend('visits', 'hits');
+        xlabel('HDR tone mapping index');
+        title('HDR');
+        
+        subplot(2,2,2);
+        plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.visited(:,1), 'r-', 'LineWidth', 4);
+        hold on;
+        plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.LDRmap(:,1), 'k-');
+        legend('visits', 'hits');
+        xlabel('HDR tone mapping index');
+        title('LDR');
+                
+        subplot(2,2,[3 4]);
+        hold on
+        plot(1:numel(stimPreferenceData.rowStimIndices), (prefStatsStruct.HDRmap(:,1)+prefStatsStruct.LDRmap(:,1))./prefStatsStruct.visited(:,1), 'k-', 'LineWidth', 4);
+        plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.HDRmap(:,1)./prefStatsStruct.visited(:,1), 'r-', 'LineWidth', 2);
+        plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.LDRmap(:,1)./prefStatsStruct.visited(:,1), 'g-', 'LineWidth', 2);
+        legend('total', 'HDR', 'LDR');
+        ylabel('probability hit');
+        xlabel('HDR tone mapping index');
+        drawnow;
+        
+        disp('here')
+        pause
+        
+        % average over reps
         if (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
-            % average over reps
            for rowIndex = 1:numel(stimPreferenceData.rowStimIndices)
                if (prefStatsStruct.visited(rowIndex,1)>1)
                     prefStatsStruct.LDRmap(rowIndex,1) = prefStatsStruct.LDRmap(rowIndex,1) / prefStatsStruct.visited(rowIndex,1);
                     prefStatsStruct.HDRmap(rowIndex,1) = prefStatsStruct.HDRmap(rowIndex,1) / prefStatsStruct.visited(rowIndex,1);
                end
            end  
-        else
-            % average over reps
+        elseif (~strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
             % mean response latency for the paired comparison (row,col)
             prefStatsStruct.meanResponseLatency2D = round(prefStatsStruct.meanResponseLatency2D / repsNum);   
             %plot2DLatencyHistogram(98,prefStatsStruct.meanResponseLatency2D);
