@@ -332,7 +332,7 @@ function AnalyzeImagePreferenceExperiment
             plot([HDRtoneMapDeviation(1)-1 HDRtoneMapDeviation(end)+1], [0.5 0.5], 'w-');
             hold off;
             ylabel('P_{choice}','Color', [0.7 0.7 0.7], 'FontSize', 16);
-            hleg = legend('choice = HDR', 'choice = LDR', 'Location','northwest');
+            hleg = legend('choice = OLED', 'choice = LCD', 'Location','northwest');
             set(hleg,'FontSize', 14, 'box', 'off', 'TextColor', [0.8 0.8 0.8]);
             set(gca, 'FontSize', 14, 'Color', [0 0 0], 'XColor', [0.7 0.7 0.7], 'YColor', [0.7 0.7 0.7]);
             set(gca, 'XLim', [-3.5 3.5], 'YLim', [0 1.1], 'Xtick', [-10:1:10], 'YTick', [0:0.25:1.0]);
@@ -344,7 +344,7 @@ function AnalyzeImagePreferenceExperiment
                 plot(0.1*max(mappingFunctionsHDR{toneMappingIndex}.input) + mappingFunctionsHDR{toneMappingIndex}.input*0.8 + (toneMappingIndex-1)* max(mappingFunctionsHDR{toneMappingIndex}.input), mappingFunctionsHDR{toneMappingIndex}.output, 'r-', 'LineWidth', 2.);
                 plot(0.1*max(mappingFunctionsHDR{toneMappingIndex}.input) + mappingFunctionsLDR{toneMappingIndex}.input*0.8 + (toneMappingIndex-1)* max(mappingFunctionsHDR{toneMappingIndex}.input), mappingFunctionsLDR{toneMappingIndex}.output, 'g-', 'LineWidth', 2.);    
             end
-            hleg = legend('HDR', 'LDR');
+            hleg = legend('OLED', 'LCD');
             set(hleg,'FontSize', 14, 'box', 'off', 'TextColor', [0.8 0.8 0.8]);
             legend('boxoff')
             set(gca, 'YLim', [0 mappingFunctionHDRmax]*1.05, 'YTick', [0:100:1000]);
@@ -352,8 +352,8 @@ function AnalyzeImagePreferenceExperiment
             set(gca, 'XTick', ((1:toneMappingsNum)-0.5)*max(mappingFunctionsHDR{toneMappingIndex}.input), 'XTickLabel', {'-3', '-2', '-1', '0', '1', '2', '3'});
             set(gca, 'Color', [0 0 0]);
             set(gca, 'FontSize', 14, 'Color', [0 0 0], 'XColor', [0.7 0.7 0.7], 'YColor', [0.7 0.7 0.7]);
-            xlabel('Tone mapping index');
-            ylabel('Image luminance');
+            xlabel('tone mapping index');
+            ylabel('image luminance');
             box on; grid on;
             
             
@@ -457,7 +457,7 @@ function AnalyzeImagePreferenceExperiment
            
             subplot('Position', subplotPosVectors(2,sceneIndex).v);
             bar(HDRtoneMapDeviation, preferenceDataStats{sceneIndex}.LDRmap-preferenceDataStats{sceneIndex}.HDRmap, 'FaceColor', [0.8 0.6 0.2], 'EdgeColor', [1 1 0]);
-            xlabel('HDR tone mapping index','Color', [0.7 0.7 0.7], 'FontSize', 16);
+            xlabel('tone mapping index','Color', [0.7 0.7 0.7], 'FontSize', 16);
             if (sceneIndex == 1)
                 ylabel('P_{LDR} - P_{HDR}','Color', [0.7 0.7 0.7], 'FontSize', 16);
             else
