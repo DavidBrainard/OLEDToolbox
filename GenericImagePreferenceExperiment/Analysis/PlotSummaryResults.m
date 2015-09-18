@@ -27,46 +27,81 @@ function PlotSummaryResults
     
     h = figure(1);
     clf;
-    set(h, 'Position', [10 10 1600 678], 'Color', [1 1 1]);
-    subplot(1,2,1);
-    plot(dynamicRange, alphaHDRnicolas, 'ko-','MarkerSize', 12, 'MarkerFaceColor', [1 0.8 0.8], 'MarkerEdgeColor', [0 0 0 ]);
-    hold on
-    plot(dynamicRange, alphaLDRnicolas, 'ks-','MarkerSize', 12, 'MarkerFaceColor', [1 0.8 0.8], 'MarkerEdgeColor', [0 0 0]);
-    plot(dynamicRange, alphaHDRdavid, 'ko-','MarkerSize', 12, 'MarkerFaceColor', [0.8 0.8 1.0], 'MarkerEdgeColor', [0 0 0 ]);
-    plot(dynamicRange, alphaLDRdavid, 'ks-','MarkerSize', 12, 'MarkerFaceColor', [0.8 0.8 1.0], 'MarkerEdgeColor', [0 0 0]);
+    set(h, 'Position', [10 10 1160 475], 'Color', [1 1 1]);
     
-    plot(dynamicRange, pointQproj(1,:), 'ko-','MarkerSize', 10, 'MarkerFaceColor', 'c', 'MarkerEdgeColor', 'b');
-    plot(dynamicRange, pointQproj(2,:), 'ks-','MarkerSize', 10, 'MarkerFaceColor', 'c', 'MarkerEdgeColor', 'b');
-    
-    set(gca, 'FontSize', 14);
-    set(gca, 'YLim', [1 220]);
-    legend('HDRnicolas', 'LDRnicolas', 'HDRdavid', 'LDRdavid', 'HDRdavid-projections', 'LDRdavid-projections');
-    grid on
-    xlabel('scene dynamic range', 'FontSize', 14, 'FontWeight', 'bold');
-    ylabel('best alpha',  'FontSize', 14, 'FontWeight', 'bold');
-    
-    subplot(1,2,2);
+    subplot(2,2,[1 3]);
     plot(alphaHDRnicolas, alphaLDRnicolas, 'ko', 'MarkerSize', 12, 'MarkerFaceColor', [1.0 0.8 0.8], 'MarkerEdgeColor', [0 0 0 ]);
     hold on
     plot(alphaHDRdavid, alphaLDRdavid, 'ko', 'MarkerSize', 12, 'MarkerFaceColor', [0.8 0.8 1.0], 'MarkerEdgeColor', [0 0 0 ]);
     plot(linearFit.x, linearFit.y, 'k-');
     
     for k = 1:numel(alphaHDRdavid)
-        plot(pointQproj(1,k), pointQproj(2,k), 'bo', 'MarkerFaceColor', [0 1 1], 'MarkerSize', 10);
-        plot([pointQ(1,k) pointQproj(1,k)], [pointQ(2,k) pointQproj(2,k)], 'b-');
+        plot(pointQproj(1,k), pointQproj(2,k), 'bo', 'MarkerFaceColor', [0 1 1], 'MarkerSize', 8);
+        plot([pointQ(1,k) pointQproj(1,k)], [pointQ(2,k) pointQproj(2,k)], 'k-');
     end
     
-    set(gca, 'XLim', [0 220], 'YLim', [0 220], 'XTick', [0:20:300], 'YTick', [0:20:300]);
-    legend('nicolas', 'david', 'linear fit', 'david''s projections to best fit line');
-    xlabel('HDR alpha', 'FontSize', 14, 'FontWeight', 'bold');
-    ylabel('LDR alpha',  'FontSize', 14, 'FontWeight', 'bold');
+    set(gca, 'XLim', [0 220], 'YLim', [0 220], 'XTick', [0:20:300], 'YTick', [0:20:300], 'FontSize', 14);
+    legend('NPC', 'DHB', 'linear fit', 'DHB''s projections to best fit line', 'Location', 'SouthEast');
+    xlabel('optimal alpha (OLED)', 'FontSize', 18, 'FontWeight', 'bold');
+    ylabel('optimal alpha (LCD)',  'FontSize', 18, 'FontWeight', 'bold');
     grid on
+    axis 'square'
     set(gca, 'FontSize', 14);
     
     
+    d = 15;
+    edges = 0:d:180;
+    [N1, ~] = histcounts(alphaHDRnicolas, edges);
+    [N2, ~] = histcounts(alphaLDRnicolas, edges);
+    [D1, ~] = histcounts(alphaHDRdavid, edges);
+    [D2, ~] = histcounts(alphaLDRdavid, edges);
+    
+    initParams = [5 20 10];
+    [N1fittedParams,resnorm] = lsqcurvefit(@guassianCurve,initParams,edges(1:end-1)+d/2,N1);
+    [N2fittedParams,resnorm] = lsqcurvefit(@guassianCurve,initParams,edges(1:end-1)+d/2,N2);
+    
+    initParams = [5 30 10];
+    [D1fittedParams,resnorm] = lsqcurvefit(@guassianCurve,initParams,edges(1:end-1)+d/2,D1);
+    initParams = [5 100 10];
+    [D2fittedParams,resnorm] = lsqcurvefit(@guassianCurve,initParams,edges(1:end-1)+d/2,D2);
+    
+    xdata= 0:1:220;
+    
+    subplot(2,2,2);
+    hold on;
+    plot(xdata, guassianCurve(N1fittedParams,xdata), 'k-', 'Color', [1.0 0.8 0.8], 'LineWidth', 2.0);
+    plot(xdata, guassianCurve(N2fittedParams,xdata), 'k-', 'Color', [1.0 0.5 0.5], 'LineWidth', 2.0);
+    
+    b  = bar(edges(1:end-1)+d/2, [N1; N2]', 1);
+    b(1).FaceColor = [1.0 0.8 0.8];
+    b(2).FaceColor = [1.0 0.5 0.5];
+    
+    
+    grid on
+    box on
+    title('NPC')
+    xlabel('optimal alpha', 'FontSize', 18, 'FontWeight', 'bold');
+    legend('OLED', 'LCD');
+    set(gca, 'XLim', [0 170]);
+    set(gca, 'FontSize', 14);
+    
+    subplot(2,2,4);
+    hold on;
+    plot(xdata, guassianCurve(D1fittedParams,xdata), 'k-', 'Color', [0.8 0.8 1.0], 'LineWidth', 2.0);
+    plot(xdata, guassianCurve(D2fittedParams,xdata), 'k-', 'Color', [0.5 0.5 1.0], 'LineWidth', 2.0);
+    b  = bar(edges(1:end-1)+d/2, [D1; D2]', 1);
+    b(1).FaceColor = [0.8 0.8 1.0];
+    b(2).FaceColor = [0.5 0.5 1.0];
+    grid on
+    box on
+    title('DHB')
+    xlabel('optimal alpha', 'FontSize', 18, 'FontWeight', 'bold');
+    legend('OLED', 'LCD');
+    set(gca, 'XLim', [0 170]);
+    set(gca, 'FontSize', 14);
+    
     
     drawnow
-    pdfFileName
     NicePlot.exportFigToPDF(sprintf('PDFfigs/%s',pdfFileName), h, 300);
     
 end
@@ -122,4 +157,10 @@ function [projPointQ, length_q] = ProjectPointToVector(vector, pointQ)
     length_q = sqrt(sum((projPointQ-pointQ).^2));
 end
 
+function F = guassianCurve(params,xdata)
+    gain = params(1);
+    mean = params(2);
+    sigma = params(3);
+    F = gain*exp(-0.5*((xdata-mean)/sigma).^2);
+end
 
