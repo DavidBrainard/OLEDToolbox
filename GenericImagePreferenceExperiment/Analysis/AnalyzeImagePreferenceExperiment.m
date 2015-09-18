@@ -189,37 +189,38 @@ function AnalyzeImagePreferenceExperiment
         end % repIndex
         
         
-        figure(sceneIndex+500);
-        clf;
-        subplot(2,2,1);
-        plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.visited(:,1), 'r-', 'LineWidth', 4);
-        hold on;
-        plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.HDRmap(:,1), 'k-');
-        legend('visits', 'hits');
-        xlabel('HDR tone mapping index');
-        title('HDR');
+        if (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
+            figure(sceneIndex+500);
+            clf;
+            subplot(2,2,1);
+            plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.visited(:,1), 'r-', 'LineWidth', 4);
+            hold on;
+            plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.HDRmap(:,1), 'k-');
+            legend('visits', 'hits');
+            xlabel('HDR tone mapping index');
+            title('HDR');
         
-        subplot(2,2,2);
-        plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.visited(:,1), 'r-', 'LineWidth', 4);
-        hold on;
-        plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.LDRmap(:,1), 'k-');
-        legend('visits', 'hits');
-        xlabel('HDR tone mapping index');
-        title('LDR');
-                
-        subplot(2,2,[3 4]);
-        hold on
-        plot(1:numel(stimPreferenceData.rowStimIndices), (prefStatsStruct.HDRmap(:,1)+prefStatsStruct.LDRmap(:,1))./prefStatsStruct.visited(:,1), 'k-', 'LineWidth', 4);
-        plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.HDRmap(:,1)./prefStatsStruct.visited(:,1), 'r-', 'LineWidth', 2);
-        plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.LDRmap(:,1)./prefStatsStruct.visited(:,1), 'g-', 'LineWidth', 2);
-        legend('total', 'HDR', 'LDR');
-        ylabel('probability hit');
-        xlabel('HDR tone mapping index');
-        drawnow;
+            subplot(2,2,2);
+            plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.visited(:,1), 'r-', 'LineWidth', 4);
+            hold on;
+            plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.LDRmap(:,1), 'k-');
+            legend('visits', 'hits');
+            xlabel('HDR tone mapping index');
+            title('LDR');
+
+            subplot(2,2,[3 4]);
+            hold on
+            plot(1:numel(stimPreferenceData.rowStimIndices), (prefStatsStruct.HDRmap(:,1)+prefStatsStruct.LDRmap(:,1))./prefStatsStruct.visited(:,1), 'k-', 'LineWidth', 4);
+            plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.HDRmap(:,1)./prefStatsStruct.visited(:,1), 'r-', 'LineWidth', 2);
+            plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.LDRmap(:,1)./prefStatsStruct.visited(:,1), 'g-', 'LineWidth', 2);
+            legend('total', 'HDR', 'LDR');
+            ylabel('probability hit');
+            xlabel('HDR tone mapping index');
+            drawnow;
         
-        disp('here')
-        pause
-        
+        end
+    
+    
         % average over reps
         if (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
            for rowIndex = 1:numel(stimPreferenceData.rowStimIndices)
