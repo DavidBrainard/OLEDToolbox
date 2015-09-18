@@ -4,13 +4,9 @@ function RunImagePreferenceExperiment
     [repsNum, dataDir, datafileName, debugMode, histogramIsVisible, visualizeResultsOnline, whichDisplay] = Controller.ConfigureExperiment(rootDir);
     cd(rootDir);
 
-    % use debugMode = false, when running on the Samsung
-    experimentController = Controller('debugMode', debugMode, ...
-                                      'giveVerbalFeedback', false, ...
-                                      'histogramIsVisible', histogramIsVisible, ...
-                                      'visualizeResultsOnLine', visualizeResultsOnline);
     
-    % Select a stimulus cache file(s)
+    % Select a stimulus cache file. This will determine the experiment to
+    % be run.
     cacheFileNameList = {...
         fullfile(rootDir,'Caches', 'Blobbie_SunRoomSideLight_Reinhardt_Cache.mat') ...
         };
@@ -19,20 +15,41 @@ function RunImagePreferenceExperiment
         fullfile(rootDir,'Caches', 'Blobbie_SunRoomSideLight_Cache_HDR_vs_optimalLDR_David.mat') ...
         };
     
-    % Specify experiment params
-    params = struct(...
+    cacheFileNameList = {...
+        fullfile(rootDir,'Caches', 'Blobbie_SunRoomSideLight_Cache_HDR_vs_optimalLDR_Nicolas.mat') ...
+        };
+    
+        
+    fprintf('\n----------------------------------------------------------------------------');
+    fprintf('\n\nStimulus cache to load: <strong> %s </strong>', cacheFileNameList{1});
+    fprintf('\nIf this is the desired cache file, hit enter to continue ... ');
+    pause
+    fprintf('\n----------------------------------------------------------------------------\n');
+    
+    
+    
+    % use debugMode = false, when running on the Samsung
+    experimentController = Controller('debugMode', debugMode, ...
+                                      'giveVerbalFeedback', false, ...
+                                      'histogramIsVisible', histogramIsVisible, ...
+                                      'visualizeResultsOnLine', visualizeResultsOnline);
+
+                                  
+    % Load the stimulus cache
+    cartoonImageDirectory = fullfile(rootDir, 'CartoonImages');
+    experimentController.loadStimulusCache(cacheFileNameList, cartoonImageDirectory);
+    
+    
+    % Specify experiment run params
+    runParams = struct(...
         'repsNum', repsNum, ...
         'varyToneMappingParamsInBlockDesign', false, ...   % set to true to do comparisons of tone mapping param value within blocks
         'whichDisplay', whichDisplay,...
         'dataFileName', fullfile(dataDir,datafileName)... ..
     );
     
-    % Load the stimulus cache
-    cartoonImageDirectory = fullfile(rootDir, 'CartoonImages');
-    experimentController.loadStimulusCache(cacheFileNameList, cartoonImageDirectory);
-    
     % Run the experiment
-    abnormalTermination = experimentController.runExperiment(params);
+    abnormalTermination = experimentController.runExperiment(runParams);
     
     % Shutdown
     experimentController.shutDown();

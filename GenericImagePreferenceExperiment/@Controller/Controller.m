@@ -99,7 +99,7 @@ classdef Controller < handle
         visualizePreferenceMatrix(obj, stimPreferenceData, whichDisplay);
         
         % Method to visualize the current preferred image histogram
-        visualizePreferredImageHistogram(obj, stimPreferenceData);
+        visualizePreferredImageHistogram(obj, stimPreferenceData, whichDisplay);
         
         % Method to save the data
         saveData(obj);

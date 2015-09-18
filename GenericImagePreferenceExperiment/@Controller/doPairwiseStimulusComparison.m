@@ -105,7 +105,7 @@ function [stimPreferenceData, abnormalTermination] = doPairwiseStimulusCompariso
         
         if (isempty(testSinglePair))
             % Visualize current data  in a block
-            obj.visualizePreferredImageHistogram(stimPreferenceData);
+            obj.visualizePreferredImageHistogram(stimPreferenceData, whichDisplay);
             obj.visualizePreferenceMatrix(stimPreferenceData, whichDisplay);
         end
         
