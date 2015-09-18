@@ -79,6 +79,7 @@ function AnalyzeImagePreferenceExperiment
     
     
     for sceneIndex = 1:scenesNum
+        
         for repIndex = 1:repsNum
             
             % get the data for this repetition
@@ -87,9 +88,9 @@ function AnalyzeImagePreferenceExperiment
             if (repIndex == 1)
                 if strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR')
                     prefStatsStruct = struct(...
-                        'HDRmap',  zeros(numel(stimPreferenceData.rowStimIndices), 1), ...
-                        'LDRmap',  zeros(numel(stimPreferenceData.rowStimIndices), 1), ...
-                        'visited', zeros(numel(stimPreferenceData.rowStimIndices), 1) ...
+                        'HDRmapSingleReps',  zeros(numel(stimPreferenceData.rowStimIndices), repsNum), ...
+                        'LDRmapSingleReps',  zeros(numel(stimPreferenceData.rowStimIndices), repsNum), ...
+                        'visitedSingleReps', zeros(numel(stimPreferenceData.rowStimIndices), repsNum) ...
                     );
                 else
                     prefStatsStruct = struct(...
@@ -100,11 +101,12 @@ function AnalyzeImagePreferenceExperiment
                 end
             end % repIndex == 1
                       
-             
+            
             for rowIndex = 1:numel(stimPreferenceData.rowStimIndices)
             for colIndex = 1:numel(stimPreferenceData.colStimIndices)
                 
                 if (~isnan(stimPreferenceData.stimulusChosen(rowIndex, colIndex))) 
+                    
                     
                     % stimulus selected
                     selectedStimIndex = stimPreferenceData.stimulusChosen(rowIndex, colIndex);
@@ -119,16 +121,16 @@ function AnalyzeImagePreferenceExperiment
                         if (selectedStimIndex > 10000)
                             % HDR version selected
                             selectedStimIndex = selectedStimIndex - 10000;
-                            prefStatsStruct.HDRmap(rowIndex,1) =  prefStatsStruct.HDRmap(rowIndex,1) + 1;
+                            prefStatsStruct.HDRmapSingleReps(rowIndex,repIndex) =  prefStatsStruct.HDRmapSingleReps(rowIndex,repIndex) + 1;
                         elseif (selectedStimIndex > 1000)
                             % LDR version selected
                             selectedStimIndex = selectedStimIndex - 1000;
-                            prefStatsStruct.LDRmap(rowIndex,1) =  prefStatsStruct.LDRmap(rowIndex,1) + 1;
+                            prefStatsStruct.LDRmapSingleReps(rowIndex,repIndex) =  prefStatsStruct.LDRmapSingleReps(rowIndex,repIndex) + 1;
                         else
                             error('How can this be?');
                         end  
                         
-                        prefStatsStruct.visited(rowIndex,1) = prefStatsStruct.visited(rowIndex,1) + 1;
+                        prefStatsStruct.visitedSingleReps(rowIndex,repIndex) = prefStatsStruct.visitedSingleReps(rowIndex,repIndex) + 1;
                    
                     
                     % in HDR or LDR mode
@@ -173,6 +175,7 @@ function AnalyzeImagePreferenceExperiment
             end % colIndex
             end % rowIndex
 
+            
             if (~strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
                 % ensure that (row,col) with Prate = 0 do not have a nan value
                 for rowIndex = 1:numel(stimPreferenceData.rowStimIndices)
@@ -190,46 +193,57 @@ function AnalyzeImagePreferenceExperiment
         
         
         if (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
+            
+            % sum over all reps
+            timesVisited = sum(prefStatsStruct.visitedSingleReps,2);
+            HDRselected  = sum(prefStatsStruct.HDRmapSingleReps,2);
+            LDRselected  = sum(prefStatsStruct.LDRmapSingleReps,2);
+            
+            prefStatsStruct.HDRprob = HDRselected./timesVisited;
+            prefStatsStruct.LDRprob = LDRselected./timesVisited;
+            
+            fprintf(2,'\nsceneIndex = %d\n', sceneIndex);
+            prefStatsStruct.HDRmapSingleReps
+            [timesVisited HDRselected LDRselected]
+            fprintf('\n----------------------------\n');
+            
+            
             figure(sceneIndex+500);
             clf;
             subplot(2,2,1);
-            plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.visited(:,1), 'r-', 'LineWidth', 4);
+            plot(1:numel(stimPreferenceData.rowStimIndices), timesVisited, 'r-', 'LineWidth', 4);
             hold on;
-            plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.HDRmap(:,1), 'k-');
-            legend('visits', 'hits');
+            plot(1:numel(stimPreferenceData.rowStimIndices), HDRselected, 'k-');
+            set(gca, 'YLim', [0 max(timesVisited)+1]);
+            legend('times presented', 'times selected');
+            box on; grid on;
             xlabel('HDR tone mapping index');
             title('HDR');
         
             subplot(2,2,2);
-            plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.visited(:,1), 'r-', 'LineWidth', 4);
+            plot(1:numel(stimPreferenceData.rowStimIndices), timesVisited, 'r-', 'LineWidth', 4);
             hold on;
-            plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.LDRmap(:,1), 'k-');
-            legend('visits', 'hits');
+            plot(1:numel(stimPreferenceData.rowStimIndices), LDRselected, 'k-');
+            set(gca, 'YLim', [0 max(timesVisited)+1]);
+            legend('times presented', 'times selected');
+            box on; grid on;
             xlabel('HDR tone mapping index');
             title('LDR');
 
             subplot(2,2,[3 4]);
             hold on
-            plot(1:numel(stimPreferenceData.rowStimIndices), (prefStatsStruct.HDRmap(:,1)+prefStatsStruct.LDRmap(:,1))./prefStatsStruct.visited(:,1), 'k-', 'LineWidth', 4);
-            plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.HDRmap(:,1)./prefStatsStruct.visited(:,1), 'r-', 'LineWidth', 2);
-            plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.LDRmap(:,1)./prefStatsStruct.visited(:,1), 'g-', 'LineWidth', 2);
-            legend('total', 'HDR', 'LDR');
-            ylabel('probability hit');
+            plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.LDRprob+prefStatsStruct.HDRprob, 'k-', 'LineWidth', 4);
+            plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.HDRprob, 'r-', 'LineWidth', 2);
+            plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.LDRprob, 'g-', 'LineWidth', 2);
+            legend('total', 'OLED selected', 'LCD selected');
+            ylabel('probability');
             xlabel('HDR tone mapping index');
             drawnow;
         
         end
     
-    
-        % average over reps
-        if (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
-           for rowIndex = 1:numel(stimPreferenceData.rowStimIndices)
-               if (prefStatsStruct.visited(rowIndex,1)>1)
-                    prefStatsStruct.LDRmap(rowIndex,1) = prefStatsStruct.LDRmap(rowIndex,1) / prefStatsStruct.visited(rowIndex,1);
-                    prefStatsStruct.HDRmap(rowIndex,1) = prefStatsStruct.HDRmap(rowIndex,1) / prefStatsStruct.visited(rowIndex,1);
-               end
-           end  
-        elseif (~strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
+        % 
+        if (~strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
             % mean response latency for the paired comparison (row,col)
             prefStatsStruct.meanResponseLatency2D = round(prefStatsStruct.meanResponseLatency2D / repsNum);   
             %plot2DLatencyHistogram(98,prefStatsStruct.meanResponseLatency2D);
@@ -245,7 +259,7 @@ function AnalyzeImagePreferenceExperiment
         preferenceDataStats{sceneIndex} = prefStatsStruct;        
     end % sceneIndex
     
-
+    
     figNum = 1;
     for sceneIndex = 1:scenesNum
         
@@ -321,12 +335,12 @@ function AnalyzeImagePreferenceExperiment
             HDRtoneMapDeviation = [-3 -2 -1 0 1 2 3];
             
             subplot('Position', [0.07 0.72  0.92 0.26]);
-            b = bar(HDRtoneMapDeviation, preferenceDataStats{sceneIndex}.HDRmap(:), 0.6);
+            b = bar(HDRtoneMapDeviation, preferenceDataStats{sceneIndex}.HDRprob, 0.6);
             hold on;
             b(1).LineWidth = 2;
             b(1).EdgeColor = [1 0 0];
             b(1).FaceColor = [0.8 0.6 0.6];
-            b = bar(HDRtoneMapDeviation, preferenceDataStats{sceneIndex}.LDRmap(:), 0.4);
+            b = bar(HDRtoneMapDeviation, preferenceDataStats{sceneIndex}.LDRprob, 0.4);
             b(1).LineWidth = 2;
             b(1).EdgeColor = [0 1 0];
             b(1).FaceColor = [0.6 0.8 0.6];
@@ -455,17 +469,20 @@ function AnalyzeImagePreferenceExperiment
         
     
         if (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
-           
+            
             subplot('Position', subplotPosVectors(2,sceneIndex).v);
-            bar(HDRtoneMapDeviation, preferenceDataStats{sceneIndex}.LDRmap-preferenceDataStats{sceneIndex}.HDRmap, 'FaceColor', [0.8 0.6 0.2], 'EdgeColor', [1 1 0]);
+            hold on;
+            plot(HDRtoneMapDeviation, preferenceDataStats{sceneIndex}.HDRprob, 'r-', 'LineWidth', 2);
+            plot(HDRtoneMapDeviation, preferenceDataStats{sceneIndex}.LDRprob, 'g-', 'LineWidth', 2);
+            legend('OLED', 'LCD', 'Location', 'NorthWest');
             xlabel('tone mapping index','Color', [0.7 0.7 0.7], 'FontSize', 16);
             if (sceneIndex == 1)
-                ylabel('P_{LDR} - P_{HDR}','Color', [0.7 0.7 0.7], 'FontSize', 16);
+                ylabel('P_choice','Color', [0.7 0.7 0.7], 'FontSize', 16);
             else
                set(gca, 'YTickLabel', {}); 
             end
             
-            set(gca, 'YLim', 1.1*[-1 1], 'Xtick', [-10:1:10], 'YTick', [-1.0:0.25:1.0]);
+            set(gca, 'YLim', 1.1*[0 1], 'Xtick', [-10:1:10], 'YTick', [0:0.2:1.0]);
             set(gca, 'FontSize', 14, 'Color', [0 0 0], 'XColor', [0.7 0.7 0.7], 'YColor', [0.7 0.7 0.7]);
             
         else
