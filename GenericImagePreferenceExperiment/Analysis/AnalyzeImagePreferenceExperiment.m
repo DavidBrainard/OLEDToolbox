@@ -202,15 +202,44 @@ function AnalyzeImagePreferenceExperiment
             prefStatsStruct.HDRprob = HDRselected./timesVisited;
             prefStatsStruct.LDRprob = LDRselected./timesVisited;
             
-            fprintf(2,'\nsceneIndex = %d\n', sceneIndex);
-            prefStatsStruct.HDRmapSingleReps
-            [timesVisited HDRselected LDRselected]
-            fprintf('\n----------------------------\n');
+            % resample reps: all possible combinations of 3 different reps
+            resampleIndex = 0;
             
+            for ii = 1:repsNum
+                for jj = ii+1:repsNum
+                    for kk = jj+1:repsNum
+                    
+                        HDR = zeros(size(prefStatsStruct.HDRmapSingleReps,1),1);
+                        LDR = zeros(size(prefStatsStruct.LDRmapSingleReps,1),1);
+                        reps = zeros(size(prefStatsStruct.visitedSingleReps,1),1);
+
+                        % use reps ii and jj
+                        rr = [ii jj kk];
+                        %fprintf('Resample [%d] = [%d %d %d]\n', resampleIndex, ii, jj, kk);
+                        for kindex = 1:numel(rr)
+                            HDR = HDR + prefStatsStruct.HDRmapSingleReps(:, rr(kindex));
+                            LDR = LDR + prefStatsStruct.LDRmapSingleReps(:, rr(kindex));
+                            reps = reps + prefStatsStruct.visitedSingleReps(:,rr(kindex));
+                        end
+                    
+                        if (any(reps == 0))
+                            reps
+                            prefStatsStruct.visitedSingleReps(:,rr(1))
+                            prefStatsStruct.visitedSingleReps(:,rr(2))
+                            prefStatsStruct.visitedSingleReps(:,rr(3))
+                            error('combined total reps = 0');
+                        end
+                        resampleIndex = resampleIndex + 1;
+                        prefStatsStruct.HDRresampledReps(:,resampleIndex) = HDR ./ reps;
+                        prefStatsStruct.LDRresampledReps(:,resampleIndex) = LDR ./ reps;
+                    end
+                end
+            end
+
             
             figure(sceneIndex+500);
             clf;
-            subplot(2,2,1);
+            subplot(1,2,1);
             plot(1:numel(stimPreferenceData.rowStimIndices), timesVisited, 'r-', 'LineWidth', 4);
             hold on;
             plot(1:numel(stimPreferenceData.rowStimIndices), HDRselected, 'k-');
@@ -220,7 +249,7 @@ function AnalyzeImagePreferenceExperiment
             xlabel('HDR tone mapping index');
             title('HDR');
         
-            subplot(2,2,2);
+            subplot(1,2,2);
             plot(1:numel(stimPreferenceData.rowStimIndices), timesVisited, 'r-', 'LineWidth', 4);
             hold on;
             plot(1:numel(stimPreferenceData.rowStimIndices), LDRselected, 'k-');
@@ -230,14 +259,7 @@ function AnalyzeImagePreferenceExperiment
             xlabel('HDR tone mapping index');
             title('LDR');
 
-            subplot(2,2,[3 4]);
-            hold on
-            plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.LDRprob+prefStatsStruct.HDRprob, 'k-', 'LineWidth', 4);
-            plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.HDRprob, 'r-', 'LineWidth', 2);
-            plot(1:numel(stimPreferenceData.rowStimIndices), prefStatsStruct.LDRprob, 'g-', 'LineWidth', 2);
-            legend('total', 'OLED selected', 'LCD selected');
-            ylabel('probability');
-            xlabel('HDR tone mapping index');
+            
             drawnow;
         
         end
@@ -259,9 +281,12 @@ function AnalyzeImagePreferenceExperiment
         preferenceDataStats{sceneIndex} = prefStatsStruct;        
     end % sceneIndex
     
+    clear 'prefStatsStruct'
     
     figNum = 1;
     for sceneIndex = 1:scenesNum
+        
+        
         
         stimIndices =  conditionsData(sceneIndex, :);
         if strcmp(runParams.whichDisplay, 'HDR')
@@ -334,26 +359,50 @@ function AnalyzeImagePreferenceExperiment
             set(hFig, 'Position', [10 10 990 800], 'Color', [ 0 0 0]);
             HDRtoneMapDeviation = [-3 -2 -1 0 1 2 3];
             
-            subplot('Position', [0.07 0.72  0.92 0.26]);
-            b = bar(HDRtoneMapDeviation, preferenceDataStats{sceneIndex}.HDRprob, 0.6);
-            hold on;
-            b(1).LineWidth = 2;
-            b(1).EdgeColor = [1 0 0];
-            b(1).FaceColor = [0.8 0.6 0.6];
-            b = bar(HDRtoneMapDeviation, preferenceDataStats{sceneIndex}.LDRprob, 0.4);
-            b(1).LineWidth = 2;
-            b(1).EdgeColor = [0 1 0];
-            b(1).FaceColor = [0.6 0.8 0.6];
+            prefStatsStruct = preferenceDataStats{sceneIndex};
+            
+            meanValsHDR = mean(prefStatsStruct.HDRresampledReps,2);
+            upperValsHDR = max(prefStatsStruct.HDRresampledReps, [], 2) - meanValsHDR;
+            lowerValsHDR = min(prefStatsStruct.HDRresampledReps, [], 2) - meanValsHDR;
+            meanValsLDR = mean(prefStatsStruct.LDRresampledReps,2);
+            upperValsLDR = max(prefStatsStruct.LDRresampledReps, [], 2) - meanValsLDR;
+            lowerValsLDR = min(prefStatsStruct.LDRresampledReps, [], 2) - meanValsLDR;
+            subplot('Position', [0.07 0.1  0.92 0.26]);
+            
+%             
+%             x = [HDRtoneMapDeviation HDRtoneMapDeviation(end:-1:1)];
+%             y1 = (min(preferenceDataStats{sceneIndex}.HDRresampledReps,[], 2))';
+%             y2 = (max(preferenceDataStats{sceneIndex}.HDRresampledReps,[], 2))';
+%             y = [y1 y2(end:-1:1)];
+%             v = [x' y'];
+%             patch('Faces', 1:14, 'Vertices', v, 'FaceColor',[1 0.7 0.7], 'EdgeColor', [1 0 0], 'FaceAlpha', 0.5);
+%             hold on;
+%             
+%             y1 = (min(preferenceDataStats{sceneIndex}.LDRresampledReps,[], 2))';
+%             y2 = (max(preferenceDataStats{sceneIndex}.LDRresampledReps,[], 2))';
+%             y = [y1 y2(end:-1:1)];
+%             v = [x' y'];
+%             patch('Faces', 1:14, 'Vertices', v, 'FaceColor',[0.7 1 0.7], 'EdgeColor', [0 1 0], 'FaceAlpha', 0.5);
+            
+            plot(HDRtoneMapDeviation, prefStatsStruct.HDRresampledReps, 'r-'); 
+            hold on
+            plot(HDRtoneMapDeviation, prefStatsStruct.LDRresampledReps, 'g-');
+            
+%             
+%             plot(HDRtoneMapDeviation, meanValsHDR, 'r-', 'LineWidth',2);
+%             hErr = errorbar(HDRtoneMapDeviation, meanValsHDR,  lowerValsHDR, upperValsHDR, 'rs', 'LineWidth',2, 'MarkerFaceColor', [0.8 0.6 0.6], 'MarkerSize', 14);
+% 
+%             plot(HDRtoneMapDeviation, meanValsLDR, 'g-', 'LineWidth',2);
+%             lErr = errorbar(HDRtoneMapDeviation+0.05, meanValsLDR,  lowerValsLDR, upperValsLDR, 'gs', 'LineWidth',2, 'MarkerFaceColor', [0.6 0.8 0.6], 'MarkerSize', 14);
+%             
             plot([HDRtoneMapDeviation(1)-1 HDRtoneMapDeviation(end)+1], [0.5 0.5], 'w-');
             hold off;
-            ylabel('P_{choice}','Color', [0.7 0.7 0.7], 'FontSize', 16);
-            hleg = legend('choice = OLED', 'choice = LCD', 'Location','northwest');
-            set(hleg,'FontSize', 14, 'box', 'off', 'TextColor', [0.8 0.8 0.8]);
+            ylabel('P_{choice} (r=OLED, g=LCD)','Color', [0.7 0.7 0.7], 'FontSize', 16);
             set(gca, 'FontSize', 14, 'Color', [0 0 0], 'XColor', [0.7 0.7 0.7], 'YColor', [0.7 0.7 0.7]);
-            set(gca, 'XLim', [-3.5 3.5], 'YLim', [0 1.1], 'Xtick', [-10:1:10], 'YTick', [0:0.25:1.0]);
+            set(gca, 'XLim', [-3.5 3.5], 'YLim', [-0.1 1.1], 'Xtick', [-10:1:10], 'YTick', [0:0.25:1.0]);
             box on; grid on
             
-            subplot('Position', [0.07 0.37 0.92 0.26]);
+            subplot('Position', [0.07 0.41 0.92 0.26]);
             hold on
             for toneMappingIndex = 1:toneMappingsNum
                 plot(0.1*max(mappingFunctionsHDR{toneMappingIndex}.input) + mappingFunctionsHDR{toneMappingIndex}.input*0.8 + (toneMappingIndex-1)* max(mappingFunctionsHDR{toneMappingIndex}.input), mappingFunctionsHDR{toneMappingIndex}.output, 'r-', 'LineWidth', 2.);
@@ -375,11 +424,11 @@ function AnalyzeImagePreferenceExperiment
             for toneMappingIndex = 1:toneMappingsNum
                 stimIndex =  conditionsData(sceneIndex, toneMappingIndex);
                 
-                subplot('Position', [0.085+(toneMappingIndex-1)*0.13 0.02 0.11 0.12]);
+                subplot('Position', [0.085+(toneMappingIndex-1)*0.13 0.02+0.70 0.11 0.12]);
                 imagePic = squeeze(thumbnailStimImages(stimIndex,2,:,:,:));
                 imshow(imagePic/255);
                 
-                subplot('Position', [0.085+(toneMappingIndex-1)*0.13 0.16 0.11 0.12]);
+                subplot('Position', [0.085+(toneMappingIndex-1)*0.13 0.16+0.70 0.11 0.12]);
                 imagePic = squeeze(thumbnailStimImages(stimIndex,1,:,:,:));
                 imshow(imagePic/255);
             end
@@ -470,14 +519,49 @@ function AnalyzeImagePreferenceExperiment
     
         if (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
             
-            subplot('Position', subplotPosVectors(2,sceneIndex).v);
+            subplot('Position', subplotPosVectors(2,sceneIndex).v);            
+            meanValsHDR = mean(preferenceDataStats{sceneIndex}.HDRresampledReps,2);
+            meanValsLDR = mean(preferenceDataStats{sceneIndex}.LDRresampledReps,2);
+            stdValsHDR  = std(preferenceDataStats{sceneIndex}.HDRresampledReps,0, 2);
+            stdValsLDR  = std(preferenceDataStats{sceneIndex}.LDRresampledReps,0, 2);
+            
+            upperValsHDR = max(preferenceDataStats{sceneIndex}.HDRresampledReps, [], 2) - meanValsHDR;
+            lowerValsHDR = min(preferenceDataStats{sceneIndex}.HDRresampledReps, [], 2) - meanValsHDR;
+            
+            upperValsLDR = max(preferenceDataStats{sceneIndex}.LDRresampledReps, [], 2) - meanValsLDR;
+            lowerValsLDR = min(preferenceDataStats{sceneIndex}.LDRresampledReps, [], 2) - meanValsLDR;
+
+%             x = [HDRtoneMapDeviation HDRtoneMapDeviation(end:-1:1)];
+% 
+%             y1 = (min(preferenceDataStats{sceneIndex}.HDRresampledReps,[], 2))';
+%             y2 = (max(preferenceDataStats{sceneIndex}.HDRresampledReps,[], 2))';
+%             y = [y1 y2(end:-1:1)];
+%             v = [x' y'];
+%             patch('Faces', 1:14, 'Vertices', v, 'FaceColor',[1 0.7 0.7], 'EdgeColor', [1 0 0], 'FaceAlpha', 0.5);
+%             hold on;
+%             
+%             y1 = (min(preferenceDataStats{sceneIndex}.LDRresampledReps,[], 2))';
+%             y2 = (max(preferenceDataStats{sceneIndex}.LDRresampledReps,[], 2))';
+%             y = [y1 y2(end:-1:1)];
+%             v = [x' y'];
+%             patch('Faces', 1:14, 'Vertices', v, 'FaceColor',[0.7 1.0 0.7], 'EdgeColor', [0 1 0], 'FaceAlpha', 0.5);
+            
+            
+            plot(HDRtoneMapDeviation, meanValsHDR, 'r-', 'LineWidth',2);
             hold on;
-            plot(HDRtoneMapDeviation, preferenceDataStats{sceneIndex}.HDRprob, 'r-', 'LineWidth', 2);
-            plot(HDRtoneMapDeviation, preferenceDataStats{sceneIndex}.LDRprob, 'g-', 'LineWidth', 2);
+            plot(HDRtoneMapDeviation, meanValsLDR, 'g-', 'LineWidth',2);
+            %hErr = errorbar(HDRtoneMapDeviation, meanValsHDR,  lowerValsHDR, upperValsHDR, 'rs', 'LineWidth',2, 'MarkerFaceColor', [0.8 0.6 0.6], 'MarkerSize', 12);
+            %lErr = errorbar(HDRtoneMapDeviation, meanValsLDR,  lowerValsLDR, upperValsLDR, 'gs', 'LineWidth',2, 'MarkerFaceColor', [0.6 0.8 0.6], 'MarkerSize', 12);
+ 
+            hErr = errorbar(HDRtoneMapDeviation, meanValsHDR,  stdValsHDR, 'rs', 'LineWidth',2, 'MarkerFaceColor', [0.8 0.6 0.6], 'MarkerSize', 12);
+            lErr = errorbar(HDRtoneMapDeviation, meanValsLDR,  stdValsLDR, 'gs', 'LineWidth',2, 'MarkerFaceColor', [0.6 0.8 0.6], 'MarkerSize', 12);
+ 
+            
+            
             legend('OLED', 'LCD', 'Location', 'NorthWest');
             xlabel('tone mapping index','Color', [0.7 0.7 0.7], 'FontSize', 16);
             if (sceneIndex == 1)
-                ylabel('P_choice','Color', [0.7 0.7 0.7], 'FontSize', 16);
+                ylabel('P_{choice}','Color', [0.7 0.7 0.7], 'FontSize', 16);
             else
                set(gca, 'YTickLabel', {}); 
             end
