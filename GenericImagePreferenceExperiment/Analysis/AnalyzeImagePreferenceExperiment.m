@@ -447,39 +447,38 @@ function AnalyzeImagePreferenceExperiment
             plotSelectionProbabilityMatrix(pdfSubDir, figNum, runParams.whichDisplay, preferenceDataStats{sceneIndex}.stimulusPreferenceRate2D, squeeze(stimulusPreference1D(sceneIndex,:)), imagePics, mappingFunctions, allScenesLum, allImagesLum, maxSceneLum, maxImageLum, DHRpercentileLowEnd, DHRpercentileHighEnd, lumRange);
         end
         
-        if (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR')) 
-            
-            subplotPosVectors = NicePlot.getSubPlotPosVectors(...
-            'rowsNum',      2, ...
-            'colsNum',      toneMappingsNum, ...
-            'widthMargin',  0.01, ...
-            'leftMargin',   0.01, ...
-            'bottomMargin', 0.03, ...
-            'topMargin',    0.03);
-    
-            hFig = figure(figNum+100);
-            set(hFig, 'Position',[30 30 990 198], 'Color', [0 0 0]);
-            clf;
-            
-            for toneMappingIndex = 1:toneMappingsNum
-                stimIndex =  conditionsData(sceneIndex, toneMappingIndex);
-                
-                subplot('Position', subplotPosVectors(1,toneMappingIndex).v);
-                imagePic = squeeze(thumbnailStimImages(stimIndex,1,:,:,:));
-                imshow(imagePic/255);
-                
-                subplot('Position', subplotPosVectors(2,toneMappingIndex).v);
-                imagePic = squeeze(thumbnailStimImages(stimIndex,2,:,:,:));
-                imshow(imagePic/255);
-                
-            end
-            
-            NicePlot.exportFigToPDF(sprintf('%s/LDR_vs_HDR_toneMapIndex%dPics_scene_%d.pdf', pdfSubDir, toneMappingIndex , sceneIndex),hFig,300); 
-        end
+%         if (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR')) 
+%             
+%             subplotPosVectors = NicePlot.getSubPlotPosVectors(...
+%             'rowsNum',      2, ...
+%             'colsNum',      toneMappingsNum, ...
+%             'widthMargin',  0.01, ...
+%             'leftMargin',   0.01, ...
+%             'bottomMargin', 0.03, ...
+%             'topMargin',    0.03);
+%     
+%             hFig = figure(figNum+100);
+%             set(hFig, 'Position',[30 30 990 198], 'Color', [0 0 0]);
+%             clf;
+%             
+%             for toneMappingIndex = 1:toneMappingsNum
+%                 stimIndex =  conditionsData(sceneIndex, toneMappingIndex);
+%                 
+%                 subplot('Position', subplotPosVectors(1,toneMappingIndex).v);
+%                 imagePic = squeeze(thumbnailStimImages(stimIndex,1,:,:,:));
+%                 imshow(imagePic/255);
+%                 
+%                 subplot('Position', subplotPosVectors(2,toneMappingIndex).v);
+%                 imagePic = squeeze(thumbnailStimImages(stimIndex,2,:,:,:));
+%                 imshow(imagePic/255);
+%                 
+%             end
+%             
+%             NicePlot.exportFigToPDF(sprintf('%s/LDR_vs_HDR_toneMapIndex%dPics_scene_%d.pdf', pdfSubDir, toneMappingIndex , sceneIndex),hFig,300); 
+%         end
         
         
-        figNum = figNum + 1;
-        
+        figNum = figNum + 1; 
     end % sceneIndex
     
     
