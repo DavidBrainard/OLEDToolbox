@@ -2,10 +2,17 @@ function AnalyzeImagePreferenceExperiment
    
     [rootDir,~] = fileparts(which(mfilename)); 
     
-    
     dataFileName = GetDataFile(rootDir);
     whos('-file',dataFileName)
     load(dataFileName);
+    
+    % retrieve subject name
+    [~,sessionName] = fileparts(runParams.dataFileName);
+    s = strrep(runParams.dataFileName, sessionName, '');
+    [~,subjectName] = fileparts(s(1:end-1));
+    
+    fprintf('Analyzing data from session:%s, subject:%s\n', sessionName, subjectName);
+    pdfSubDir = getPDFsubDir(rootDir, sessionName, subjectName);
     
     
     repsNum = runParams.repsNum;
@@ -435,9 +442,9 @@ function AnalyzeImagePreferenceExperiment
             
             drawnow;
             
-            NicePlot.exportFigToPDF(sprintf('PDFfigs/LDR_vs_HDR_scene_%d.pdf', sceneIndex),hFig,300);
+            NicePlot.exportFigToPDF(sprintf('%s/LDR_vs_HDR_scene_%d.pdf', pdfSubDir, sceneIndex),hFig,300);
         else
-            plotSelectionProbabilityMatrix(figNum, runParams.whichDisplay, preferenceDataStats{sceneIndex}.stimulusPreferenceRate2D, squeeze(stimulusPreference1D(sceneIndex,:)), imagePics, mappingFunctions, allScenesLum, allImagesLum, maxSceneLum, maxImageLum, DHRpercentileLowEnd, DHRpercentileHighEnd, lumRange);
+            plotSelectionProbabilityMatrix(pdfSubDir, figNum, runParams.whichDisplay, preferenceDataStats{sceneIndex}.stimulusPreferenceRate2D, squeeze(stimulusPreference1D(sceneIndex,:)), imagePics, mappingFunctions, allScenesLum, allImagesLum, maxSceneLum, maxImageLum, DHRpercentileLowEnd, DHRpercentileHighEnd, lumRange);
         end
         
         if (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR')) 
@@ -467,7 +474,7 @@ function AnalyzeImagePreferenceExperiment
                 
             end
             
-            NicePlot.exportFigToPDF(sprintf('PDFfigs/LDR_vs_HDR_toneMapIndex%dPics_scene_%d.pdf', toneMappingIndex , sceneIndex),hFig,300); 
+            NicePlot.exportFigToPDF(sprintf('%s/LDR_vs_HDR_toneMapIndex%dPics_scene_%d.pdf', pdfSubDir, toneMappingIndex , sceneIndex),hFig,300); 
         end
         
         
@@ -622,9 +629,9 @@ function AnalyzeImagePreferenceExperiment
     end
     
     if (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
-        NicePlot.exportFigToPDF(sprintf('PDFfigs/Summary_%s.pdf',runParams.whichDisplay),hFig,300);
+        NicePlot.exportFigToPDF(sprintf('%s/Summary_%s.pdf', pdfSubDir, runParams.whichDisplay),hFig,300);
     else
-        NicePlot.exportFigToPDF(sprintf('PDFfigs/Summary_HDRvs_LDR.pdf'),hFig,300);
+        NicePlot.exportFigToPDF(sprintf('%s/Summary_HDRvs_LDR.pdf', pdfSubDir),hFig,300);
     end
     
 end
@@ -660,7 +667,7 @@ end
 
 
 
-function plotSelectionProbabilityMatrix(figNum, whichDisplay, ProwGivenRowColUnorderedPair, P_row, imagePics, mappingFunctions, allScenesLum, allImagesLum, maxSceneLum, maxImageLum, DHRpercentileLowEnd, DHRpercentileHighEnd, lumRange)
+function plotSelectionProbabilityMatrix(pdfSubDir, figNum, whichDisplay, ProwGivenRowColUnorderedPair, P_row, imagePics, mappingFunctions, allScenesLum, allImagesLum, maxSceneLum, maxImageLum, DHRpercentileLowEnd, DHRpercentileHighEnd, lumRange)
 
 
     h = figure(figNum);
@@ -744,11 +751,28 @@ function plotSelectionProbabilityMatrix(figNum, whichDisplay, ProwGivenRowColUno
     
     drawnow
     
-    NicePlot.exportFigToPDF(sprintf('PDFfigs/Scene_%d_%s.pdf',figNum, whichDisplay),h,300);
+    NicePlot.exportFigToPDF(sprintf('%s/Scene_%d_%s.pdf', pdfSubDir, figNum, whichDisplay),h,300);
     
 end
 
+function pdfSubDir = getPDFsubDir(rootDir, sessionName, subjectName)
 
+    cd(rootDir);
+    cd('PDFfigs');
+    
+    if (~isdir(sprintf('%s/%s', pwd,subjectName)))
+        mkdir(subjectName);
+    end
+    cd(subjectName);
+    
+    if (~isdir(sprintf('%s/%s/%s', pwd, subjectName, sessionName)))
+        mkdir(sessionName);
+    end
+    cd(sessionName);
+    
+    pdfSubDir = pwd;
+    cd(rootDir);
+end
 
 function dataFile = GetDataFile(rootDir)
     cd(rootDir);
