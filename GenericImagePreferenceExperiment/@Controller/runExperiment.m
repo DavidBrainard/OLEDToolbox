@@ -32,12 +32,11 @@ function abnormalTermination = runExperiment(obj, params)
     else
         % Form N-dimensional grid for all variables
         if (strcmp(params.whichDisplay, 'fixOptimalLDR_varyHDR'))
-            toneMappingParamPairs(:,1) = toneMappingIndicesArray;
-            toneMappingParamPairs(:,2) = toneMappingIndicesArray;
+            toneMappingParamPairs(:,1) = [toneMappingIndicesArray toneMappingIndicesArray toneMappingIndicesArray];
+            toneMappingParamPairs(:,2) = [toneMappingIndicesArray toneMappingIndicesArray toneMappingIndicesArray];
         else
             toneMappingParamPairs = nchoosek(toneMappingIndicesArray, 2);
         end
-        
         toneMappingParamValue1IndicesArray = squeeze(toneMappingParamPairs(:,1));
         toneMappingParamValue2IndicesArray = squeeze(toneMappingParamPairs(:,2));
         toneMappingParamMultiplexedValueIndicesArray = toneMappingParamValue1IndicesArray*100 + toneMappingParamValue2IndicesArray;
