@@ -757,6 +757,10 @@ end
 function pdfSubDir = getPDFsubDir(rootDir, sessionName, subjectName)
 
     cd(rootDir);
+    if (~isdir('PDFfigs'))
+        mkdir('PDFfigs');
+    end
+    
     cd('PDFfigs');
     
     if (~isdir(sprintf('%s/%s', pwd,subjectName)))
