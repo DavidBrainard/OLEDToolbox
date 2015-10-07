@@ -627,7 +627,7 @@ function AnalyzeImagePreferenceExperiment
         
     end
     
-    if (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
+    if (~strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
         NicePlot.exportFigToPDF(sprintf('%s/Summary_%s.pdf', pdfSubDir, runParams.whichDisplay),hFig,300);
     else
         NicePlot.exportFigToPDF(sprintf('%s/Summary_HDRvs_LDR.pdf', pdfSubDir),hFig,300);
