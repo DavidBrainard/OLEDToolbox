@@ -10,6 +10,7 @@ function GenerateStimulusCacheForHDRvsOptimalLDR
    
     whichSubject = 'David_Projected';
     whichSubject = 'Nicolas_Measured';
+    whichSubject = 'Ana_Measured';
     
     if (strcmp(whichSubject, 'David_Projected'))
         % David's projected alpha HDR and LDR
@@ -22,6 +23,12 @@ function GenerateStimulusCacheForHDRvsOptimalLDR
         optimalHDRalphas = [12.9 19.7 16.3 27.4 16.7 23.6 21.5  35];
         optimalLDRalphas = [23.3 33.3 31.5 54.6 30.7 47.3 35.3  65.8];
         sceneIndices     = [1    2    3    4    5    6    7     8];
+        
+    elseif (strcmp(whichSubject,'Ana_Measured'))
+        % Ana measured optimal HDR and LDR alphas
+        optimalHDRalphas = [52.2 30.3 58.6 45.9 43.6 29.2 43.7 60.6];
+        optimalLDRalphas = [43.2 37.8 50.4 59.6 47.9 36.5 64.1 56.3];
+        sceneIndices     = [1    2    3    4    5    6    7     8]; 
     end
     
     
@@ -34,6 +41,8 @@ function GenerateStimulusCacheForHDRvsOptimalLDR
             cacheFileName = sprintf('Blobbie_SunRoomSideLight_Cache_HDR_vs_optimalLDR_David.mat');
         elseif (strcmp(whichSubject,'Nicolas_Measured'))
             cacheFileName = sprintf('Blobbie_SunRoomSideLight_Cache_HDR_vs_optimalLDR_Nicolas.mat');
+        elseif (strcmp(whichSubject,'Ana_Measured'))
+            cacheFileName = sprintf('Blobbie_SunRoomSideLight_Cache_HDR_vs_optimalLDR_Ana.mat');
         end
         
         luminanceOverdrive(1) = 0.97;   % overdrive for LCD (adjust so at to have a rendered output luminance that is similar to the intended output luminance)
@@ -50,8 +59,15 @@ function GenerateStimulusCacheForHDRvsOptimalLDR
     
     
     
-    
-    degradationFactor = 3;
+    % For David and Nicolas, degradationFactor was 3.0
+    % For Ana, since she is more narrowly tuned, chose 2.0
+    if ((strcmp(whichSubject, 'David_Projected')) || (strcmp(whichSubject,'Nicolas_Measured')))
+        degradationFactor = 3;
+    elseif (strcmp(whichSubject,'Ana_Measured'))
+        degradationFactor = 2;
+    else
+       error('Dont have a degradation factor for subject %s',  whichSubject);
+    end
     for sceneIndex = 1:numel(optimalLDRalphas)
         LDRalphas(sceneIndex, 1) = optimalLDRalphas(sceneIndices(sceneIndex));
         LDRalphas(sceneIndex, 2) = optimalLDRalphas(sceneIndices(sceneIndex));
