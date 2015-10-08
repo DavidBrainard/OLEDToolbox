@@ -32,8 +32,8 @@ function abnormalTermination = runExperiment(obj, params)
     else
         % Form N-dimensional grid for all variables
         if (strcmp(params.whichDisplay, 'fixOptimalLDR_varyHDR'))
-            toneMappingParamPairs(:,1) = [toneMappingIndicesArray toneMappingIndicesArray toneMappingIndicesArray];
-            toneMappingParamPairs(:,2) = [toneMappingIndicesArray toneMappingIndicesArray toneMappingIndicesArray];
+            toneMappingParamPairs(:,1) = toneMappingIndicesArray;
+            toneMappingParamPairs(:,2) = toneMappingIndicesArray;
         else
             toneMappingParamPairs = nchoosek(toneMappingIndicesArray, 2);
         end
@@ -131,14 +131,20 @@ function abnormalTermination = runExperiment(obj, params)
         
 
         if (repIndex < params.repsNum)
-            abnormalTermination = obj.presentSessionCompletionImageAndGetResponse(repIndex, params.repsNum);
-            if (abnormalTermination)
-                obj.dealWithAbnormalTermination('AbortAtEndOfSession', repIndex);
-                return;
+            if ( ...
+                    ((strcmp(params.whichDisplay, 'fixOptimalLDR_varyHDR')) && (mod(repIndex-1,3) == 2)) || ...
+                    (~strcmp(params.whichDisplay, 'fixOptimalLDR_varyHDR')) ...
+                    )
+                abnormalTermination = obj.presentSessionCompletionImageAndGetResponse(repIndex, params.repsNum);
+                if (abnormalTermination)
+                    obj.dealWithAbnormalTermination('AbortAtEndOfSession', repIndex);
+                    return;
+                end
             end
         else
             obj.presentSessionCompletionImageAndGetResponse(repIndex, params.repsNum);
         end
+        
     end % repIndex
 
     % save the collected data together with other data from the cache file

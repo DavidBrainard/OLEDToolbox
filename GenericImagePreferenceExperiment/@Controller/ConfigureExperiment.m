@@ -33,12 +33,7 @@ function [repsNum, dataDir, datafileName, debugMode, histogramIsVisible, visuali
     fprintf('\nHit enter to continue');
     pause;
     
-    repsNum = input('\nEnter number of repetitions: ', 's');
-    if (isempty(repsNum))
-        repsNum = 1;
-    else
-        repsNum = str2num(repsNum);
-    end
+
     
     
     runningInDemoMode = input('\nRunning on demo mode [y/n] [default=n]: ', 's');
@@ -79,6 +74,19 @@ function [repsNum, dataDir, datafileName, debugMode, histogramIsVisible, visuali
     while ((~strcmp(whichDisplay, 'HDR') && (~strcmp(whichDisplay, 'LDR'))  && (~strcmp(whichDisplay,'fixOptimalLDR_varyHDR'))))
         whichDisplay = input('\nWhich display to emulate ? [HDR/LDR/fixOptimalLDR_varyHDR] : ', 's');
     end
+    
+    
+    repsNum = input('\nEnter number of repetitions: ', 's');
+    if (isempty(repsNum))
+        repsNum = 1;
+    else
+        repsNum = str2num(repsNum);
+    end
+    
+    if (strcmp(whichDisplay,'fixOptimalLDR_varyHDR'))
+        repsNum = 3*repsNum;
+    end
+    
 end
 
 
