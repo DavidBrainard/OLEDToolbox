@@ -24,7 +24,7 @@ function AnalyzeImagePreferenceExperiment
             fprintf(2,'Run was supposed to have %d reps, but it was aborted during the %d run\n', repsNum, runAbortedAtRepetition);
             repsNum = runAbortedAtRepetition;
         elseif (strcmp(runAbortionStatus, 'none'))
-            fprintf('Run was completed normally.');
+            fprintf('Run was completed normally.\n');
         end
     end
     
@@ -113,8 +113,7 @@ function AnalyzeImagePreferenceExperiment
             for colIndex = 1:numel(stimPreferenceData.colStimIndices)
                 
                 if (~isnan(stimPreferenceData.stimulusChosen(rowIndex, colIndex))) 
-                    
-                    
+                     
                     % stimulus selected
                     selectedStimIndex = stimPreferenceData.stimulusChosen(rowIndex, colIndex);
                     
@@ -209,66 +208,86 @@ function AnalyzeImagePreferenceExperiment
             prefStatsStruct.HDRprob = HDRselected./timesVisited;
             prefStatsStruct.LDRprob = LDRselected./timesVisited;
             
-            % resample reps: all possible combinations of 3 different reps
-            resampleIndex = 0;
             
-            for ii = 1:repsNum
-                for jj = ii+1:repsNum
-                    for kk = jj+1:repsNum
-                    
-                        HDR = zeros(size(prefStatsStruct.HDRmapSingleReps,1),1);
-                        LDR = zeros(size(prefStatsStruct.LDRmapSingleReps,1),1);
-                        reps = zeros(size(prefStatsStruct.visitedSingleReps,1),1);
+            if (sum(sum(prefStatsStruct.visitedSingleReps == ones(size(prefStatsStruct.visitedSingleReps)))) == numel(prefStatsStruct.visitedSingleReps)) 
+                
+                resamplingSamplesNum = 300;
+                resampledTrialsNum = round(0.75*repsNum);
+                prefStatsStruct.HDRresampledReps = zeros(numel(stimPreferenceData.rowStimIndices), resamplingSamplesNum);
+                prefStatsStruct.LDRresampledReps = zeros(numel(stimPreferenceData.rowStimIndices), resamplingSamplesNum);
+            
+                for resampleIndex = 1:resamplingSamplesNum
+                    resampledReps = randperm(repsNum, resampledTrialsNum);
+                    prefStatsStruct.HDRresampledReps(:, resampleIndex) = mean(prefStatsStruct.HDRmapSingleReps(:,resampledReps), 2);
+                    prefStatsStruct.LDRresampledReps(:, resampleIndex) = mean(prefStatsStruct.LDRmapSingleReps(:,resampledReps), 2);
+                end
+            
+            else
+                
+                fprintf(2,'Correcting for uneven presentation of stimuli\n');
+                %OLD WAY OF ANALYSIS FOR ORIGINAL DATA BY NPC and DHB THAT
+                %HAD UNEQUAL VISITS FOR DIFFERENT CONDITIONS
+                % resample reps: all possible combinations of 3 different reps
+                resampleIndex = 0;
 
-                        % use reps ii and jj
-                        rr = [ii jj kk];
-                        %fprintf('Resample [%d] = [%d %d %d]\n', resampleIndex, ii, jj, kk);
-                        for kindex = 1:numel(rr)
-                            HDR = HDR + prefStatsStruct.HDRmapSingleReps(:, rr(kindex));
-                            LDR = LDR + prefStatsStruct.LDRmapSingleReps(:, rr(kindex));
-                            reps = reps + prefStatsStruct.visitedSingleReps(:,rr(kindex));
+                for ii = 1:repsNum
+                    for jj = ii+1:repsNum
+                        for kk = jj+1:repsNum
+
+                            HDR = zeros(size(prefStatsStruct.HDRmapSingleReps,1),1);
+                            LDR = zeros(size(prefStatsStruct.LDRmapSingleReps,1),1);
+                            reps = zeros(size(prefStatsStruct.visitedSingleReps,1),1);
+
+                            % use reps ii and jj
+                            rr = [ii jj kk];
+                            %fprintf('Resample [%d] = [%d %d %d]\n', resampleIndex, ii, jj, kk);
+                            for kindex = 1:numel(rr)
+                                HDR = HDR + prefStatsStruct.HDRmapSingleReps(:, rr(kindex));
+                                LDR = LDR + prefStatsStruct.LDRmapSingleReps(:, rr(kindex));
+                                reps = reps + prefStatsStruct.visitedSingleReps(:,rr(kindex));
+                            end
+
+                            if (any(reps == 0))
+                                reps
+                                prefStatsStruct.visitedSingleReps(:,rr(1))
+                                prefStatsStruct.visitedSingleReps(:,rr(2))
+                                prefStatsStruct.visitedSingleReps(:,rr(3))
+                                error('combined total reps = 0');
+                            end
+                            resampleIndex = resampleIndex + 1;
+                            prefStatsStruct.HDRresampledReps(:,resampleIndex) = HDR ./ reps;
+                            prefStatsStruct.LDRresampledReps(:,resampleIndex) = LDR ./ reps;
                         end
-                    
-                        if (any(reps == 0))
-                            reps
-                            prefStatsStruct.visitedSingleReps(:,rr(1))
-                            prefStatsStruct.visitedSingleReps(:,rr(2))
-                            prefStatsStruct.visitedSingleReps(:,rr(3))
-                            error('combined total reps = 0');
-                        end
-                        resampleIndex = resampleIndex + 1;
-                        prefStatsStruct.HDRresampledReps(:,resampleIndex) = HDR ./ reps;
-                        prefStatsStruct.LDRresampledReps(:,resampleIndex) = LDR ./ reps;
                     end
                 end
+            
+            
+                figure(sceneIndex+500);
+                clf;
+                subplot(1,2,1);
+                plot(1:numel(stimPreferenceData.rowStimIndices), timesVisited, 'r-', 'LineWidth', 4);
+                hold on;
+                plot(1:numel(stimPreferenceData.rowStimIndices), HDRselected, 'k-');
+                set(gca, 'YLim', [0 max(timesVisited)+1]);
+                legend('times presented', 'times selected');
+                box on; grid on;
+                xlabel('HDR tone mapping index');
+                title('HDR');
+
+                subplot(1,2,2);
+                plot(1:numel(stimPreferenceData.rowStimIndices), timesVisited, 'r-', 'LineWidth', 4);
+                hold on;
+                plot(1:numel(stimPreferenceData.rowStimIndices), LDRselected, 'k-');
+                set(gca, 'YLim', [0 max(timesVisited)+1]);
+                legend('times presented', 'times selected');
+                box on; grid on;
+                xlabel('HDR tone mapping index');
+                title('LDR');
+
+                drawnow;
             end
-
             
-            figure(sceneIndex+500);
-            clf;
-            subplot(1,2,1);
-            plot(1:numel(stimPreferenceData.rowStimIndices), timesVisited, 'r-', 'LineWidth', 4);
-            hold on;
-            plot(1:numel(stimPreferenceData.rowStimIndices), HDRselected, 'k-');
-            set(gca, 'YLim', [0 max(timesVisited)+1]);
-            legend('times presented', 'times selected');
-            box on; grid on;
-            xlabel('HDR tone mapping index');
-            title('HDR');
-        
-            subplot(1,2,2);
-            plot(1:numel(stimPreferenceData.rowStimIndices), timesVisited, 'r-', 'LineWidth', 4);
-            hold on;
-            plot(1:numel(stimPreferenceData.rowStimIndices), LDRselected, 'k-');
-            set(gca, 'YLim', [0 max(timesVisited)+1]);
-            legend('times presented', 'times selected');
-            box on; grid on;
-            xlabel('HDR tone mapping index');
-            title('LDR');
-
             
-            drawnow;
-        
         end
     
         % 
@@ -401,7 +420,7 @@ function AnalyzeImagePreferenceExperiment
 %             v = [x' y'];
 %             patch('Faces', 1:14, 'Vertices', v, 'FaceColor',[0.7 1 0.7], 'EdgeColor', [0 1 0], 'FaceAlpha', 0.5);
             
-            
+
             if (isfield(prefStatsStruct, 'HDRresampledReps'))
                 plot(HDRtoneMapDeviation, prefStatsStruct.HDRresampledReps, 'r-'); 
                 hold on
@@ -410,6 +429,7 @@ function AnalyzeImagePreferenceExperiment
                 plot(HDRtoneMapDeviation, prefStatsStruct.HDRmapSingleReps, 'r-'); 
                 hold on
                 plot(HDRtoneMapDeviation, prefStatsStruct.LDRmapSingleReps, 'g-');
+                plot(HDRtoneMapDeviation, prefStatsStruct.HDRprob, 'm-');
             end
             
 %             
@@ -584,7 +604,7 @@ function AnalyzeImagePreferenceExperiment
 %             v = [x' y'];
 %             patch('Faces', 1:14, 'Vertices', v, 'FaceColor',[0.7 1.0 0.7], 'EdgeColor', [0 1 0], 'FaceAlpha', 0.5);
             
-            
+
             plot(HDRtoneMapDeviation, meanValsHDR, 'r-', 'LineWidth',2);
             hold on;
             plot(HDRtoneMapDeviation, meanValsLDR, 'g-', 'LineWidth',2);
