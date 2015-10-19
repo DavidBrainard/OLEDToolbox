@@ -27,7 +27,9 @@ function PlotSummaryResultsAllSubjects
     subjectColors = [...
         1.0 0.8 0.8; ...
         0.8 0.8 1.0; ...
-        0.6 1.0 0.8 ...
+        0.6 1.0 0.8; ...
+        1.0 0.2 0.5;
+        0.2 0.5 1.0;
         ];
     
     for subjectIndex = 1:numel(preferredAlpha)
@@ -37,7 +39,7 @@ function PlotSummaryResultsAllSubjects
     plot(linearFit.x, linearFit.y, 'k-');
     
     set(gca, 'XLim', [0 220], 'YLim', [0 220], 'XTick', [0:20:300], 'YTick', [0:20:300], 'FontSize', 14);
-    legend(preferredAlpha{1}.name, preferredAlpha{2}.name, preferredAlpha{3}.name, 'linear fit', 'DHB''s projections to best fit line', 'Location', 'SouthEast');
+    legend(preferredAlpha{1}.name, preferredAlpha{2}.name, preferredAlpha{3}.name, preferredAlpha{4}.name, preferredAlpha{5}.name, 'linear fit', 'DHB''s projections to best fit line', 'Location', 'SouthEast');
     xlabel('optimal alpha (OLED)', 'FontSize', 18, 'FontWeight', 'bold');
     ylabel('optimal alpha (LCD)',  'FontSize', 18, 'FontWeight', 'bold');
     grid on
@@ -45,7 +47,7 @@ function PlotSummaryResultsAllSubjects
     set(gca, 'FontSize', 14);
     
     
-    d = 15;
+    d = 10;
     edges = 0:d:180;
     for subjectIndex = 1:numel(preferredAlpha)
         [N1(subjectIndex,:), ~] = histcounts(preferredAlpha{subjectIndex}.HDR(:), edges);
@@ -117,6 +119,17 @@ function [preferredAlpha, pdfFileName] = GetAllSubjectData()
     preferredAlpha{subjectIndex}.HDR = [52.2 30.3 58.6 45.9 43.6 29.2 43.7 60.6];
     preferredAlpha{subjectIndex}.LDR = [43.2 37.8 50.4 59.6 47.9 36.5 64.1 56.3];
     
+    
+    subjectIndex = subjectIndex + 1;
+    preferredAlpha{subjectIndex}.name = 'NBJ';
+    preferredAlpha{subjectIndex}.HDR = [34.7 26.1 44.5 35.6 20.6 20.4 28.3 24.7];
+    preferredAlpha{subjectIndex}.LDR = [57.0 31.5 60.9 45.3 23.5 31.2 29.4 39.6];
+        
+    subjectIndex = subjectIndex + 1;
+    preferredAlpha{subjectIndex}.name = 'VTK';
+    preferredAlpha{subjectIndex}.HDR = [19.3 19.5 22.1 26.4 11.3 17.9 19.3 20.0];
+    preferredAlpha{subjectIndex}.LDR = [23.5 26.6 22.7 32.1 17.0 23.3 22.0 28.7];
+        
     [~,ix] = sort(dynamicRange);
     
     for k = 1:subjectIndex 
