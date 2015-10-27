@@ -10,9 +10,21 @@ function RunImagePreferenceExperiment
     if (strcmp(whichDisplay, 'HDR')) || (strcmp(whichDisplay, 'LDR'))
         % Universal for all subjects. This is to map their optimal LCD and OLED
         % tone mapping functions
-        cacheFileNameList = {...
-            fullfile(rootDir,'Caches', 'Blobbie_SunRoomSideLight_Reinhardt_Cache.mat') ...
-            };
+        selection = input('Standard (s), or brighter (b) tone mapping range ? :', 's');
+        if (strcmp(selection, 's'))
+            cacheFileNameList = {...
+                fullfile(rootDir,'Caches', 'Blobbie_SunRoomSideLight_Reinhardt_Cache.mat') ...
+                };
+            fprintf('\n * * * Will use the STANDARD tone mapping range. * * * \n');
+        elseif (strcmp(selection, 'b'))
+            cacheFileNameList = {...
+                fullfile(rootDir,'Caches', 'Blobbie_SunRoomSideLight_Reinhardt_Cache_Brighter.mat') ...
+                };
+            fprintf('\n * * * Will use the BRIGHTER tone mapping range. * * * \n');
+        else
+            error('Unknown tonemapping range ''%s'' ', selection);
+        end
+            
     elseif (strcmp(whichDisplay, 'fixOptimalLDR_varyHDR'))
         subjectName = input('Enter subject name: ', 's');
         cacheFileNameList = {...

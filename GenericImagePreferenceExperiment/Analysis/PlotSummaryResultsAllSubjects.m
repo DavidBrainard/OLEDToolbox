@@ -12,7 +12,7 @@ function PlotSummaryResultsAllSubjects
     end
     
     p = polyfit(x,y,1);
-    linearFit.x = 0:1:240;
+    linearFit.x = 0:1:500;
     linearFit.y = polyval(p,linearFit.x);
     
     
@@ -30,6 +30,8 @@ function PlotSummaryResultsAllSubjects
         0.6 1.0 0.8; ...
         1.0 0.2 0.5;
         0.2 0.5 1.0;
+        0.5 1.0 0.2;
+        1.0 0.7 0.2;
         ];
     
     for subjectIndex = 1:numel(preferredAlpha)
@@ -38,8 +40,8 @@ function PlotSummaryResultsAllSubjects
     
     plot(linearFit.x, linearFit.y, 'k-');
     
-    set(gca, 'XLim', [0 220], 'YLim', [0 220], 'XTick', [0:20:300], 'YTick', [0:20:300], 'FontSize', 14);
-    legend(preferredAlpha{1}.name, preferredAlpha{2}.name, preferredAlpha{3}.name, preferredAlpha{4}.name, preferredAlpha{5}.name, 'linear fit', 'DHB''s projections to best fit line', 'Location', 'SouthEast');
+    set(gca, 'XLim', [0 350], 'YLim', [0 350], 'XTick', [0:50:350], 'YTick', [0:50:350], 'FontSize', 14);
+    legend(preferredAlpha{1}.name, preferredAlpha{2}.name, preferredAlpha{3}.name, preferredAlpha{4}.name, preferredAlpha{5}.name, preferredAlpha{6}.name, preferredAlpha{7}.name, 'linear fit', 'DHB''s projections to best fit line', 'Location', 'SouthEast');
     xlabel('optimal alpha (OLED)', 'FontSize', 18, 'FontWeight', 'bold');
     ylabel('optimal alpha (LCD)',  'FontSize', 18, 'FontWeight', 'bold');
     grid on
@@ -130,7 +132,20 @@ function [preferredAlpha, pdfFileName] = GetAllSubjectData()
     preferredAlpha{subjectIndex}.HDR = [19.3 19.5 22.1 26.4 11.3 17.9 19.3 20.0];
     preferredAlpha{subjectIndex}.LDR = [23.5 26.6 22.7 32.1 17.0 23.3 22.0 28.7];
         
+    subjectIndex = subjectIndex + 1;
+    preferredAlpha{subjectIndex}.name = 'FMR';
+    preferredAlpha{subjectIndex}.HDR = [ 5.0 21.0 22.0 41.8 25.1 37.2 47.6 53.4];
+    preferredAlpha{subjectIndex}.LDR = [20.4 32.7 37.7 59.2 44.0 44.1 81.6 80.0];
+    
+    subjectIndex = subjectIndex + 1;
+    preferredAlpha{subjectIndex}.name = 'JTA';
+    preferredAlpha{subjectIndex}.HDR = [195.2 267.4 266.3 266.3 314.2 214.7  365  334];
+    preferredAlpha{subjectIndex}.LDR = [81.9  100.6  85.9 105.4 120.9  90.6  93.6 133.5];
+    
+
+    
     [~,ix] = sort(dynamicRange);
+    
     
     for k = 1:subjectIndex 
        preferredAlpha{subjectIndex}.dynamicRange = dynamicRange(ix);
