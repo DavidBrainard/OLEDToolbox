@@ -7,16 +7,28 @@ function GenerateStimulusCache
     sceneFamily = 'RT3Scenes';
    % sceneFamily = 'Samsung';
     
+    toneMappingRange = 'standard';
+    toneMappingRange = 'brighter';
+     
     cacheDirectory = '/Users/Shared/Matlab/Toolboxes/OLEDToolbox/GenericImagePreferenceExperiment/Caches';
     if strcmp(sceneFamily, 'RT3Scenes')
     % Load the RT3 scenes
         [sceneEnsemble, ensembleLuminances, sceneFileNames] = loadRT3Scenes();
-        cacheFileName = sprintf('Blobbie_SunRoomSideLight_Cache.mat');
+        
         luminanceOverdrive(1) = 0.97;   % overdrive for LCD (adjust so at to have a rendered output luminance that is similar to the intended output luminance)
         luminanceOverdrive(2) = 0.87;   % overdrive for OLED (adjust so at to have a rendered output luminance that is similar to the intended output luminance)
         
         % Reinhardt luminance mappings
-        minAlpha = 1.0; maxAlpha = 200.0; alphasNum = 6;
+        if (strcmp(toneMappingRange, 'standard'))
+            minAlpha = 1.0; maxAlpha = 200.0; alphasNum = 6;  % starndard range
+            cacheFileName = sprintf('Blobbie_SunRoomSideLight_Cache.mat');
+        elseif (strcmp(toneMappingRange, 'brighter'))
+            minAlpha = 5; maxAlpha = 500.0; alphasNum = 6;
+            cacheFileName = sprintf('Blobbie_SunRoomSideLight_Cache_Brighter.mat');
+        else
+            error('No case for tonemappingRange = ''%s''.', toneMappingRange);
+        end
+        
         ReinhardtParams.alphas = logspace(log10(minAlpha),log10(maxAlpha),alphasNum);
         
         minAlpha = 0.1;
