@@ -17,6 +17,7 @@ function GenerateStimulusCacheForHDRvsOptimalLDR
     whichSubject = 'Camille_Measured';         % Lab Initials: VJK
     whichSubject = 'Samuel_Measured';          % Lab Initials: FMR
     whichSubject = 'Anna_Measured' ;           % Lab initials: JTA
+    whichSubject = 'Fiorella_Measured';        % Lab initials: DEK
     
     if (strcmp(whichSubject, 'David_Projected'))
         % David's projected alpha HDR and LDR
@@ -56,10 +57,17 @@ function GenerateStimulusCacheForHDRvsOptimalLDR
         
     elseif (strcmp(whichSubject, 'Anna_Measured'))
         % JTA measured - this subject showed the reverse relationship b/n
-        % HDR and LDR alpha
-        optimalHDRalphas  = [195.2 267.4 266.3 266.3 314.2 214.7  365  334];
+        % HDR and LDR alpha in first run
+        optimalHDRalphas  = [86.3   66.7  92   106.1 104.7  73.9  105.4 95.5];
         optimalLDRalphas  = [81.9  100.6  85.9 105.4 120.9  90.6  93.6 133.5];
         sceneIndices     = [1    2    3    4    5    6    7     8]; 
+        
+    elseif (strcmp(whichSubject, 'Fiorella_Measured'))
+        % DEK meaured
+        optimalHDRalphas  = [129.6  41.5 133.7  72.5 126.6  52.9 194.4 74.6];  % standard tone map range
+        optimalLDRalphas  = [481.4 114.6 433.5 273.9 188.6 115.5 471.1 203.1]; % using the brighter tone map range
+        sceneIndices     = [1    2    3    4    5    6    7     8]; 
+        
     end
     
     
@@ -82,6 +90,8 @@ function GenerateStimulusCacheForHDRvsOptimalLDR
             cacheFileName = sprintf('Blobbie_SunRoomSideLight_Cache_HDR_vs_optimalLDR_FMR.mat');
         elseif (strcmp(whichSubject, 'Anna_Measured'))
             cacheFileName = sprintf('Blobbie_SunRoomSideLight_Cache_HDR_vs_optimalLDR_JTA.mat');
+        elseif (strcmp(whichSubject, 'Fiorella_Measured'))
+            cacheFileName = sprintf('Blobbie_SunRoomSideLight_Cache_HDR_vs_optimalLDR_DEK.mat');
         end
         
         luminanceOverdrive(1) = 0.97;   % overdrive for LCD (adjust so at to have a rendered output luminance that is similar to the intended output luminance)
@@ -111,6 +121,8 @@ function GenerateStimulusCacheForHDRvsOptimalLDR
     elseif (strcmp(whichSubject, 'Samuel_Measured'))
         degradationFactor = 2;
     elseif (strcmp(whichSubject, 'Anna_Measured'))
+        degradationFactor = 2;
+    elseif (strcmp(whichSubject, 'Fiorella_Measured'))
         degradationFactor = 2;
     else
        error('Dont have a degradation factor for subject %s',  whichSubject);

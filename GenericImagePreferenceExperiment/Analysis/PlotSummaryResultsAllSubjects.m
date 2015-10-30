@@ -19,7 +19,7 @@ function PlotSummaryResultsAllSubjects
     
     h = figure(1);
     clf;
-    set(h, 'Position', [10 10 1126 800], 'Color', [1 1 1]);
+    set(h, 'Position', [10 10 1766 1271], 'Color', [1 1 1]);
     
     subplot(numel(preferredAlpha),2,[1:2:2*numel(preferredAlpha)-1]);
     hold on;
@@ -32,16 +32,32 @@ function PlotSummaryResultsAllSubjects
         0.2 0.5 1.0;
         0.5 1.0 0.2;
         1.0 0.7 0.2;
+        0.7 0.8 0.4;
         ];
     
+    plot(linearFit.x, linearFit.y, 'r-', 'LineWidth', 2.0);
+    plot([10 1000], [10 1000], 'k--');
+    
     for subjectIndex = 1:numel(preferredAlpha)
-        plot(preferredAlpha{subjectIndex}.HDR, preferredAlpha{subjectIndex}.LDR, 'ko', 'MarkerSize', 12, 'MarkerFaceColor', subjectColors(subjectIndex,:), 'MarkerEdgeColor', [0 0 0 ]);
+        plot(preferredAlpha{subjectIndex}.HDR, preferredAlpha{subjectIndex}.LDR, 'ko', 'MarkerSize', 10, 'MarkerFaceColor', subjectColors(subjectIndex,:), 'MarkerEdgeColor', [0 0 0 ]);
     end
     
-    plot(linearFit.x, linearFit.y, 'k-');
     
-    set(gca, 'XLim', [0 350], 'YLim', [0 350], 'XTick', [0:50:350], 'YTick', [0:50:350], 'FontSize', 14);
-    legend(preferredAlpha{1}.name, preferredAlpha{2}.name, preferredAlpha{3}.name, preferredAlpha{4}.name, preferredAlpha{5}.name, preferredAlpha{6}.name, preferredAlpha{7}.name, 'linear fit', 'DHB''s projections to best fit line', 'Location', 'SouthEast');
+    
+    set(gca, 'XLim', [10 1000], 'YLim', [10 1000], 'XTick', [10 33 100 330  1000], 'YTick', [10 33 100 330  1000], 'FontSize', 14);
+    set(gca, 'XScale', 'log', 'YScale', 'log')
+    legend(...
+           sprintf('linear fit: LCD_{alpha} =  %2.2f + %2.2f x OLED_{alpha}', p(2), p(1)),  ...
+           'identity line', ...
+           preferredAlpha{1}.name, ...
+           preferredAlpha{2}.name, ...
+           preferredAlpha{3}.name, ...
+           preferredAlpha{4}.name, ...
+           preferredAlpha{5}.name, ...
+           preferredAlpha{6}.name, ...
+           preferredAlpha{7}.name, ...
+           preferredAlpha{8}.name, ...
+           'Location', 'NorthOutside');
     xlabel('optimal alpha (OLED)', 'FontSize', 18, 'FontWeight', 'bold');
     ylabel('optimal alpha (LCD)',  'FontSize', 18, 'FontWeight', 'bold');
     grid on
@@ -49,15 +65,26 @@ function PlotSummaryResultsAllSubjects
     set(gca, 'FontSize', 14);
     
     
-    d = 10;
-    edges = 0:d:180;
+    
     for subjectIndex = 1:numel(preferredAlpha)
-        [N1(subjectIndex,:), ~] = histcounts(preferredAlpha{subjectIndex}.HDR(:), edges);
-        [N2(subjectIndex,:), ~] = histcounts(preferredAlpha{subjectIndex}.LDR(:), edges);
+        
+        d = 15;
+        edges = 0:d:500;
+        if (strcmp(preferredAlpha{subjectIndex}.name, 'DEK'))
+            d = 50;
+            edges = 0:d:500;
+        end
+        
+        [tmp1, ~] = histcounts(preferredAlpha{subjectIndex}.HDR(:), edges);
+        [tmp2, ~] = histcounts(preferredAlpha{subjectIndex}.LDR(:), edges);
   
-        initParams = [5 60 10; 5 20 8; 5 100 100];
+        N1{subjectIndex,:} = tmp1;
+        N2{subjectIndex,:} = tmp2;
+        Nedges{subjectIndex} = edges;
+        
+        initParams = [5 60 10; 5 20 8; 5 80 20; 5 300 60];
         for kInit = 1:size(initParams,1)
-            [tmp,resnorm(kInit)] = lsqcurvefit(@guassianCurve,initParams(kInit,:),edges(1:end-1)+d/2,squeeze(N1(subjectIndex,:)));
+            [tmp,resnorm(kInit)] = lsqcurvefit(@guassianCurve,initParams(kInit,:),edges(1:end-1)+d/2,squeeze(N1{subjectIndex,:}));
             tmpParams(kInit,:) = tmp';
         end
         [~,kInit] = min(resnorm);
@@ -65,23 +92,25 @@ function PlotSummaryResultsAllSubjects
         
         
         for kInit = 1:size(initParams,1)
-            [tmp,resnorm(kInit)] = lsqcurvefit(@guassianCurve,initParams(kInit,:),edges(1:end-1)+d/2,squeeze(N2(subjectIndex,:)));
+            [tmp,resnorm(kInit)] = lsqcurvefit(@guassianCurve,initParams(kInit,:),edges(1:end-1)+d/2,squeeze(N2{subjectIndex,:}));
             tmpParams(kInit,:) = tmp';
         end
         [~,kInit] = min(resnorm);
         N2fittedParams(subjectIndex,:) = tmpParams(kInit,:);
     end
     
-    xdata = 0:1:220;
+    xdata = 0:1:500;
     
     for subjectIndex = 1:numel(preferredAlpha)
+        
+        edges = Nedges{subjectIndex};
         subplot(numel(preferredAlpha),2,2+(subjectIndex-1)*2);
         hold on;
 
         plot(xdata, guassianCurve(squeeze(N1fittedParams(subjectIndex,:)),xdata), 'k-', 'Color', subjectColors(subjectIndex,:), 'LineWidth', 2.0);
         plot(xdata, guassianCurve(squeeze(N2fittedParams(subjectIndex,:)),xdata), 'k-', 'Color', 0.7*subjectColors(subjectIndex,:), 'LineWidth', 2.0);
 
-        b  = bar(edges(1:end-1)+d/2, [squeeze(N1(subjectIndex,:)); squeeze(N2(subjectIndex,:))]', 1);
+        b  = bar(edges(1:end-1)+d/2, [squeeze(N1{subjectIndex,:}); squeeze(N2{subjectIndex,:})]', 1);
         b(1).FaceColor = subjectColors(subjectIndex,:);
         b(2).FaceColor = 0.7*subjectColors(subjectIndex,:);
     
@@ -93,7 +122,7 @@ function PlotSummaryResultsAllSubjects
             xlabel('optimal alpha', 'FontSize', 18, 'FontWeight', 'bold');
         end
         legend('OLED', 'LCD');
-        set(gca, 'XLim', [0 170]);
+        set(gca, 'XLim', [0 500]);
         set(gca, 'FontSize', 14);
     end
     
@@ -139,10 +168,16 @@ function [preferredAlpha, pdfFileName] = GetAllSubjectData()
     
     subjectIndex = subjectIndex + 1;
     preferredAlpha{subjectIndex}.name = 'JTA';
-    preferredAlpha{subjectIndex}.HDR = [195.2 267.4 266.3 266.3 314.2 214.7  365  334];
+   % preferredAlpha{subjectIndex}.HDR = [195.2 267.4 266.3 266.3 314.2 214.7  365  334];  % 1st run - peak out of range, so repeated
+    preferredAlpha{subjectIndex}.HDR = [86.3   66.7  92   106.1 104.7  73.9  105.4 95.5];  % 2nd run - with brighter tone map range
     preferredAlpha{subjectIndex}.LDR = [81.9  100.6  85.9 105.4 120.9  90.6  93.6 133.5];
     
 
+    subjectIndex = subjectIndex + 1;
+    preferredAlpha{subjectIndex}.name = 'DEK';
+    preferredAlpha{subjectIndex}.HDR = [129.6  41.5 133.7  72.5 126.6  52.9 194.4 74.6];  % standard tone map range
+    preferredAlpha{subjectIndex}.LDR = [481.4 114.6 433.5 273.9 188.6 115.5 471.1 203.1]; % using the brighter tone map range
+    
     
     [~,ix] = sort(dynamicRange);
     
