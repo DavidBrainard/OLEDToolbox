@@ -629,7 +629,7 @@ function AnalyzeImagePreferenceExperiment
             legend('OLED', 'LCD', 'Location', 'NorthWest');
             xlabel('$$\alpha_{opt} / \alpha_{test}$$','interpreter','latex','fontsize',24)
             if (sceneIndex == 1) || (sceneIndex == 5)
-                ylabel('P_{choice}','Color', [0.7 0.7 0.7], 'FontSize', 18);
+                ylabel('P_{select}','Color', [0.7 0.7 0.7], 'FontSize', 18);
             else
                set(gca, 'YTickLabel', {}); 
             end
