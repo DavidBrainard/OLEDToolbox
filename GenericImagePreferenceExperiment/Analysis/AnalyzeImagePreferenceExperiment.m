@@ -6,6 +6,7 @@ function AnalyzeImagePreferenceExperiment
     whos('-file',dataFileName)
     load(dataFileName);
     
+    
     % retrieve subject name
     [~,sessionName] = fileparts(runParams.dataFileName);
     s = strrep(runParams.dataFileName, sessionName, '');
@@ -383,7 +384,13 @@ function AnalyzeImagePreferenceExperiment
             hFig = figure(figNum);
             clf;
             set(hFig, 'Position', [10 10 990 800], 'Color', [ 0 0 0]);
+            for k = 1:numel(mappingFunctionsHDR)
+                HDRalphas(k) = mappingFunctionsHDR{k}.paramValue;
+            end
+            
+            
             HDRtoneMapDeviation = [-3 -2 -1 0 1 2 3];
+            HDRtoneMapLabels = HDRalphas(4)./HDRalphas;
             
             prefStatsStruct = preferenceDataStats{sceneIndex};
             
@@ -443,7 +450,8 @@ function AnalyzeImagePreferenceExperiment
             hold off;
             ylabel('P_{choice} (r=OLED, g=LCD)','Color', [0.7 0.7 0.7], 'FontSize', 16);
             set(gca, 'FontSize', 14, 'Color', [0 0 0], 'XColor', [0.7 0.7 0.7], 'YColor', [0.7 0.7 0.7]);
-            set(gca, 'XLim', [-3.5 3.5], 'YLim', [-0.1 1.1], 'Xtick', [-10:1:10], 'YTick', [0:0.25:1.0]);
+            set(gca, 'XLim', [-3.5 3.5], 'YLim', [-0.1 1.1], 'YTick', [0:0.25:1.0]);
+            set(gca, 'Xtick', HDRtoneMapDeviation, 'XTickLabel', sprintf('%1.2f\n',HDRtoneMapLabels));
             box on; grid on
             
             subplot('Position', [0.07 0.41 0.92 0.26]);
@@ -457,10 +465,11 @@ function AnalyzeImagePreferenceExperiment
             legend('boxoff')
             set(gca, 'YLim', [0 mappingFunctionHDRmax]*1.05, 'YTick', [0:100:1000]);
             set(gca, 'XLim', [0 toneMappingIndex*max(mappingFunctionsHDR{toneMappingIndex}.input)]);
-            set(gca, 'XTick', ((1:toneMappingsNum)-0.5)*max(mappingFunctionsHDR{toneMappingIndex}.input), 'XTickLabel', {'-3', '-2', '-1', '0', '1', '2', '3'});
+            set(gca, 'XTick', ((1:toneMappingsNum)-0.5)*max(mappingFunctionsHDR{toneMappingIndex}.input), 'XTickLabel', sprintf('%1.2f\n',HDRtoneMapLabels));
             set(gca, 'Color', [0 0 0]);
             set(gca, 'FontSize', 14, 'Color', [0 0 0], 'XColor', [0.7 0.7 0.7], 'YColor', [0.7 0.7 0.7]);
-            xlabel('tone mapping index');
+            xlabel('$$\alpha_{opt} / \alpha_{test}$$','interpreter','latex','fontsize',24)
+            
             ylabel('image luminance');
             box on; grid on;
             
@@ -527,14 +536,15 @@ function AnalyzeImagePreferenceExperiment
     
     % Steup subplot position vectors
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
-        'rowsNum',      2, ...
-        'colsNum',      scenesNum, ...
+        'rowsNum',      4, ...
+        'colsNum',      scenesNum/2, ...
         'widthMargin',  0.01, ...
-        'leftMargin',   0.03, ...
-        'bottomMargin', 0.1, ...
-        'topMargin',    0.03);
+        'heightMargin', 0.02, ...
+        'leftMargin',   0.05, ...
+        'bottomMargin', 0.04, ...
+        'topMargin',    0.00);
     
-    set(hFig, 'Position', [10 10 2600 535], 'Color', [0 0 0]);
+    set(hFig, 'Position', [10 10 1360 1282], 'Color', [0 0 0]);
     
 
     for sceneIndex = 1:scenesNum
@@ -552,17 +562,17 @@ function AnalyzeImagePreferenceExperiment
             error('runParams.whichDisplay');
         end
         
-        subplot('Position', subplotPosVectors(1,sceneIndex).v);
+        subplot('Position', subplotPosVectors(1+2*floor((sceneIndex-1)/(scenesNum/2)),1+mod(sceneIndex-1,scenesNum/2)).v);
         imshow(squeeze(double(imagePic)/255.0));
         
         lumRange(1) = prctile(hdrMappingFunctionFullRes{sceneIndex, selectedToneMappingIndex}.input, DHRpercentileLowEnd);
         lumRange(2) = prctile(hdrMappingFunctionFullRes{sceneIndex, selectedToneMappingIndex}.input, DHRpercentileHighEnd);
-        title(sprintf('DR (%2.1f-%2.1f): %4.0f', DHRpercentileLowEnd, DHRpercentileHighEnd, lumRange(2)/lumRange(1)), 'Color', [0.7 0.7 0.0], 'FontSize', 18, 'FontWeight', 'bold');
-        
+        xlabel(sprintf('DR (%2.1f-%2.1f): %4.0f', DHRpercentileLowEnd, DHRpercentileHighEnd, lumRange(2)/lumRange(1)), 'Color', [0.7 0.7 0.0], 'FontSize', 18, 'FontWeight', 'bold');
+        title(' ', 'FontSize', 18, 'FontWeight', 'bold');
     
         if (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
             
-            subplot('Position', subplotPosVectors(2,sceneIndex).v); 
+            subplot('Position', subplotPosVectors(2+2*floor((sceneIndex-1)/(scenesNum/2)),1+mod(sceneIndex-1,scenesNum/2)).v); 
             
             if (isfield(preferenceDataStats{sceneIndex}, 'HDRresampledReps'))
                 meanValsHDR = mean(preferenceDataStats{sceneIndex}.HDRresampledReps,2);
@@ -617,14 +627,15 @@ function AnalyzeImagePreferenceExperiment
             
             
             legend('OLED', 'LCD', 'Location', 'NorthWest');
-            xlabel('tone mapping index','Color', [0.7 0.7 0.7], 'FontSize', 16);
-            if (sceneIndex == 1)
-                ylabel('P_{choice}','Color', [0.7 0.7 0.7], 'FontSize', 16);
+            xlabel('$$\alpha_{opt} / \alpha_{test}$$','interpreter','latex','fontsize',24)
+            if (sceneIndex == 1) || (sceneIndex == 5)
+                ylabel('P_{choice}','Color', [0.7 0.7 0.7], 'FontSize', 18);
             else
                set(gca, 'YTickLabel', {}); 
             end
             
-            set(gca, 'YLim', 1.1*[0 1], 'Xtick', [-10:1:10], 'YTick', [0:0.2:1.0]);
+            set(gca, 'YLim', 1.1*[0 1], 'YTick', [0:0.2:1.0]);
+            set(gca, 'XLim', [HDRtoneMapDeviation(1)-0.3  HDRtoneMapDeviation(end)+0.3], 'XTick', HDRtoneMapDeviation, 'XTickLabel', sprintf('%1.2f\n',HDRtoneMapLabels));
             set(gca, 'FontSize', 14, 'Color', [0 0 0], 'XColor', [0.7 0.7 0.7], 'YColor', [0.7 0.7 0.7]);
             
         else
@@ -656,20 +667,20 @@ function AnalyzeImagePreferenceExperiment
             F = guassianCurve(fittedParams,  alphas);
             normAlphas = 1 + (alphas-min(alphas))/(max(alphas)-min(alphas)) * (size(stimulusPreference1D,2)-1);
 
-            subplot('Position', subplotPosVectors(2,sceneIndex).v);
+            subplot('Position', subplotPosVectors(2+2*floor((sceneIndex-1)/(scenesNum/2)),1+mod(sceneIndex-1,scenesNum/2)).v);
             bar(1:size(stimulusPreference1D,2), squeeze(stimulusPreference1D(sceneIndex,:)), 'FaceColor', [0.8 0.6 0.2], 'EdgeColor', [1 1 0]);
             hold on;
             plot(normAlphas, F, 'c-', 'LineWidth', 2.0);
             hErr = errorbar(1:size(stimulusPreference1D,2),meanSelectionRate,stdErrorOfTheMeanSelectionRate,'c.');
             hold off;
 
-            xlabel('Reinhardt alpha', 'Color', [0.7 0.7 0.7], 'FontSize', 16);
-            if (sceneIndex == 1)
+            xlabel('Reinhardt \alpha', 'Color', [0.7 0.7 0.7], 'FontSize', 16);
+            if (sceneIndex == 1) || (sceneIndex == 5)
                 ylabel('probability', 'Color', [0.7 0.7 0.7], 'FontSize', 16);
             end
         
             set(gca, 'FontSize', 14, 'Color', [0 0 0], 'XColor', [0.7 0.7 0.7], 'YColor', [0.7 0.7 0.7]);
-            set(gca, 'XLim',[0.5 size(stimulusPreference1D,2)+0.5], 'YLim', [0 1], 'XTick', [1:toneMappingsNum], 'XTickLabel', xTickLabels);
+            set(gca, 'XLim',[0.7 size(stimulusPreference1D,2)+0.3], 'YLim', [0 1], 'XTick', [1:toneMappingsNum], 'XTickLabel', xTickLabels);
             if (sceneIndex > 1)
                set(gca, 'YTickLabel', {}); 
             end
@@ -688,7 +699,8 @@ function AnalyzeImagePreferenceExperiment
 end
 
 
-
+    
+    
 function F = guassianCurve(params,xdata)
     gain = params(1);
     mean = params(2);
