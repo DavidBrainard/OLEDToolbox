@@ -12,6 +12,15 @@ function AnalyzeImagePreferenceExperiment
     s = strrep(runParams.dataFileName, sessionName, '');
     [~,subjectName] = fileparts(s(1:end-1));
     
+    % Correct misspeling of subject FMR
+    if (strcmp(subjectName, 'rfm'))
+        subjectName = 'fmr';
+    end
+    if (strcmp(subjectName, ' dek'))
+        subjectName = 'dek';
+    end
+    
+    
     fprintf('Analyzing data from session:%s, subject:%s\n', sessionName, subjectName);
     pdfSubDir = getPDFsubDir(rootDir, sessionName, subjectName);
     
@@ -312,9 +321,7 @@ function AnalyzeImagePreferenceExperiment
     
     figNum = 1;
     for sceneIndex = 1:scenesNum
-        
-        
-        
+
         stimIndices =  conditionsData(sceneIndex, :);
         if strcmp(runParams.whichDisplay, 'HDR')
             imagePics = squeeze(thumbnailStimImages(stimIndices,1,:,:,:));
@@ -365,6 +372,7 @@ function AnalyzeImagePreferenceExperiment
 
                 mappingFunctionsHDR{toneMappingIndex}.name   = s{2}.name;
                 mappingFunctionsHDR{toneMappingIndex}.paramValue  = s{2}.alphaValue;
+               
             else
                 mappingFunctions{toneMappingIndex}.name   = s{1}.name;
                 mappingFunctions{toneMappingIndex}.paramValue  = s{1}.alphaValue;
@@ -383,14 +391,15 @@ function AnalyzeImagePreferenceExperiment
         if (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))      
             hFig = figure(figNum);
             clf;
-            set(hFig, 'Position', [10 10 990 800], 'Color', [ 0 0 0]);
+            set(hFig, 'Position', [10 200 990 800], 'Color', [ 0 0 0]);
             for k = 1:numel(mappingFunctionsHDR)
-                HDRalphas(k) = mappingFunctionsHDR{k}.paramValue;
+                HDRalphas(sceneIndex,k) = mappingFunctionsHDR{k}.paramValue;
+                LDRalphas(sceneIndex,k) = mappingFunctionsLDR{k}.paramValue;
             end
             
             
             HDRtoneMapDeviation = [-3 -2 -1 0 1 2 3];
-            HDRtoneMapLabels = HDRalphas(4)./HDRalphas;
+            HDRtoneMapLabels = HDRalphas(sceneIndex,:) ./ HDRalphas(sceneIndex,4);
             
             prefStatsStruct = preferenceDataStats{sceneIndex};
             
@@ -452,30 +461,35 @@ function AnalyzeImagePreferenceExperiment
             set(gca, 'FontSize', 14, 'Color', [0 0 0], 'XColor', [0.7 0.7 0.7], 'YColor', [0.7 0.7 0.7]);
             set(gca, 'XLim', [-3.5 3.5], 'YLim', [-0.1 1.1], 'YTick', [0:0.25:1.0]);
             set(gca, 'Xtick', HDRtoneMapDeviation, 'XTickLabel', sprintf('%1.2f\n',HDRtoneMapLabels));
+            xlabel('$$\mathsf{\alpha_{test} / \alpha_{opt}}$$','interpreter','latex','fontsize',24)
+            set(gca, 'XDir', 'reverse');
             box on; grid on
             
             subplot('Position', [0.07 0.41 0.92 0.26]);
             hold on
             for toneMappingIndex = 1:toneMappingsNum
-                plot(0.1*max(mappingFunctionsHDR{toneMappingIndex}.input) + mappingFunctionsHDR{toneMappingIndex}.input*0.8 + (toneMappingIndex-1)* max(mappingFunctionsHDR{toneMappingIndex}.input), mappingFunctionsHDR{toneMappingIndex}.output, 'r-', 'LineWidth', 2.);
-                plot(0.1*max(mappingFunctionsHDR{toneMappingIndex}.input) + mappingFunctionsLDR{toneMappingIndex}.input*0.8 + (toneMappingIndex-1)* max(mappingFunctionsHDR{toneMappingIndex}.input), mappingFunctionsLDR{toneMappingIndex}.output, 'g-', 'LineWidth', 2.);    
+                sceneLum = mappingFunctionsHDR{toneMappingsNum - toneMappingIndex+1}.input;
+                imageLum = mappingFunctionsHDR{toneMappingsNum - toneMappingIndex+1}.output;
+                plot(0.1*max(mappingFunctionsHDR{toneMappingIndex}.input) + sceneLum*0.8 + (toneMappingIndex-1)* max(mappingFunctionsHDR{toneMappingIndex}.input), imageLum, 'r-', 'LineWidth', 2.);
+                
+                sceneLum = mappingFunctionsLDR{toneMappingIndex}.input;
+                imageLum = mappingFunctionsLDR{toneMappingIndex}.output;
+                plot(0.1*max(mappingFunctionsLDR{toneMappingIndex}.input) + sceneLum*0.8 + (toneMappingIndex-1)* max(mappingFunctionsLDR{toneMappingIndex}.input), imageLum, 'g-', 'LineWidth', 2.);    
             end
             hleg = legend('OLED', 'LCD');
             set(hleg,'FontSize', 14, 'box', 'off', 'TextColor', [0.8 0.8 0.8]);
             legend('boxoff')
             set(gca, 'YLim', [0 mappingFunctionHDRmax]*1.05, 'YTick', [0:100:1000]);
             set(gca, 'XLim', [0 toneMappingIndex*max(mappingFunctionsHDR{toneMappingIndex}.input)]);
-            set(gca, 'XTick', ((1:toneMappingsNum)-0.5)*max(mappingFunctionsHDR{toneMappingIndex}.input), 'XTickLabel', sprintf('%1.2f\n',HDRtoneMapLabels));
+            set(gca, 'XTick', ((1:toneMappingsNum)-0.5)*max(mappingFunctionsHDR{toneMappingIndex}.input), 'XTickLabel', sprintf('%1.2f\n',HDRtoneMapLabels(end:-1:1)));
             set(gca, 'Color', [0 0 0]);
             set(gca, 'FontSize', 14, 'Color', [0 0 0], 'XColor', [0.7 0.7 0.7], 'YColor', [0.7 0.7 0.7]);
-            xlabel('$$\alpha_{opt} / \alpha_{test}$$','interpreter','latex','fontsize',24)
-            
             ylabel('image luminance');
             box on; grid on;
             
             
             for toneMappingIndex = 1:toneMappingsNum
-                stimIndex =  conditionsData(sceneIndex, toneMappingIndex);
+                stimIndex =  conditionsData(sceneIndex, toneMappingsNum-toneMappingIndex+1);
                 
                 subplot('Position', [0.085+(toneMappingIndex-1)*0.13 0.02+0.70 0.11 0.12]);
                 imagePic = squeeze(thumbnailStimImages(stimIndex,2,:,:,:));
@@ -542,11 +556,11 @@ function AnalyzeImagePreferenceExperiment
         'heightMargin', 0.02, ...
         'leftMargin',   0.05, ...
         'bottomMargin', 0.04, ...
-        'topMargin',    0.00);
+        'topMargin',   -0.02);
     
     set(hFig, 'Position', [10 10 1360 1282], 'Color', [0 0 0]);
     
-
+    
     for sceneIndex = 1:scenesNum
         
         selectedToneMappingIndex = 4;
@@ -562,13 +576,15 @@ function AnalyzeImagePreferenceExperiment
             error('runParams.whichDisplay');
         end
         
-        subplot('Position', subplotPosVectors(1+2*floor((sceneIndex-1)/(scenesNum/2)),1+mod(sceneIndex-1,scenesNum/2)).v);
+        subplotPosition = subplotPosVectors(1+2*floor((sceneIndex-1)/(scenesNum/2)),1+mod(sceneIndex-1,scenesNum/2)).v;
+        subplotPosition(2) = subplotPosition(2)-0.02;
+        
+        subplot('Position', subplotPosition);
         imshow(squeeze(double(imagePic)/255.0));
         
         lumRange(1) = prctile(hdrMappingFunctionFullRes{sceneIndex, selectedToneMappingIndex}.input, DHRpercentileLowEnd);
         lumRange(2) = prctile(hdrMappingFunctionFullRes{sceneIndex, selectedToneMappingIndex}.input, DHRpercentileHighEnd);
-        xlabel(sprintf('DR (%2.1f-%2.1f): %4.0f', DHRpercentileLowEnd, DHRpercentileHighEnd, lumRange(2)/lumRange(1)), 'Color', [0.7 0.7 0.0], 'FontSize', 18, 'FontWeight', 'bold');
-        title(' ', 'FontSize', 18, 'FontWeight', 'bold');
+        title(sprintf('DR (%2.1f-%2.1f): %4.0f', DHRpercentileLowEnd, DHRpercentileHighEnd, lumRange(2)/lumRange(1)), 'Color', [0.7 0.7 0.0], 'FontSize', 18, 'FontWeight', 'bold');
     
         if (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
             
@@ -624,22 +640,38 @@ function AnalyzeImagePreferenceExperiment
             hErr = errorbar(HDRtoneMapDeviation, meanValsHDR,  stdValsHDR, 'rs', 'LineWidth',2, 'MarkerFaceColor', [0.8 0.6 0.6], 'MarkerSize', 12);
             lErr = errorbar(HDRtoneMapDeviation, meanValsLDR,  stdValsLDR, 'gs', 'LineWidth',2, 'MarkerFaceColor', [0.6 0.8 0.6], 'MarkerSize', 12);
  
-            
-            
+
             legend('OLED', 'LCD', 'Location', 'NorthWest');
-            xlabel('$$\alpha_{opt} / \alpha_{test}$$','interpreter','latex','fontsize',24)
+            xlabel('$$\mathsf{\alpha_{test} / \alpha_{opt}}$$','interpreter','latex','fontsize',26, 'Color', [1 0 0]);
+            text(-0.9, 1.01, ['$$\mathsf{\alpha_{opt}:' sprintf('%2.1f', HDRalphas(sceneIndex, 4)) '}$$'], 'Interpreter', 'latex', 'fontsize',22, 'Color', [1 0 0]);
+                
             if (sceneIndex == 1) || (sceneIndex == 5)
                 ylabel('P_{select}','Color', [0.7 0.7 0.7], 'FontSize', 18);
             else
                set(gca, 'YTickLabel', {}); 
             end
             
-            set(gca, 'YLim', 1.1*[0 1], 'YTick', [0:0.2:1.0]);
+            YTicks = [0:0.25:1.0];
+            set(gca, 'YLim', 1.1*[0 1], 'YTick', YTicks);
+            if (mod(sceneIndex-1,scenesNum/2) == 0)
+                set(gca, 'YTickLabel', sprintf('%1.2f\n',YTicks));
+            else
+                set(gca, 'YTickLabel', {});
+            end
+            
+            HDRtoneMapLabels = HDRalphas(sceneIndex,:) ./ HDRalphas(sceneIndex,4);
             set(gca, 'XLim', [HDRtoneMapDeviation(1)-0.3  HDRtoneMapDeviation(end)+0.3], 'XTick', HDRtoneMapDeviation, 'XTickLabel', sprintf('%1.2f\n',HDRtoneMapLabels));
             set(gca, 'FontSize', 14, 'Color', [0 0 0], 'XColor', [0.7 0.7 0.7], 'YColor', [0.7 0.7 0.7]);
+            set(gca, 'XDir', 'reverse');
+            grid on;
             
         else
             
+            if strcmp(runParams.whichDisplay, 'HDR')
+                optimalAlphaColor = [1 0 0];
+            else
+                optimalAlphaColor = [0 1 0];
+            end
             for toneMappingIndex = 1:toneMappingsNum
                 xTickLabels{toneMappingIndex} = sprintf('%3.1f', mappingFunctions{toneMappingIndex}.paramValue);
                 alphaValues(toneMappingIndex) = log(mappingFunctions{toneMappingIndex}.paramValue);
@@ -670,30 +702,36 @@ function AnalyzeImagePreferenceExperiment
             subplot('Position', subplotPosVectors(2+2*floor((sceneIndex-1)/(scenesNum/2)),1+mod(sceneIndex-1,scenesNum/2)).v);
             bar(1:size(stimulusPreference1D,2), squeeze(stimulusPreference1D(sceneIndex,:)), 'FaceColor', [0.8 0.6 0.2], 'EdgeColor', [1 1 0]);
             hold on;
-            plot(normAlphas, F, 'c-', 'LineWidth', 2.0);
-            hErr = errorbar(1:size(stimulusPreference1D,2),meanSelectionRate,stdErrorOfTheMeanSelectionRate,'c.');
+            hErr = errorbar(1:size(stimulusPreference1D,2),meanSelectionRate,stdErrorOfTheMeanSelectionRate,'.', 'Color', [0.8 0.6 0.2], 'LineWidth', 2.0);
+            
+            plot(normAlphas, F, '-', 'LineWidth', 5.0, 'Color', [0 0 0]);
+            plot(normAlphas, F, '-', 'LineWidth', 3.0, 'Color', optimalAlphaColor);
+            
             hold off;
 
-            xlabel('Reinhardt \alpha', 'Color', [0.7 0.7 0.7], 'FontSize', 16);
+            xlabel('$$\mathsf{\alpha_{test}}$$', 'interpreter', 'latex', 'Color', [0.7 0.7 0.7], 'FontSize', 26);
             if (sceneIndex == 1) || (sceneIndex == 5)
-                ylabel('probability', 'Color', [0.7 0.7 0.7], 'FontSize', 16);
+                ylabel('probability', 'Color', [0.7 0.7 0.7], 'FontSize', 22);
             end
         
-            set(gca, 'FontSize', 14, 'Color', [0 0 0], 'XColor', [0.7 0.7 0.7], 'YColor', [0.7 0.7 0.7]);
+            set(gca, 'FontSize', 18, 'Color', [0 0 0], 'XColor', [0.7 0.7 0.7], 'YColor', [0.7 0.7 0.7]);
             set(gca, 'XLim',[0.7 size(stimulusPreference1D,2)+0.3], 'YLim', [0 1], 'XTick', [1:toneMappingsNum], 'XTickLabel', xTickLabels);
-            if (sceneIndex > 1)
+            if (sceneIndex ~= 1) && (sceneIndex ~= 5)
                set(gca, 'YTickLabel', {}); 
             end
             grid on;
-            text(0.6, 0.9, sprintf('a = %2.1f', exp(fittedParams(2))), 'FontSize', 16, 'FontWeight', 'bold', 'Color', 'c');
+            text(1.0, 0.9, ['$$\mathsf{\alpha_{opt}:' sprintf('%2.1f', exp(fittedParams(2))) '}$$'], 'Interpreter', 'latex', 'fontsize',22, 'Color', optimalAlphaColor);
+             
         end
         
     end
     
     if (~strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
         NicePlot.exportFigToPDF(sprintf('%s/Summary_%s.pdf', pdfSubDir, runParams.whichDisplay),hFig,300);
+        fprintf('Figure saved in %s\n', sprintf('%s/Summary_%s.pdf', pdfSubDir, runParams.whichDisplay));
     else
         NicePlot.exportFigToPDF(sprintf('%s/Summary_HDRvs_LDR.pdf', pdfSubDir),hFig,300);
+        fprintf('Figure saved in %s\n', sprintf('%s/Summary_HDRvs_LDR.pdf', pdfSubDir));
     end
     
 end
