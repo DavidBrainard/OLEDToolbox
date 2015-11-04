@@ -553,12 +553,12 @@ function AnalyzeImagePreferenceExperiment
         'rowsNum',      4, ...
         'colsNum',      scenesNum/2, ...
         'widthMargin',  0.01, ...
-        'heightMargin', 0.02, ...
+        'heightMargin', 0.03, ...
         'leftMargin',   0.05, ...
         'bottomMargin', 0.04, ...
         'topMargin',   -0.02);
     
-    set(hFig, 'Position', [10 10 1360 1282], 'Color', [0 0 0]);
+    set(hFig, 'Position', [10 10 1200 1282], 'Color', [0 0 0]);
     
     
     for sceneIndex = 1:scenesNum
@@ -577,7 +577,7 @@ function AnalyzeImagePreferenceExperiment
         end
         
         subplotPosition = subplotPosVectors(1+2*floor((sceneIndex-1)/(scenesNum/2)),1+mod(sceneIndex-1,scenesNum/2)).v;
-        subplotPosition(2) = subplotPosition(2)-0.02;
+        subplotPosition(2) = subplotPosition(2)-0.03;
         
         subplot('Position', subplotPosition);
         imshow(squeeze(double(imagePic)/255.0));
@@ -641,9 +641,10 @@ function AnalyzeImagePreferenceExperiment
             lErr = errorbar(HDRtoneMapDeviation, meanValsLDR,  stdValsLDR, 'gs', 'LineWidth',2, 'MarkerFaceColor', [0.6 0.8 0.6], 'MarkerSize', 12);
  
 
-            legend('OLED', 'LCD', 'Location', 'NorthWest');
-            xlabel('$$\mathsf{\alpha_{test} / \alpha_{opt}}$$','interpreter','latex','fontsize',26, 'Color', [1 0 0]);
-            text(-0.9, 1.01, ['$$\mathsf{\alpha_{opt}:' sprintf('%2.1f', HDRalphas(sceneIndex, 4)) '}$$'], 'Interpreter', 'latex', 'fontsize',22, 'Color', [1 0 0]);
+            hl = legend('OLED', 'LCD', 'Location', 'North');
+            set(hl, 'Color', 'none', 'TextColor', [1 1 1]);
+            xlabel(['$$ \mathsf{\alpha_{test} / \alpha_{opt} ~ (\alpha_{opt} = ' sprintf('%2.1f', HDRalphas(sceneIndex, 4)) ')}$$'],'Interpreter','latex','fontsize',30, 'Color', [1 0 0]);
+           % title(['$$\mathsf{\alpha_{opt}:' sprintf('%2.1f', HDRalphas(sceneIndex, 4)) '}$$'], 'Interpreter', 'latex', 'fontsize',22, 'Color', [1 0 0]);
                 
             if (sceneIndex == 1) || (sceneIndex == 5)
                 ylabel('P_{select}','Color', [0.7 0.7 0.7], 'FontSize', 18);
@@ -660,8 +661,8 @@ function AnalyzeImagePreferenceExperiment
             end
             
             HDRtoneMapLabels = HDRalphas(sceneIndex,:) ./ HDRalphas(sceneIndex,4);
-            set(gca, 'XLim', [HDRtoneMapDeviation(1)-0.3  HDRtoneMapDeviation(end)+0.3], 'XTick', HDRtoneMapDeviation, 'XTickLabel', sprintf('%1.2f\n',HDRtoneMapLabels));
-            set(gca, 'FontSize', 14, 'Color', [0 0 0], 'XColor', [0.7 0.7 0.7], 'YColor', [0.7 0.7 0.7]);
+            set(gca, 'XLim', [HDRtoneMapDeviation(1)-0.3  HDRtoneMapDeviation(end)+0.3], 'XTick', HDRtoneMapDeviation, 'XTickLabel', sprintf('%1.01f\n', HDRtoneMapLabels));
+            set(gca, 'FontSize', 18, 'Color', [0 0 0], 'XColor', [0.7 0.7 0.7], 'YColor', [0.7 0.7 0.7]);
             set(gca, 'XDir', 'reverse');
             grid on;
             
