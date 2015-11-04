@@ -6,7 +6,6 @@ function AnalyzeImagePreferenceExperiment
     whos('-file',dataFileName)
     load(dataFileName);
     
-    
     % retrieve subject name
     [~,sessionName] = fileparts(runParams.dataFileName);
     s = strrep(runParams.dataFileName, sessionName, '');
@@ -36,6 +35,82 @@ function AnalyzeImagePreferenceExperiment
         elseif (strcmp(runAbortionStatus, 'none'))
             fprintf('Run was completed normally.\n');
         end
+    end
+    
+    
+    
+    if (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
+        
+        subplotPosVectors = NicePlot.getSubPlotPosVectors(...
+                 'rowsNum',      3, ...
+                 'colsNum',      size(ldrMappingFunctionFullRes,1), ...
+                 'widthMargin',  0.01, ...
+                 'heightMargin', 0.08, ...
+                 'leftMargin',   0.03, ...
+                 'bottomMargin', 0.08, ...
+                 'topMargin',    0.05);
+
+
+        hFig = figure(102);
+        set(hFig, 'Color', [0 0 0], 'Position', [10 300 2234 700]);
+        clf;
+
+        toneMappingIndex = 4;
+    
+        for sceneIndex = 1:size(ldrMappingFunctionFullRes,1)
+
+            stimIndex =  conditionsData(sceneIndex, toneMappingIndex);
+            % choose the HDR image
+            imagePic = squeeze(thumbnailStimImages(stimIndex,1,:,:,:));
+
+            sceneLum =  ldrMappingFunctionLowRes{sceneIndex,toneMappingIndex}.input;
+            LCDlum  = ldrMappingFunctionLowRes{sceneIndex,toneMappingIndex}.output;
+            OLEDlum = hdrMappingFunctionLowRes{sceneIndex,toneMappingIndex}.output;
+
+            subplot('Position', subplotPosVectors(1,sceneIndex).v);
+            imshow(imagePic/255);
+
+            subplot('Position', subplotPosVectors(2,sceneIndex).v);
+            hold on;
+            plot(sceneLum, OLEDlum, 'r.');
+            plot(sceneLum, LCDlum, 'g.');
+            hold off
+            set(gca, 'Color', [0 0 0 ], 'XColor', [ 1 1 1], 'YColor', [1 1 1], 'XTickLabel', {}, 'XTick', []);
+            set(gca, 'YLim', [0 500], 'XLim', [0 60000], 'FontSize', 16);
+            xlabel('scene luminance');
+
+            if (sceneIndex == 1)
+                ylabel('display luminance', 'FontSize', 18);
+            else
+               set(gca, 'YTickLabel', {}); 
+            end
+            h = legend('OLED', 'LCD');
+            set(h, 'TextColor', [1 1 1], 'box', 'off');
+
+            subplot('Position', subplotPosVectors(3,sceneIndex).v);
+            hold on
+            plot(OLEDlum, LCDlum , '.', 'Color', [0.6 0.2 1.0]);
+            plot([0 max(OLEDlum)], [0 max(LCDlum)], 'w--');
+            set(gca, 'Color', [0 0 0 ], 'XColor', [ 1 1 1], 'YColor', [1 1 1]);
+            set(gca, 'XLim', [0 500], 'YLim', [0 200]);
+            set(gca, 'XTick', [0:100:1000], 'YTick', [0:50:1000], 'FontSize', 16);
+            xlabel('OLED luminance', 'Color', [1 0 0], 'FontSize', 18);
+
+            if (sceneIndex == 1)
+                ylabel('LCD luminance', 'Color', [0 1 0], 'FontSize', 18);
+            else
+               set(gca, 'YTickLabel', {}); 
+            end
+
+            title(sprintf('scene %d', sceneIndex));
+        end
+    
+    
+        NicePlot.exportFigToPDF(sprintf('%s/Summary_ToneMappings.pdf', pdfSubDir),hFig,300);
+        fprintf('Figure saved in %s\n', sprintf('%s/Summary_ToneMappings.pdf', pdfSubDir));
+    
+        disp('Hit enter to continue\n');
+        pause
     end
     
     
@@ -558,7 +633,7 @@ function AnalyzeImagePreferenceExperiment
         'bottomMargin', 0.04, ...
         'topMargin',   -0.02);
     
-    set(hFig, 'Position', [10 10 1200 1282], 'Color', [0 0 0]);
+    set(hFig, 'Position', [10 10 1425 1340], 'Color', [0 0 0]);
     
     
     for sceneIndex = 1:scenesNum
