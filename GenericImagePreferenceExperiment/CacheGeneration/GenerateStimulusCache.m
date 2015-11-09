@@ -9,11 +9,18 @@ function GenerateStimulusCache
     
     toneMappingRange = 'standard';
     toneMappingRange = 'brighter';
-     
-    cacheDirectory = '/Users/Shared/Matlab/Toolboxes/OLEDToolbox/GenericImagePreferenceExperiment/Caches';
+    
+    % Where cache will be saved
+    %cacheDirectory = '/Users/Shared/Matlab/Toolboxes/OLEDToolbox/GenericImagePreferenceExperiment/Caches';
+    cacheDirectory = '/Users1/Shared/Matlab/Experiments/SamsungOLED/StimCaches';
+    
+    % where RT3 scenes are stored
+    %   sceneDirectory = '/Users1/Shared/Matlab/RT3scenes/Blobbies/HighDynamicRange/';
+    sceneDirectory = '/Users1/Shared/Matlab/Experiments/SamsungOLED/RT3scenes/Blobbies/HighDynamicRange/';
+    
     if strcmp(sceneFamily, 'RT3Scenes')
     % Load the RT3 scenes
-        [sceneEnsemble, ensembleLuminances, sceneFileNames] = loadRT3Scenes();
+        [sceneEnsemble, ensembleLuminances, sceneFileNames] = loadRT3Scenes(sceneDirectory);
         
         luminanceOverdrive(1) = 0.97;   % overdrive for LCD (adjust so at to have a rendered output luminance that is similar to the intended output luminance)
         luminanceOverdrive(2) = 0.87;   % overdrive for OLED (adjust so at to have a rendered output luminance that is similar to the intended output luminance)
@@ -339,9 +346,8 @@ function [sceneEnsemble, ensembleLuminances, sceneFileNames] = loadSamsungScenes
 end
 
 
-function [sceneEnsemble, ensembleLuminances, sceneFileNames] = loadRT3Scenes()
+function [sceneEnsemble, ensembleLuminances, sceneFileNames] = loadRT3Scenes(sceneDirectory)
 
-    sceneDirectory = '/Users1/Shared/Matlab/RT3scenes/Blobbies/HighDynamicRange/';
     shapesExamined = {...
         'Blobbie8SubsHighFreqMultipleBlobbiesOpenRoof'...
         'Blobbie8SubsVeryLowFreqMultipleBlobbiesOpenRoof'...
