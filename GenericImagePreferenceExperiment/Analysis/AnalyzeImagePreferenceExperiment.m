@@ -477,61 +477,32 @@ function AnalyzeImagePreferenceExperiment
             HDRtoneMapLabels = HDRalphas(sceneIndex,:) ./ HDRalphas(sceneIndex,4);
             
             prefStatsStruct = preferenceDataStats{sceneIndex};
-            
-            if (isfield(prefStatsStruct, 'HDRresampledReps'))
-                meanValsHDR = mean(prefStatsStruct.HDRresampledReps,2);
-                upperValsHDR = max(prefStatsStruct.HDRresampledReps, [], 2) - meanValsHDR;
-                lowerValsHDR = min(prefStatsStruct.HDRresampledReps, [], 2) - meanValsHDR;
-                meanValsLDR = mean(prefStatsStruct.LDRresampledReps,2);
-                upperValsLDR = max(prefStatsStruct.LDRresampledReps, [], 2) - meanValsLDR;
-                lowerValsLDR = min(prefStatsStruct.LDRresampledReps, [], 2) - meanValsLDR;
-            else
-                meanValsHDR = mean(prefStatsStruct.HDRmapSingleReps,2);
-                upperValsHDR = max(prefStatsStruct.HDRmapSingleReps, [], 2) - meanValsHDR;
-                lowerValsHDR = min(prefStatsStruct.HDRmapSingleReps, [], 2) - meanValsHDR;
-                meanValsLDR = mean(prefStatsStruct.LDRmapSingleReps,2);
-                upperValsLDR = max(prefStatsStruct.LDRmapSingleReps, [], 2) - meanValsLDR;
-                lowerValsLDR = min(prefStatsStruct.LDRmapSingleReps, [], 2) - meanValsLDR;
-            end
+            meanValsHDR = mean(prefStatsStruct.HDRmapSingleReps,2);
+            meanValsLDR = mean(prefStatsStruct.LDRmapSingleReps,2);
+            stdValsHDR  = std(preferenceDataStats{sceneIndex}.HDRresampledReps,0, 2);
+            stdValsLDR  = std(preferenceDataStats{sceneIndex}.LDRresampledReps,0, 2);
+
             
             subplot('Position', [0.07 0.1  0.92 0.26]);
             
-%             
-%             x = [HDRtoneMapDeviation HDRtoneMapDeviation(end:-1:1)];
-%             y1 = (min(preferenceDataStats{sceneIndex}.HDRresampledReps,[], 2))';
-%             y2 = (max(preferenceDataStats{sceneIndex}.HDRresampledReps,[], 2))';
-%             y = [y1 y2(end:-1:1)];
-%             v = [x' y'];
-%             patch('Faces', 1:14, 'Vertices', v, 'FaceColor',[1 0.7 0.7], 'EdgeColor', [1 0 0], 'FaceAlpha', 0.5);
-%             hold on;
-%             
-%             y1 = (min(preferenceDataStats{sceneIndex}.LDRresampledReps,[], 2))';
-%             y2 = (max(preferenceDataStats{sceneIndex}.LDRresampledReps,[], 2))';
-%             y = [y1 y2(end:-1:1)];
-%             v = [x' y'];
-%             patch('Faces', 1:14, 'Vertices', v, 'FaceColor',[0.7 1 0.7], 'EdgeColor', [0 1 0], 'FaceAlpha', 0.5);
-            
+            x  = HDRtoneMapDeviation(:);
+            y1 = meanValsHDR - stdValsHDR;
+            y2 = meanValsHDR + stdValsHDR;
+             
+            x = [x; x(end:-1:1)];
+            y = [y1; y2(end:-1:1)];
+            v = [x(:) y(:)];
+            patch('Faces', 1:14, 'Vertices', v, 'FaceColor',[1 0.7 0.7], 'EdgeColor', [1 0 0], 'FaceAlpha', 0.8);
+            hold on;
 
-            if (isfield(prefStatsStruct, 'HDRresampledReps'))
-                plot(HDRtoneMapDeviation, prefStatsStruct.HDRresampledReps, 'r-'); 
-                hold on
-                plot(HDRtoneMapDeviation, prefStatsStruct.LDRresampledReps, 'g-');
-            else
-                plot(HDRtoneMapDeviation, prefStatsStruct.HDRmapSingleReps, 'r-'); 
-                hold on
-                plot(HDRtoneMapDeviation, prefStatsStruct.LDRmapSingleReps, 'g-');
-                plot(HDRtoneMapDeviation, prefStatsStruct.HDRprob, 'm-');
-            end
-            
-%             
-%             plot(HDRtoneMapDeviation, meanValsHDR, 'r-', 'LineWidth',2);
-%             hErr = errorbar(HDRtoneMapDeviation, meanValsHDR,  lowerValsHDR, upperValsHDR, 'rs', 'LineWidth',2, 'MarkerFaceColor', [0.8 0.6 0.6], 'MarkerSize', 14);
-% 
-%             plot(HDRtoneMapDeviation, meanValsLDR, 'g-', 'LineWidth',2);
-%             lErr = errorbar(HDRtoneMapDeviation+0.05, meanValsLDR,  lowerValsLDR, upperValsLDR, 'gs', 'LineWidth',2, 'MarkerFaceColor', [0.6 0.8 0.6], 'MarkerSize', 14);
-%             
-            plot([HDRtoneMapDeviation(1)-1 HDRtoneMapDeviation(end)+1], [0.5 0.5], 'w-');
+    
+            y1 = meanValsLDR - stdValsLDR;
+            y2 = meanValsLDR + stdValsLDR;
+            y = [y1 y2(end:-1:1)];
+            v = [x(:) y(:)];
+            patch('Faces', 1:14, 'Vertices', v, 'FaceColor',[0.7 1.0 0.7], 'EdgeColor', [0 1 0], 'FaceAlpha', 0.8);
             hold off;
+
             ylabel('P_{choice} (r=OLED, g=LCD)','Color', [0.7 0.7 0.7], 'FontSize', 16);
             set(gca, 'FontSize', 14, 'Color', [0 0 0], 'XColor', [0.7 0.7 0.7], 'YColor', [0.7 0.7 0.7]);
             set(gca, 'XLim', [-3.5 3.5], 'YLim', [-0.1 1.1], 'YTick', [0:0.25:1.0]);
@@ -679,8 +650,8 @@ function AnalyzeImagePreferenceExperiment
             else
                 meanValsHDR = mean(preferenceDataStats{sceneIndex}.HDRmapSingleReps,2);
                 meanValsLDR = mean(preferenceDataStats{sceneIndex}.LDRmapSingleReps,2);
-                stdValsHDR  = std(preferenceDataStats{sceneIndex}.HDRmapSingleReps,0, 2);
-                stdValsLDR  = std(preferenceDataStats{sceneIndex}.LDRmapSingleReps,0, 2);
+                stdValsHDR  = std(preferenceDataStats{sceneIndex}.HDRresampledReps,0, 2);
+                stdValsLDR  = std(preferenceDataStats{sceneIndex}.LDRresampledReps,0, 2);
 
                 upperValsHDR = max(preferenceDataStats{sceneIndex}.HDRmapSingleReps, [], 2) - meanValsHDR;
                 lowerValsHDR = min(preferenceDataStats{sceneIndex}.HDRmapSingleReps, [], 2) - meanValsHDR;
