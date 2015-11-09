@@ -59,14 +59,14 @@ function PlotSummaryResultsAllSubjects
     
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
                  'rowsNum',      1, ...
-                 'colsNum',      3, ...
+                 'colsNum',      2, ...
                  'widthMargin',  0.05, ...
                  'leftMargin',   0.04, ...
                  'rightMargin',  0.005, ...
                  'bottomMargin', 0.09, ...
                  'topMargin',    0.01);
 
-    set(h, 'Position', [10 10 3500 1270], 'Color', [0 0 0]);
+    set(h, 'Position', [10 10 2330 1270], 'Color', [0 0 0]);
     
     subplot('Position', subplotPosVectors(1,1).v);
     hold on;
@@ -108,47 +108,48 @@ function PlotSummaryResultsAllSubjects
     
     
     
+    if (1==2)
+        subplot('Position', subplotPosVectors(1,2).v);
+        hold on;
+        plot(fit1.x, fit1.y, '-', 'LineWidth', 3.0, 'Color', [0.6 0.6 0.6]);
+        plot(fit2.x, fit2.y, '-', 'LineWidth', 3.0, 'Color', [0.9 0.9 0.9]);
 
-    subplot('Position', subplotPosVectors(1,2).v);
-    hold on;
-    plot(fit1.x, fit1.y, '-', 'LineWidth', 3.0, 'Color', [0.6 0.6 0.6]);
-    plot(fit2.x, fit2.y, '-', 'LineWidth', 3.0, 'Color', [0.9 0.9 0.9]);
-    
-    for subjectIndex = 1:numel(preferredAlpha)
-        if ismember(preferredAlpha{subjectIndex}.name, subjectPool1)
-            markerFaceColor = 0.5*preferredAlpha{subjectIndex}.color;
-        else
-            markerFaceColor = 'none';
+        for subjectIndex = 1:numel(preferredAlpha)
+            if ismember(preferredAlpha{subjectIndex}.name, subjectPool1)
+                markerFaceColor = 0.5*preferredAlpha{subjectIndex}.color;
+            else
+                markerFaceColor = 'none';
+            end
+            plot(preferredAlpha{subjectIndex}.HDR, preferredAlpha{subjectIndex}.LDR, 'ks', 'LineWidth', 2, 'MarkerSize', 18, 'MarkerFaceColor', markerFaceColor, 'MarkerEdgeColor', preferredAlpha{subjectIndex}.color);
         end
-        plot(preferredAlpha{subjectIndex}.HDR, preferredAlpha{subjectIndex}.LDR, 'ks', 'LineWidth', 2, 'MarkerSize', 18, 'MarkerFaceColor', markerFaceColor, 'MarkerEdgeColor', preferredAlpha{subjectIndex}.color);
+
+        set(gca, 'XColor', [1 1 1], 'YColor', [1 1 1]);
+        set(gca, 'XLim', [0 150], 'YLim', [0 500], 'XTick', [0:50:400], 'YTick', [0:50:500], 'FontSize', 14);
+        set(gca, 'XScale', 'linear', 'YScale', 'linear')
+        hL = legend(...
+               [sprintf('quadratic fit1: ') '$$\alpha_{_{LCD}} = $$' sprintf(' %2.2f + %2.2f ', p1(3), p1(2)) '$$ \alpha_{_{OLED}}$$' sprintf(' + %2.2f ', p(1)) '$$ \alpha^2_{_{OLED}}$$'],  ...
+               [sprintf('quadratic fit2: ') '$$\alpha_{_{LCD}} = $$' sprintf(' %2.2f + %2.2f ', p2(3), p2(2)) '$$  \alpha_{_{OLED}}$$' sprintf(' + %2.2f ', p(1)) '$$ \alpha^2_{_{OLED}}$$'],  ...
+               preferredAlpha{1}.name, ...
+               preferredAlpha{2}.name, ...
+               preferredAlpha{3}.name, ...
+               preferredAlpha{4}.name, ...
+               preferredAlpha{5}.name, ...
+               preferredAlpha{6}.name, ...
+               preferredAlpha{7}.name, ...
+               preferredAlpha{8}.name, ...
+               'Location', 'NorthWest');
+        set(hL,'Interpreter','latex', 'fontsize', 24, 'TextColor', [ 1 1 1], 'Color', 'none', 'box', 'off')
+
+        xlabel('$$\alpha_{_{OLED}}$$', 'interpreter', 'latex', 'FontSize', 40, 'FontWeight', 'bold', 'Color', [0.7 0.7 0.7]);
+        %ylabel('$$\alpha_{_{LCD}}$$',  'interpreter', 'latex', 'FontSize', 40, 'FontWeight', 'bold', 'Color', [0.7 0.7 0.7]);
+        grid off
+        box on
+        set(gca, 'FontSize', 28, 'Color', [0 0 0 ]);
     end
     
-    set(gca, 'XColor', [1 1 1], 'YColor', [1 1 1]);
-    set(gca, 'XLim', [0 150], 'YLim', [0 500], 'XTick', [0:50:400], 'YTick', [0:50:500], 'FontSize', 14);
-    set(gca, 'XScale', 'linear', 'YScale', 'linear')
-    hL = legend(...
-           [sprintf('quadratic fit1: ') '$$\alpha_{_{LCD}} = $$' sprintf(' %2.2f + %2.2f ', p1(3), p1(2)) '$$ \alpha_{_{OLED}}$$' sprintf(' + %2.2f ', p(1)) '$$ \alpha^2_{_{OLED}}$$'],  ...
-           [sprintf('quadratic fit2: ') '$$\alpha_{_{LCD}} = $$' sprintf(' %2.2f + %2.2f ', p2(3), p2(2)) '$$  \alpha_{_{OLED}}$$' sprintf(' + %2.2f ', p(1)) '$$ \alpha^2_{_{OLED}}$$'],  ...
-           preferredAlpha{1}.name, ...
-           preferredAlpha{2}.name, ...
-           preferredAlpha{3}.name, ...
-           preferredAlpha{4}.name, ...
-           preferredAlpha{5}.name, ...
-           preferredAlpha{6}.name, ...
-           preferredAlpha{7}.name, ...
-           preferredAlpha{8}.name, ...
-           'Location', 'NorthWest');
-    set(hL,'Interpreter','latex', 'fontsize', 24, 'TextColor', [ 1 1 1], 'Color', 'none', 'box', 'off')
-       
-    xlabel('$$\alpha_{_{OLED}}$$', 'interpreter', 'latex', 'FontSize', 40, 'FontWeight', 'bold', 'Color', [0.7 0.7 0.7]);
-    %ylabel('$$\alpha_{_{LCD}}$$',  'interpreter', 'latex', 'FontSize', 40, 'FontWeight', 'bold', 'Color', [0.7 0.7 0.7]);
-    grid off
-    box on
-    set(gca, 'FontSize', 28, 'Color', [0 0 0 ]);
     
     
-    
-    subplot('Position', subplotPosVectors(1,3).v);
+    subplot('Position', subplotPosVectors(1,2).v);
     hold on;
 
     for subjectIndex = 1:numel(preferredAlpha)
