@@ -466,13 +466,15 @@ function [preferredAlpha, imagePics, sceneLums, histograms, pdfFileName] = GetAl
         dataDir = '/Users1/Shared/Matlab/Experiments/SamsungOLED/Data/blobbieexp2';
         dataFile = fullfile(dataDir, lower(preferredAlpha{subjectIndex}.name), sprintf('Session_%s.mat', timeStamp));
         load(dataFile);
-        
 
         
         toneMappingIndex = 6;
         bestToneMappingIndex = 4;
+        repsNum = runParams.repsNum;
+        scenesNum       = size(conditionsData,1);
+        toneMappingsNum = size(conditionsData,2);
         
-        for sceneIndex = 1:size(ldrMappingFunctionFullRes,1)
+        for sceneIndex = 1:scenesNum
 
             if (subjectIndex == 1)
                 stimIndex =  conditionsData(sceneIndex, toneMappingIndex);
@@ -481,12 +483,161 @@ function [preferredAlpha, imagePics, sceneLums, histograms, pdfFileName] = GetAl
                 histograms(sceneIndex).counts = histogramsLowRes{sceneIndex,1}.counts;
                 sceneLums(sceneIndex).data = ldrMappingFunctionLowRes{sceneIndex,bestToneMappingIndex}.input;
             end
-            
-            
+
             optimalLCDlum(subjectIndex, sceneIndex).data   = ldrMappingFunctionLowRes{sceneIndex,bestToneMappingIndex}.output;
             optimalOLEDlum(subjectIndex, sceneIndex).data  = hdrMappingFunctionLowRes{sceneIndex,bestToneMappingIndex}.output;
 
+            if strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR')
+                for repIndex = 1:repsNum
+                    
+                    % get the data for this repetition
+                     stimPreferenceData = stimPreferenceMatrices{sceneIndex, repIndex};
+            
+                    if (repIndex == 1)
+                        prefStatsStruct = struct(...
+                        'HDRmapSingleReps',  zeros(numel(stimPreferenceData.rowStimIndices), repsNum), ...
+                        'LDRmapSingleReps',  zeros(numel(stimPreferenceData.rowStimIndices), repsNum), ...
+                        'visitedSingleReps', zeros(numel(stimPreferenceData.rowStimIndices), repsNum) ...
+                    );
+                    end
+                    
+                    for rowIndex = 1:numel(stimPreferenceData.rowStimIndices)
+                    for colIndex = 1:numel(stimPreferenceData.colStimIndices)
+                
+                        if (~isnan(stimPreferenceData.stimulusChosen(rowIndex, colIndex))) 
+                     
+                            % stimulus selected
+                            selectedStimIndex = stimPreferenceData.stimulusChosen(rowIndex, colIndex);
+
+                            % selection latency
+                            latencyInMilliseconds = stimPreferenceData.reactionTimeInMilliseconds(rowIndex, colIndex);
+
+                            % decode stimIndex
+                            if (selectedStimIndex > 10000)
+                                % HDR version selected
+                                selectedStimIndex = selectedStimIndex - 10000;
+                                prefStatsStruct.HDRmapSingleReps(rowIndex,repIndex) =  prefStatsStruct.HDRmapSingleReps(rowIndex,repIndex) + 1;
+                            elseif (selectedStimIndex > 1000)
+                                % LDR version selected
+                                selectedStimIndex = selectedStimIndex - 1000;
+                                prefStatsStruct.LDRmapSingleReps(rowIndex,repIndex) =  prefStatsStruct.LDRmapSingleReps(rowIndex,repIndex) + 1;
+                            else
+                                error('How can this be?');
+                            end  
+
+                            prefStatsStruct.visitedSingleReps(rowIndex,repIndex) = prefStatsStruct.visitedSingleReps(rowIndex,repIndex) + 1;
+                        end
+                     end % colIndex
+                     end % rowIndex
+                end % repIndex
+            
+                % sum over all reps
+                timesVisited = sum(prefStatsStruct.visitedSingleReps,2);
+                HDRselected  = sum(prefStatsStruct.HDRmapSingleReps,2);
+                LDRselected  = sum(prefStatsStruct.LDRmapSingleReps,2);
+            
+                prefStatsStruct.HDRprob = HDRselected./timesVisited;
+                prefStatsStruct.LDRprob = LDRselected./timesVisited;
+                
+                if (sum(sum(prefStatsStruct.visitedSingleReps == ones(size(prefStatsStruct.visitedSingleReps)))) == numel(prefStatsStruct.visitedSingleReps)) 
+                
+                    resamplingSamplesNum = 300;
+                    resampledTrialsNum = round(0.75*repsNum);
+                    prefStatsStruct.HDRresampledReps = zeros(numel(stimPreferenceData.rowStimIndices), resamplingSamplesNum);
+                    prefStatsStruct.LDRresampledReps = zeros(numel(stimPreferenceData.rowStimIndices), resamplingSamplesNum);
+
+                    for resampleIndex = 1:resamplingSamplesNum
+                        resampledReps = randperm(repsNum, resampledTrialsNum);
+                        prefStatsStruct.HDRresampledReps(:, resampleIndex) = mean(prefStatsStruct.HDRmapSingleReps(:,resampledReps), 2);
+                        prefStatsStruct.LDRresampledReps(:, resampleIndex) = mean(prefStatsStruct.LDRmapSingleReps(:,resampledReps), 2);
+                    end
+            
+                    useResampled = false;
+                else
+                
+                    fprintf(2,'Correcting for uneven presentation of stimuli\n');
+                    %OLD WAY OF ANALYSIS FOR ORIGINAL DATA BY NPC and DHB THAT
+                    %HAD UNEQUAL VISITS FOR DIFFERENT CONDITIONS
+                    % resample reps: all possible combinations of 3 different reps
+                    resampleIndex = 0;
+
+                    for ii = 1:repsNum
+                        for jj = ii+1:repsNum
+                            for kk = jj+1:repsNum
+
+                                HDR = zeros(size(prefStatsStruct.HDRmapSingleReps,1),1);
+                                LDR = zeros(size(prefStatsStruct.LDRmapSingleReps,1),1);
+                                reps = zeros(size(prefStatsStruct.visitedSingleReps,1),1);
+
+                                % use reps ii and jj
+                                rr = [ii jj kk];
+                                %fprintf('Resample [%d] = [%d %d %d]\n', resampleIndex, ii, jj, kk);
+                                for kindex = 1:numel(rr)
+                                    HDR = HDR + prefStatsStruct.HDRmapSingleReps(:, rr(kindex));
+                                    LDR = LDR + prefStatsStruct.LDRmapSingleReps(:, rr(kindex));
+                                    reps = reps + prefStatsStruct.visitedSingleReps(:,rr(kindex));
+                                end
+
+                                if (any(reps == 0))
+                                    reps
+                                    prefStatsStruct.visitedSingleReps(:,rr(1))
+                                    prefStatsStruct.visitedSingleReps(:,rr(2))
+                                    prefStatsStruct.visitedSingleReps(:,rr(3))
+                                    error('combined total reps = 0');
+                                end
+                                resampleIndex = resampleIndex + 1;
+                                prefStatsStruct.HDRresampledReps(:,resampleIndex) = HDR ./ reps;
+                                prefStatsStruct.LDRresampledReps(:,resampleIndex) = LDR ./ reps;
+                            end % kk
+                        end % jj
+                    end % ii
+                    
+                    useResampled = true;
+                end
+                
+                % save averaged data
+                preferenceDataStats{sceneIndex} = prefStatsStruct;
+                
+      
+                mappingFunctionHDRmax = 0;
+                mappingFunctionLDRmax = 0;
+        
+                for toneMappingIndex = 1:toneMappingsNum
+            
+                    s = toneMappingParams(sceneIndex,toneMappingIndex);
+                
+                    s = s{1,1};
+                    mappingFunctionsLDR{toneMappingIndex}.name   = s{1}.name;
+                    mappingFunctionsLDR{toneMappingIndex}.paramValue  = s{1}.alphaValue;
+
+                    mappingFunctionsHDR{toneMappingIndex}.name   = s{2}.name;
+                    mappingFunctionsHDR{toneMappingIndex}.paramValue  = s{2}.alphaValue;
+                end
+                
+                for k = 1:numel(mappingFunctionsHDR)
+                    HDRalphas(sceneIndex,k) = mappingFunctionsHDR{k}.paramValue;
+                    LDRalphas(sceneIndex,k) = mappingFunctionsLDR{k}.paramValue;
+                end
+            
+                % get OLED preference curve
+                HDRtoneMapDeviation = [-3 -2 -1 0 1 2 3];
+                HDRtoneMapLabels(sceneIndex,:) = HDRalphas(sceneIndex,:) ./ HDRalphas(sceneIndex,4);
+            
+                prefStatsStruct = preferenceDataStats{sceneIndex};
+                if (useResampled)
+                    meanValsHDR(sceneIndex,:) = mean(prefStatsStruct.HDRresampledReps,2);
+                    stdValsHDR(sceneIndex,:)  = std(preferenceDataStats{sceneIndex}.HDRresampledReps,0, 2);
+                else
+                    meanValsHDR(sceneIndex,:) = mean(prefStatsStruct.HDRmapSingleReps,2);
+                    stdValsHDR(sceneIndex,:)  = std(preferenceDataStats{sceneIndex}.HDRmapSingleReps,0, 2);
+                end
+            end
         end
+        
+        preferredAlpha{subjectIndex}.HDRtoneMapDeviation = HDRtoneMapDeviation;
+        preferredAlpha{subjectIndex}.HDRtoneMapLabels = HDRtoneMapLabels;
+        preferredAlpha{subjectIndex}.meanValsHDR = meanValsHDR;
+        preferredAlpha{subjectIndex}.stdValsHDR = stdValsHDR;
     end
     
     
@@ -496,6 +647,7 @@ function [preferredAlpha, imagePics, sceneLums, histograms, pdfFileName] = GetAl
        preferredAlpha{subjectIndex}.dynamicRange = dynamicRange(ix);
        preferredAlpha{subjectIndex}.HDR = preferredAlpha{subjectIndex}.HDR(ix);
        preferredAlpha{subjectIndex}.LDR = preferredAlpha{subjectIndex}.LDR(ix);
+       
        for sceneIndex = 1:size(ldrMappingFunctionFullRes,1)
             preferredAlpha{subjectIndex}.optimalLCDlum{sceneIndex}.data  = optimalLCDlum(subjectIndex, sceneIndex).data;
             preferredAlpha{subjectIndex}.optimalOLEDlum{sceneIndex}.data = optimalOLEDlum(subjectIndex, sceneIndex).data;
@@ -503,6 +655,86 @@ function [preferredAlpha, imagePics, sceneLums, histograms, pdfFileName] = GetAl
     end
     
     pdfFileName = 'SummaryAlphasCombo.pdf';
+    
+    
+    hFig = figure(100);
+    set(hFig, 'Position', [100 100 1560 1250], 'Color', [0 0 0]);
+    clf;
+    subplotPosVectors = NicePlot.getSubPlotPosVectors(...
+                 'rowsNum',      scenesNum, ...
+                 'colsNum',      totalSubjects-2+1, ...
+                 'widthMargin',  0.01, ...
+                 'heightMargin', 0.01, ...
+                 'leftMargin',   0.01, ...
+                 'rightMargin',  0.005, ...
+                 'bottomMargin', 0.04, ...
+                 'topMargin',    0.01);
+             
+    
+    subjectIndex2 = 0;
+    for subjectIndex = 1:totalSubjects
+        
+        if (strcmp(preferredAlpha{subjectIndex}.name, 'NPC') || strcmp(preferredAlpha{subjectIndex}.name, 'DHB'))
+            continue;
+        end
+        subjectIndex2 = subjectIndex2 + 1;
+        
+        for sceneIndex = 1:scenesNum  
+           
+           if (subjectIndex2 == 1)
+                subplot('Position', subplotPosVectors(sceneIndex, 1).v);
+                imshow(squeeze(imagePics(sceneIndex,:,:,:))/255);
+           end
+           
+            
+           subplot('Position', subplotPosVectors(sceneIndex, 1+subjectIndex2).v);
+           hold on;
+           Y = [(squeeze(preferredAlpha{subjectIndex}.meanValsHDR(sceneIndex,:))) ; (squeeze(1-preferredAlpha{subjectIndex}.meanValsHDR(sceneIndex,:)))];
+           size(Y)
+           size(preferredAlpha{subjectIndex}.HDRtoneMapDeviation)
+           
+           hA = area((preferredAlpha{subjectIndex}.HDRtoneMapDeviation)', Y', 0.5);
+           hA(1).FaceColor = 0.7*[1.2 0.6 0.2];
+           hA(2).FaceColor = [0 0 0];
+           
+           plot(preferredAlpha{subjectIndex}.HDRtoneMapDeviation, preferredAlpha{subjectIndex}.meanValsHDR(sceneIndex,:), 'rs-', 'LineWidth', 1.0, 'MarkerSize', 10, 'MarkerFaceColor', [1 0.8 0.8]);
+           %plot(preferredAlpha{subjectIndex}.HDRtoneMapDeviation, 1-preferredAlpha{subjectIndex}.meanValsHDR(sceneIndex,:), 'g-', 'LineWidth', 2.0);
+           plot([-100 100], [0.5 0.5], 'w--', 'LineWidth', 1.0, 'Color', [0.8 0.8 0.8]);
+           plot([0 0], [-2 2], '--', 'LineWidth', 1.0, 'Color', [0.8 0.8 0.8]);
+           
+           YTicks = [0 1];
+           set(gca, 'XLim', [preferredAlpha{subjectIndex}.HDRtoneMapDeviation(1)-0.3  preferredAlpha{subjectIndex}.HDRtoneMapDeviation(end)+0.3],  'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1]);
+           set(gca, 'YLim', [-0.01 1.01], 'YTick', YTicks);
+           set(gca, 'YTickLabel', sprintf('%1.0f\n',YTicks));
+           set(gca, 'XTick', preferredAlpha{subjectIndex}.HDRtoneMapDeviation, 'XTickLabel', sprintf('%1.01f\n', squeeze(preferredAlpha{subjectIndex}.HDRtoneMapLabels(sceneIndex,:))));
+           set(gca, 'FontSize', 14);
+           
+           if (subjectIndex2 > 1)
+               set(gca, 'YTickLabel', {});
+           end
+           
+           if (sceneIndex < scenesNum)
+               set(gca, 'XTickLabel', {});
+           else
+               set(gca, 'XTickLabel', sprintf('%1.01f\n', squeeze(preferredAlpha{subjectIndex}.HDRtoneMapLabels(sceneIndex,:))));
+               xlabel(['$$ \mathsf{\alpha_{test} / \alpha_{opt}}$$'],'Interpreter','latex','fontsize',20, 'Color', [1 0 0]);
+           end
+           
+           if (sceneIndex == 1)
+               title(preferredAlpha{subjectIndex}.name, 'Color', [1 1 1]);
+           end
+           box on;
+           set(gca, 'XDir', 'reverse');
+           
+           drawnow;
+        end
+        
+    end
+    
+    pdfSubDir = 'PDFfigs';
+    NicePlot.exportFigToPDF(sprintf('%s/Summary_OLEDprefCurves.pdf', pdfSubDir),hFig,300);
+    fprintf('Figure saved in %s\n', sprintf('%s/Summary_OLEDprefCurves.pdf', pdfSubDir));
+
 end
 
 
