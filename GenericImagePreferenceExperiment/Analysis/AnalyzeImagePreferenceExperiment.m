@@ -616,7 +616,11 @@ function AnalyzeImagePreferenceExperiment
         elseif strcmp(runParams.whichDisplay, 'LDR')
             imagePic = squeeze(thumbnailStimImages(stimIndex,2,:,:,:));
         elseif (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
-            % choose the HDR
+            % choose the HDR at the peak response
+            meanValsHDR = mean(preferenceDataStats{sceneIndex}.HDRmapSingleReps,2);
+            [~,selectedToneMappingIndex] = max(meanValsHDR);
+            fprintf('-----> Best OLED tone mapping index for scene[%d] = %d\n', sceneIndex, selectedToneMappingIndex);
+            stimIndex =  conditionsData(sceneIndex, selectedToneMappingIndex);
             imagePic = squeeze(thumbnailStimImages(stimIndex,1,:,:,:));
         else
             error('runParams.whichDisplay');

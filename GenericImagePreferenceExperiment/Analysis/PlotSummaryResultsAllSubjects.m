@@ -4,8 +4,111 @@ function PlotSummaryResultsAllSubjects
     [rootDir,~] = fileparts(which(mfilename)); 
     cd(rootDir);
     
-    [preferredAlpha, pdfFileName] = GetAllSubjectData();
+    [preferredAlpha, imagePics, sceneLums, sceneHistograms, pdfFileName] = GetAllSubjectData();
 
+    subplotPosVectors = NicePlot.getSubPlotPosVectors(...
+                 'rowsNum',      1 + numel(preferredAlpha), ...   % 1+number of subjects 
+                 'colsNum',      size(imagePics,1)/2, ...           % number of scenes
+                 'widthMargin',  0.01, ...
+                 'heightMargin', 0.01, ...
+                 'leftMargin',   0.025, ...
+                 'rightMargin',  0.00, ...
+                 'bottomMargin', 0.03, ...
+                 'topMargin',    0.00);
+       
+    h = figure(1);
+    clf; 
+    set(h, 'Position', [10 10 1300 1500], 'Color', [0 0 0]);
+    
+    for sceneIndex = 1:size(imagePics,1)/2
+        
+        subplot('Position', subplotPosVectors(1, sceneIndex).v);
+        imshow(squeeze(imagePics(sceneIndex,:,:,:))/255);
+        
+        for subjectIndex = 1:numel(preferredAlpha)
+            subplot('Position', subplotPosVectors(1+subjectIndex, sceneIndex).v);
+            hold on;
+             
+            LCDlum = preferredAlpha{subjectIndex}.optimalLCDlum{sceneIndex}.data;
+            OLEDlum = preferredAlpha{subjectIndex}.optimalOLEDlum{sceneIndex}.data;
+            
+            if (1==1)
+                ratio = LCDlum./OLEDlum;
+                indices = find(ratio ~= Inf);
+
+                plot(sceneLums(sceneIndex).data, LCDlum/max(LCDlum),  'g.', 'LineWidth', 2.0, 'MarkerSize', 18);
+                plot(sceneLums(sceneIndex).data, OLEDlum/max(OLEDlum),  'r.', 'LineWidth', 2.0, 'MarkerSize', 18);
+                plot(sceneLums(sceneIndex).data(indices), ratio(indices),  'c.', 'LineWidth', 2.0, 'MarkerSize', 18);
+                plot([1000 1000], [0 1], 'w--');
+
+                hT = text(30000, 0.1, sprintf('%s', preferredAlpha{subjectIndex}.name));
+                set(hT, 'Color', [1 1 1], 'FontSize', 12);
+
+                if (sceneIndex == 1) && (subjectIndex == 1)
+                    hL = legend('LCD', 'OLED', 'ratio', 'Location', 'NorthEast');
+                    set(hL,'fontsize', 14, 'TextColor', [ 1 1 1], 'Color', 'none', 'box', 'off')
+                end
+                
+                set(gca, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1]);
+                set(gca, 'XLim', 1.3*[10/1.3 100*1000], 'XScale', 'log', 'YLim', [0 1]);
+                set(gca, 'XTick', [100  1000  10000  100000], 'YTick', [0:0.25:1.0], 'YTickLabel', {0, '', '', '', 1}, 'FontSize', 16);
+
+                box off;
+                grid on;
+                if (subjectIndex == numel(preferredAlpha))
+                    xlabel('scene luminance', 'Color', [1 1 1], 'FontSize', 14);
+                else
+                   set(gca,  'XTickLabel', {})
+                end
+
+                if (sceneIndex == 1)
+                    ylabel('display lums &  ratio', 'Color', [1 1 1], 'FontSize', 14);
+                else
+                    set(gca, 'YTickLabel', {});
+                end
+                
+            else
+               
+                plot([0 1], [0 1], 'w-');
+                plot(OLEDlum/max(OLEDlum), LCDlum/max(LCDlum), 'g.', 'MarkerSize', 12);
+                 
+                hT = text(0.8, 0.1, sprintf('%s', preferredAlpha{subjectIndex}.name));
+                set(hT, 'Color', [1 1 1], 'FontSize', 12);
+                
+                set(gca, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1]);
+                set(gca, 'XLim', [0 1], 'YLim', [0 1], 'XTick', [0:0.2:1.0], 'YTick', [0:0.2:1.0], 'FontSize', 14);
+                set(gca, 'XTickLabel', {});
+                set(gca, 'YTickLabel', {});
+                 
+                if (subjectIndex == numel(preferredAlpha))
+                    xlabel('norm. OLED lum.', 'Color', [1 1 1], 'FontSize', 18);
+                else
+                   set(gca,  'XTickLabel', {})
+                end
+
+                if (sceneIndex == 1)
+                    ylabel('norm LCD lum.', 'Color', [1 1 1], 'FontSize', 16);
+                else
+                    set(gca, 'YTickLabel', {});
+                end
+                
+                box off;
+                grid off;
+            end
+            
+            
+        end
+        
+        
+    end
+    
+    
+    
+    
+    drawnow
+    NicePlot.exportFigToPNG(sprintf('PDFfigs/%s','LuminanceOLEDvsLCD'), h, 300);
+    
+    
     
     % Fit a line through the combo points
     x = []';
@@ -19,10 +122,11 @@ function PlotSummaryResultsAllSubjects
     end
     
     % pool with subjects showing similar LCD to OLED alphas 
-    subjectPool1 = {'VTK', 'JTA', 'ANA', 'NBJ', 'FMR'}
+    subjectPool1 = {'VJK', 'JTA', 'ANA', 'NBJ', 'FMR'}
     
     % pool with subjects prefaring a more saturated LCD alpha
     subjectPool2 = setdiff(allSubjects, subjectPool1)
+    
     
     x1 = [];
     y1 = [];
@@ -54,7 +158,7 @@ function PlotSummaryResultsAllSubjects
     
     
     
-    h = figure(1);
+    h = figure(2);
     clf;
     
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
@@ -268,12 +372,11 @@ function PlotSummaryResultsAllSubjects
     
 end
 
-function [preferredAlpha, pdfFileName] = GetAllSubjectData()
+function [preferredAlpha, imagePics, sceneLums, histograms, pdfFileName] = GetAllSubjectData()
 
     dynamicRange = [54848 2806 15814 1079 19581 2789 6061 1110];
     
     subjectIndex = 0;
-    
     
     subjectIndex = subjectIndex + 1;
     preferredAlpha{subjectIndex}.name = 'JTA';
@@ -292,7 +395,7 @@ function [preferredAlpha, pdfFileName] = GetAllSubjectData()
     
     
     subjectIndex = subjectIndex + 1;
-    preferredAlpha{subjectIndex}.name = 'VTK';
+    preferredAlpha{subjectIndex}.name = 'VJK';
     preferredAlpha{subjectIndex}.color = [0.6 0.5 0.3];
     preferredAlpha{subjectIndex}.HDR = [19.3 19.5 22.1 26.4 11.3 17.9 19.3 20.0];
     preferredAlpha{subjectIndex}.LDR = [23.5 26.6 22.7 32.1 17.0 23.3 22.0 28.7];
@@ -306,8 +409,7 @@ function [preferredAlpha, pdfFileName] = GetAllSubjectData()
     preferredAlpha{subjectIndex}.LDR = [57.0 31.5 60.9 45.3 23.5 31.2 29.4 39.6];
     preferredAlpha{subjectIndex}.dynamicRange = dynamicRange;
     
-    
-    
+
     subjectIndex = subjectIndex + 1;
     preferredAlpha{subjectIndex}.name = 'FMR';
     preferredAlpha{subjectIndex}.color = [1.0 0.4 0.4];
@@ -337,17 +439,67 @@ function [preferredAlpha, pdfFileName] = GetAllSubjectData()
     preferredAlpha{subjectIndex}.LDR = [481.4 114.6 433.5 273.9 188.6 115.5 471.1 203.1]; % using the brighter tone map range
     preferredAlpha{subjectIndex}.dynamicRange = dynamicRange;
     
+    totalSubjects = subjectIndex;
     
-    
-    
+    for subjectIndex = 1:totalSubjects 
+        switch preferredAlpha{subjectIndex}.name
+            case 'JTA'
+                timeStamp = '10_29_2015_at_14:27'; 
+            case 'ANA'
+                timeStamp = '10_08_2015_at_14:58';
+            case 'VJK'
+                timeStamp = '10_20_2015_at_12:58';
+            case 'NBJ'
+                timeStamp = '10_20_2015_at_16:30';
+            case 'FMR'
+                timeStamp = '10_22_2015_at_14:02';
+            case 'DEK'
+                timeStamp = '10_28_2015_at_11:02';
+            case 'NPC'
+                timeStamp = '09_18_2015_at_15:08';    
+            case 'DHB'
+                timeStamp = '07_21_2015_at_12:27';
+            otherwise
+                error('Unknown subject');
+        end
+        
+        dataDir = '/Users1/Shared/Matlab/Experiments/SamsungOLED/Data/blobbieexp2';
+        dataFile = fullfile(dataDir, lower(preferredAlpha{subjectIndex}.name), sprintf('Session_%s.mat', timeStamp));
+        load(dataFile);
+        
 
+        
+        toneMappingIndex = 6;
+        bestToneMappingIndex = 4;
+        
+        for sceneIndex = 1:size(ldrMappingFunctionFullRes,1)
+
+            if (subjectIndex == 1)
+                stimIndex =  conditionsData(sceneIndex, toneMappingIndex);
+                imagePics(sceneIndex,:,:,:) = squeeze(thumbnailStimImages(stimIndex,1,:,:,:));
+                histograms(sceneIndex).centers =  histogramsLowRes{sceneIndex,1}.centers;
+                histograms(sceneIndex).counts = histogramsLowRes{sceneIndex,1}.counts;
+                sceneLums(sceneIndex).data = ldrMappingFunctionLowRes{sceneIndex,bestToneMappingIndex}.input;
+            end
+            
+            
+            optimalLCDlum(subjectIndex, sceneIndex).data   = ldrMappingFunctionLowRes{sceneIndex,bestToneMappingIndex}.output;
+            optimalOLEDlum(subjectIndex, sceneIndex).data  = hdrMappingFunctionLowRes{sceneIndex,bestToneMappingIndex}.output;
+
+        end
+    end
+    
     
     [~,ix] = sort(dynamicRange);
 
-    for k = 1:subjectIndex 
+    for subjectIndex  = 1:totalSubjects 
        preferredAlpha{subjectIndex}.dynamicRange = dynamicRange(ix);
        preferredAlpha{subjectIndex}.HDR = preferredAlpha{subjectIndex}.HDR(ix);
        preferredAlpha{subjectIndex}.LDR = preferredAlpha{subjectIndex}.LDR(ix);
+       for sceneIndex = 1:size(ldrMappingFunctionFullRes,1)
+            preferredAlpha{subjectIndex}.optimalLCDlum{sceneIndex}.data  = optimalLCDlum(subjectIndex, sceneIndex).data;
+            preferredAlpha{subjectIndex}.optimalOLEDlum{sceneIndex}.data = optimalOLEDlum(subjectIndex, sceneIndex).data;
+       end
     end
     
     pdfFileName = 'SummaryAlphasCombo.pdf';
