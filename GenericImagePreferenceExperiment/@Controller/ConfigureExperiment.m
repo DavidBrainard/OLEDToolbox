@@ -1,4 +1,4 @@
-function [repsNum, dataDir, datafileName, debugMode, histogramIsVisible, visualizeResultsOnline, whichDisplay] = ConfigureExperiment(rootDir)
+function [repsNum, dataDir, datafileName, debugMode, calibrationMode, histogramIsVisible, visualizeResultsOnline, whichDisplay] = ConfigureExperiment(rootDir)
 
     cd(rootDir);
     
@@ -34,6 +34,12 @@ function [repsNum, dataDir, datafileName, debugMode, histogramIsVisible, visuali
     pause;
     
 
+    runningInCalibrationMode = input('\nRunning on calibration mode [y/n] [default=n]: ', 's');
+    if (isempty(runningInCalibrationMode)) || (~strcmp(runningInCalibrationMode, 'y'))
+        calibrationMode = false;
+    else
+        calibrationMode = true;
+    end
     
     
     runningInDemoMode = input('\nRunning on demo mode [y/n] [default=n]: ', 's');

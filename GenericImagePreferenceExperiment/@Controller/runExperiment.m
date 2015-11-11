@@ -6,6 +6,10 @@ function abnormalTermination = runExperiment(obj, params)
     abnormalTermination = false;
     obj.runAbortionStatus = 'none';
     
+    if (params.calibrationMode)
+        obj.setCalibrationRect(params.calibrationRect);
+    end
+    
     % reset stimPreferenceMatrices
     emptyStruct = struct(...
         'rowStimIndices', [], ...

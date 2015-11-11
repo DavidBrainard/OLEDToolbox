@@ -1,5 +1,5 @@
  % Method to present a stimulus pair at specific destination rects
-function showStimulus(obj,stimIndex, histogramIsVisible)
+function showStimulus(obj, stimIndex, histogramIsVisible)
 
     obj.currentHDRStimRect = obj.targetLocations.left;
     obj.currentLDRStimRect = obj.targetLocations.right;
@@ -75,6 +75,13 @@ function showStimulus(obj,stimIndex, histogramIsVisible)
             Screen('DrawLines', obj.psychImagingEngine.masterWindowPtr, tm2.xyCoords, tm2.lineWidthPix, toneMappingFunctionColor, tm2.center+[960 0], tm2.smooth);
         end
         
+        if (obj.initParams.calibrationMode)
+            calibrationRect = [0 0 obj.calibrationRect.width obj.calibrationRect.height];
+            calibrationRect = CenterRectOnPointd(calibrationRect, obj.calibrationRect.xCenter, obj.calibrationRect.yCenter);
+            Screen('FillRect', obj.psychImagingEngine.masterWindowPtr, obj.calibrationRect.color, calibrationRect);
+        end
+        
+        
         % --- SCREEN 2  ---
         frameIndex = 2;
         Screen('SelectStereoDrawBuffer', obj.psychImagingEngine.masterWindowPtr, 1);
@@ -93,6 +100,12 @@ function showStimulus(obj,stimIndex, histogramIsVisible)
             Screen('DrawLines', obj.psychImagingEngine.masterWindowPtr, tm2.xyCoords, tm2.lineWidthPix, toneMappingFunctionColor, tm2.center+[960 0], tm2.smooth);
         end
          
+        if (obj.initParams.calibrationMode)
+            calibrationRect = [0 0 obj.calibrationRect.width obj.calibrationRect.height];
+            calibrationRect = CenterRectOnPointd(calibrationRect, obj.calibrationRect.xCenter, obj.calibrationRect.yCenter);
+            Screen('FillRect', obj.psychImagingEngine.masterWindowPtr, obj.calibrationRect.color, calibrationRect);
+        end
+        
         
         if (~isempty(obj.psychImagingEngine.slaveWindowPtr))
             % --- SCREEN 3  ---
@@ -113,6 +126,12 @@ function showStimulus(obj,stimIndex, histogramIsVisible)
                 Screen('DrawLines', obj.psychImagingEngine.slaveWindowPtr, tm2.xyCoords, tm2.lineWidthPix, toneMappingFunctionColor, tm2.center+[960 0], tm2.smooth);
             end
 
+            if (obj.initParams.calibrationMode)
+                calibrationRect = [0 0 obj.calibrationRect.width obj.calibrationRect.height];
+                calibrationRect = CenterRectOnPointd(calibrationRect, obj.calibrationRect.xCenter, obj.calibrationRect.yCenter);
+                Screen('FillRect', obj.psychImagingEngine.slaveWindowPtr, obj.calibrationRect.color, calibrationRect);
+            end
+        
             % --- SCREEN 4  ---
             frameIndex = 4;
             Screen('SelectStereoDrawBuffer', obj.psychImagingEngine.slaveWindowPtr, 1);
@@ -129,6 +148,12 @@ function showStimulus(obj,stimIndex, histogramIsVisible)
                 % The tonemapping functions
                 Screen('DrawLines', obj.psychImagingEngine.slaveWindowPtr, tm1.xyCoords, tm1.lineWidthPix, toneMappingFunctionColor, tm1.center, tm1.smooth);
                 Screen('DrawLines', obj.psychImagingEngine.slaveWindowPtr, tm2.xyCoords, tm2.lineWidthPix, toneMappingFunctionColor, tm2.center+[960 0], tm2.smooth);
+            end
+            
+            if (obj.initParams.calibrationMode)
+                calibrationRect = [0 0 obj.calibrationRect.width obj.calibrationRect.height];
+                calibrationRect = CenterRectOnPointd(calibrationRect, obj.calibrationRect.xCenter, obj.calibrationRect.yCenter);
+                Screen('FillRect', obj.psychImagingEngine.slaveWindowPtr, obj.calibrationRect.color, calibrationRect);
             end
         end
         

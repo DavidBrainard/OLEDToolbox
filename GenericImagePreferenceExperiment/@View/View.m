@@ -8,7 +8,8 @@ classdef View < handle
     properties (Access = private)
        initParams = struct(...
            'debugMode', true, ...
-           'giveVerbalFeedback', true...
+           'calibrationMode', true, ...
+           'giveVerbalFeedback', true ...
            );
        
        % 10 bit dithering offsets
@@ -39,6 +40,14 @@ classdef View < handle
         % left and right target locations
         targetLocations;
         
+        calibrationRect = struct(...
+            'color', [255 0 0], ...
+            'xCenter', 1920/4, ...
+            'yCenter', 1080/2, ...
+            'width',  64, ...
+            'height', 64 ...
+            );
+        
         % target location for progress images
         progressImageTargetLocation;
                 
@@ -64,6 +73,7 @@ classdef View < handle
             % parse inputs
             parser = inputParser;
             parser.addParamValue('debugMode', obj.initParams.debugMode, @islogical);
+            parser.addParamValue('calibrationMode', obj.initParams.calibrationMode, @islogical);
             parser.addParamValue('giveVerbalFeedback', obj.initParams.giveVerbalFeedback, @islogical);
             % Execute the parser to make sure input is good
             parser.parse(varargin{:});
@@ -95,6 +105,10 @@ classdef View < handle
         
         % Method to configure the target locations
         configureTargets(obj, stimulusSize);
+        
+        % Method to configure the position, size and color of the
+        % calibration rectangle
+        setCalibrationRect(obj, calibrationRect);
         
         % Method to present a stimulus (hdr, ldr) pair at specific destination rects
         showStimulus(obj, stimIndex, histogramIsVisible);

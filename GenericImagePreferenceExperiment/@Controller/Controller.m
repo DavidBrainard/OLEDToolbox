@@ -15,6 +15,7 @@ classdef Controller < handle
     properties (Access = private)
         initParams = struct(...
            'debugMode', true, ...
+           'calibrationMode', false, ...
            'giveVerbalFeedback', true, ...
            'visualizeResultsOnLine', true, ...
            'histogramIsVisible', false ...
@@ -50,6 +51,7 @@ classdef Controller < handle
             % parse inputs
             parser = inputParser;
             parser.addParamValue('debugMode', obj.initParams.debugMode, @islogical);
+            parser.addParamValue('calibrationMode', obj.initParams.calibrationMode, @islogical);
             parser.addParamValue('visualizeResultsOnLine', obj.initParams.visualizeResultsOnLine, @islogical);
             parser.addParamValue('histogramIsVisible', obj.initParams.histogramIsVisible, @islogical);
             parser.addParamValue('giveVerbalFeedback', obj.initParams.giveVerbalFeedback, @islogical);
@@ -65,11 +67,18 @@ classdef Controller < handle
             obj.initController();
             
             % Instantiate our viewer object
-            obj.viewOutlet = View('debugMode', obj.initParams.debugMode, 'giveVerbalFeedback', obj.initParams.giveVerbalFeedback);
+            obj.viewOutlet = View(...
+                'debugMode', obj.initParams.debugMode, ...
+                'calibrationMode', obj.initParams.calibrationMode, ...
+                'giveVerbalFeedback', obj.initParams.giveVerbalFeedback ...
+                );
         end
         
         % Method to load the stimulus cache
         loadStimulusCache(obj, cacheFileName, cartoonImageDirectory);
+        
+        % Method to set the view's calibration rect.
+        setCalibrationRect(obj, calibrationRect);
         
         % Method to run the experiment
         abnormalTermination = runExperiment(obj, params);
@@ -106,7 +115,7 @@ classdef Controller < handle
     end
     
     methods (Static)
-       [repsNum, dataDir, datafileName, debugMode, histogramIsVisible, visualizeResultsOnline, whichDisplay] = ConfigureExperiment(rootDir); 
+       [repsNum, dataDir, datafileName, debugMode, calibrationMode, histogramIsVisible, visualizeResultsOnline, whichDisplay] = ConfigureExperiment(rootDir); 
     end
     
 end

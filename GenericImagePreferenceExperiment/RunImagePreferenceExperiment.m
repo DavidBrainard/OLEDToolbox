@@ -1,7 +1,7 @@
 function RunImagePreferenceExperiment
 
     [rootDir,~] = fileparts(which(mfilename)); 
-    [repsNum, dataDir, datafileName, debugMode, histogramIsVisible, visualizeResultsOnline, whichDisplay] = Controller.ConfigureExperiment(rootDir);
+    [repsNum, dataDir, datafileName, debugMode, calibrationMode, histogramIsVisible, visualizeResultsOnline, whichDisplay] = Controller.ConfigureExperiment(rootDir);
     cd(rootDir);
 
     
@@ -61,6 +61,7 @@ function RunImagePreferenceExperiment
     
     % use debugMode = false, when running on the Samsung
     experimentController = Controller('debugMode', debugMode, ...
+                                      'calibrationMode', calibrationMode, ...
                                       'giveVerbalFeedback', false, ...
                                       'histogramIsVisible', histogramIsVisible, ...
                                       'visualizeResultsOnLine', visualizeResultsOnline);
@@ -74,10 +75,16 @@ function RunImagePreferenceExperiment
     % Specify experiment run params
     runParams = struct(...
         'repsNum', repsNum, ...
+        'calibrationMode', calibrationMode, ...
         'varyToneMappingParamsInBlockDesign', false, ...   % set to true to do comparisons of tone mapping param value within blocks
         'whichDisplay', whichDisplay,...
         'dataFileName', fullfile(dataDir,datafileName)... ..
     );
+    
+    if (calibrationMode)
+        calibrationRect.color = 255*[1 1 1];
+        runParams.calibrationRect = calibrationRect;
+    end
     
     % Run the experiment
     abnormalTermination = experimentController.runExperiment(runParams);
