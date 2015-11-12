@@ -6,9 +6,10 @@ function response = presentStimulusAndGetResponse(obj, stimIndex)
         response = obj.photometerOBJ.measure();  % the SPD
     else
         response = obj.viewOutlet.getUserResponse();
+        if (response.terminateExperiment)
+            obj.shutDown();
+        end
     end
     
-    if (response.terminateExperiment)
-        obj.shutDown();
-    end
+    
 end

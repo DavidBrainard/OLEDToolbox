@@ -54,6 +54,10 @@ function [stimPreferenceData, abnormalTermination] = doPairwiseStimulusCompariso
         
         visStim = {stimIndexForLeftRect stimIndexForRightRect swapLeftAndRight}
         
+        responseMatrixRowIndex = find(stimIndices==stimIndexForLeftRect);
+        responseMatrixColIndex = find(stimIndices==stimIndexForRightRect);
+        
+        
         % Present stimulus and get response
         if (obj.initParams.calibrationMode)
             spd = obj.presentStimulusAndGetResponse(stimIndexInfo);
@@ -61,18 +65,16 @@ function [stimPreferenceData, abnormalTermination] = doPairwiseStimulusCompariso
             response = obj.presentStimulusAndGetResponse(stimIndexInfo);
         end
         
+ 
+        if (obj.initParams.calibrationMode)
+            stimPreferenceData.spds(responseMatrixRowIndex, responseMatrixColIndex,:) = spd;
+            continue
+        end
+        
         if (strcmp(response.selectedStimulus, 'UserTerminated'))
             fprintf('\nEarly termination by user (ESCAPE).\n');
             abnormalTermination = true;
             return;
-        end
-    
-        responseMatrixRowIndex = find(stimIndices==stimIndexForLeftRect);
-        responseMatrixColIndex = find(stimIndices==stimIndexForRightRect);
-        
-        if (obj.initParams.calibrationMode)
-            stimPreferenceData.spds(esponseMatrixRowIndex, responseMatrixColIndex,:) = spd;
-            continue
         end
         
         stimPreferenceData.reactionTimeInMilliseconds(responseMatrixRowIndex, responseMatrixColIndex) = round(response.elapsedTime*1000);
