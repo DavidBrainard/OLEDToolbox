@@ -69,6 +69,10 @@ function abnormalTermination = runExperiment(obj, params)
                     'reactionTimeInMilliseconds',   nan(numel(stimIndices), numel(stimIndices)) ...
                 );
                 
+                if (obj.initParams.calibrationMode)
+                   stimPreferenceData.spds = zeros(numel(stimIndices), numel(stimIndices), obj.photometerOBJ.nativeS(3));
+                end
+                    
                 testSinglePair = [];
                 % Show stimuli and collect responses
                 [stimPreferenceData, abnormalTermination] = obj.doPairwiseStimulusComparison(stimPreferenceData, testSinglePair, params.whichDisplay);
@@ -81,9 +85,10 @@ function abnormalTermination = runExperiment(obj, params)
                 % Update stimPreferenceMatrices
                 obj.stimPreferenceMatrices{sceneIndex, repIndex} = stimPreferenceData;
 
-                % Visualize results
-                obj.visualizePreferenceMatrix(stimPreferenceData, params.whichDisplay);
-                   
+                if (obj.initParams.debugMode) && (obj.initParams.visualizeResultsOnLine)
+                    obj.visualizePreferenceMatrix(stimPreferenceData, params.whichDisplay);
+                end
+                
                 Speak(sprintf('Finished block %d of %d', repIndex, params.repsNum));
                 Speak('Hit enter for next block');
                 pause
@@ -110,6 +115,9 @@ function abnormalTermination = runExperiment(obj, params)
                         'stimulusChosen', nan(numel(stimIndices), numel(stimIndices)), ...
                         'reactionTimeInMilliseconds',   nan(numel(stimIndices), numel(stimIndices))...
                     ); 
+                    if (obj.initParams.calibrationMode)
+                        stimPreferenceData.spds = zeros(numel(stimIndices), numel(stimIndices), obj.photometerOBJ.nativeS(3));
+                    end
                 end
                     
                 % form tmp stimPreferenceData with only two stimuli (the pair we are testing)

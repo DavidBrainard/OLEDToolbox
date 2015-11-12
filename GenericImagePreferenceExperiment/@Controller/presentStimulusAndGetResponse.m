@@ -1,7 +1,12 @@
 function response = presentStimulusAndGetResponse(obj, stimIndex)
 
     obj.viewOutlet.showStimulus(stimIndex, obj.initParams.histogramIsVisible);
-    response = obj.viewOutlet.getUserResponse();
+    
+    if (obj.initParams.calibrationMode)
+        response = obj.photometerOBJ.measure();  % the SPD
+    else
+        response = obj.viewOutlet.getUserResponse();
+    end
     
     if (response.terminateExperiment)
         obj.shutDown();

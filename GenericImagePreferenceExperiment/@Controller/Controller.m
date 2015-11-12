@@ -5,6 +5,9 @@ classdef Controller < handle
         % the psychImaging view object
         viewOutlet;
         
+        % The photometer object (only used in calibration mode)
+        photometerOBJ = [];
+        
         % the run params (passed to runExperiment)
         runParams;
         
@@ -72,6 +75,16 @@ classdef Controller < handle
                 'calibrationMode', obj.initParams.calibrationMode, ...
                 'giveVerbalFeedback', obj.initParams.giveVerbalFeedback ...
                 );
+            
+            % Check whether we are in calibration mode 
+            if (obj.initParams.calibrationMode)
+                % instantiate a photometer object
+                obj.photometerOBJ = PR650dev(...
+                    'verbosity',        1, ...       % 1 -> minimum verbosity
+                    'devicePortString', [] ...       % empty -> automatic port detection
+                );
+            end
+            
         end
         
         % Method to load the stimulus cache

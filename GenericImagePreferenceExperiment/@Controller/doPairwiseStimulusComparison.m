@@ -55,8 +55,12 @@ function [stimPreferenceData, abnormalTermination] = doPairwiseStimulusCompariso
         visStim = {stimIndexForLeftRect stimIndexForRightRect swapLeftAndRight}
         
         % Present stimulus and get response
-        response = obj.presentStimulusAndGetResponse(stimIndexInfo);
-
+        if (obj.initParams.calibrationMode)
+            spd = obj.presentStimulusAndGetResponse(stimIndexInfo);
+        else
+            response = obj.presentStimulusAndGetResponse(stimIndexInfo);
+        end
+        
         if (strcmp(response.selectedStimulus, 'UserTerminated'))
             fprintf('\nEarly termination by user (ESCAPE).\n');
             abnormalTermination = true;
@@ -65,6 +69,11 @@ function [stimPreferenceData, abnormalTermination] = doPairwiseStimulusCompariso
     
         responseMatrixRowIndex = find(stimIndices==stimIndexForLeftRect);
         responseMatrixColIndex = find(stimIndices==stimIndexForRightRect);
+        
+        if (obj.initParams.calibrationMode)
+            stimPreferenceData.spds(esponseMatrixRowIndex, responseMatrixColIndex,:) = spd;
+            continue
+        end
         
         stimPreferenceData.reactionTimeInMilliseconds(responseMatrixRowIndex, responseMatrixColIndex) = round(response.elapsedTime*1000);
         stimPreferenceData.actualTime{responseMatrixRowIndex, responseMatrixColIndex} = response.actualTime;
@@ -84,7 +93,7 @@ function [stimPreferenceData, abnormalTermination] = doPairwiseStimulusCompariso
             
             if ((strcmp(response.selectedStimulus,'LDR')) && (~swapLeftAndRight))
                 stimPreferenceData.stimulusChosen(responseMatrixRowIndex, responseMatrixColIndex) = stimIndices(responseMatrixRowIndex)+10000;
-            end 
+            end  
         else
             if (strcmp(response.selectedStimulus,'HDR'))
                 if (obj.initParams.giveVerbalFeedback)
@@ -100,8 +109,6 @@ function [stimPreferenceData, abnormalTermination] = doPairwiseStimulusCompariso
                 error('unknown selectedStimulus value: ''%s''.', response.selectedStimulus);
             end
         end
-        
-        
         
         if (isempty(testSinglePair))
             % Visualize current data  in a block
