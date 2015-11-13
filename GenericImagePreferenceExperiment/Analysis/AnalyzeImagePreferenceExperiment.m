@@ -6,6 +6,7 @@ function AnalyzeImagePreferenceExperiment
     whos('-file',dataFileName)
     load(dataFileName);
     
+    
     % retrieve subject name
     [~,sessionName] = fileparts(runParams.dataFileName);
     s = strrep(runParams.dataFileName, sessionName, '');
@@ -39,7 +40,7 @@ function AnalyzeImagePreferenceExperiment
     
     
     if (isfield(runParams, 'calibrationMode') && (runParams.calibrationMode))
-        analyzeSPDdata(runParams, stimPreferenceMatrices, conditionsData, repsNum);
+        analyzeSPDdata(runParams, stimPreferenceMatrices, toneMappingParams, conditionsData, repsNum, cacheFileNameList, pdfSubDir);
         return;
     end
     
@@ -795,17 +796,36 @@ function AnalyzeImagePreferenceExperiment
 end
 
 
-function analyzeSPDdata(runParams, stimPreferenceMatrices, conditionsData, repsNum)
+function analyzeSPDdata(runParams, stimPreferenceMatrices, toneMappingParams, conditionsData, repsNum, cacheFileNameList, pdfSubDir)
 
+    % Get subject's name
+    cacheFileNameList = cacheFileNameList{1};
+    subjectInitials = cacheFileNameList(end-6:end-4);
+    
+    % Get spectroradiometer sampling
+    stimPreferenceData = stimPreferenceMatrices{1, 1};
+    spectralAxis = squeeze(stimPreferenceData.spdSampling(1, 1,:));
+
+    
+    % Load the standard CIE '31 color matching functions.
+    load T_xyz1931;
+    T_xyz = SplineCmf(S_xyz1931, T_xyz1931, WlsToS(spectralAxis));
+    Vlambda = 683*T_xyz(2,:);
+
+    % I think I must have set up the display wrongly because I got max
+    %luminance of about 250 instead of 500. Hence the correction Factor.
+    correctionFactor = 2;
+    
+    
     fprintf('Run is a calibration run with\n');
     runParams.calibrationRect
     
     scenesNum       = size(conditionsData,1);
     toneMappingsNum = size(conditionsData,2);
     
-    if (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
-        spds = zeros(scenesNum, toneMappingsNum, repsNum, 101);
-    end
+    
+    spds = zeros(scenesNum, toneMappingsNum, repsNum, 101);
+    
 
     for sceneIndex = 1:scenesNum
         for repIndex = 1:repsNum
@@ -816,40 +836,125 @@ function analyzeSPDdata(runParams, stimPreferenceMatrices, conditionsData, repsN
             if (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
                 for rowIndex = 1:numel(stimPreferenceData.rowStimIndices)
                     colIndex = rowIndex;
-                    spectralAxis = stimPreferenceData.spds(rowIndex, colIndex,:).spdSampling;
-                    spds(sceneIndex,rowIndex,repIndex,:) = stimPreferenceData.spds(rowIndex, colIndex,:);
+                    spectralAxis = squeeze(stimPreferenceData.spdSampling(rowIndex, colIndex,:));
+                    spds(sceneIndex,rowIndex,repIndex,:) = correctionFactor*stimPreferenceData.spds(rowIndex, colIndex,:);
                 end
             end
         end % repIndex
     end % sceneIndex
     
     spds = squeeze(mean(spds,3));
-    maxSPD = max(spds(:))
-    size(spds)
-
+    maxSPD = max(spds(:));
+    
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
-                 'rowsNum',      scenesNum, ...
-                 'colsNum',      toneMappingsNum, ...
+                 'rowsNum',      scenesNum+1, ...
+                 'colsNum',      toneMappingsNum+1, ...
                  'widthMargin',  0.01, ...
-                 'heightMargin', 0.01, ...
+                 'heightMargin', 0.02, ...
                  'leftMargin',   0.03, ...
                  'rightMargin',  0.01, ...
-                 'bottomMargin', 0.08, ...
-                 'topMargin',    0.05);
+                 'bottomMargin', 0.03, ...
+                 'topMargin',    0.01);
 
-    h = figure(123);
+    hFig = figure(123);
+    set(hFig, 'Position', [10 10 1740 1530]);
     clf;
 
     for sceneIndex = 1:scenesNum
         for toneMappingIndex = 1:toneMappingsNum
-            subplot('Position', subplotPosVectors(sceneIndex, toneMappingIndex).v);
-            plot(spectralAxis, squeeze(spds(sceneIndex, toneMappingIndex,:)), 'k-');
-            title(sprintf('scene:%d / toneMap: %d', sceneIndex, toneMappingIndex));
-            set(gca, 'YLim', [0 maxSPD]);
+            
+            s = toneMappingParams(sceneIndex,toneMappingIndex);
+            s = s{1,1};
+            HDRalphas(sceneIndex,toneMappingIndex) = s{2}.alphaValue;   
+            
+            subplot('Position', subplotPosVectors(sceneIndex, toneMappingsNum-toneMappingIndex+1).v);
+            theSPD = squeeze(spds(sceneIndex, toneMappingIndex,:));
+            theLuminance(sceneIndex, toneMappingIndex) = sum(theSPD(:) .* Vlambda(:));
+            plot(spectralAxis, theSPD, 'r-');
+            title(sprintf('scene:%d / toneMap: %d (%2.1f cd/m2)', sceneIndex, toneMappingIndex, theLuminance(sceneIndex, toneMappingIndex)));
+            set(gca, 'YLim', [0 maxSPD], 'YTick', [0:0.02:0.1], 'XTick', [300:50:900],  'XLim', [spectralAxis(1) spectralAxis(end)]);
+            grid on; box on;
+            set(gca, 'XTickLabel', {});
+            if (toneMappingIndex == 1)
+                ylabel('energy');
+            end
+            if (toneMappingIndex > 1)
+                set(gca, 'YTickLabel',{});
+            end
             drawnow;
         end
     end
 
+    for sceneIndex = 1:scenesNum
+        subplot('Position', subplotPosVectors(sceneIndex, toneMappingsNum+1).v);
+        hold on;
+        for toneMappingIndex = 1:toneMappingsNum
+            plot(spectralAxis, squeeze(spds(sceneIndex, toneMappingIndex,:)), 'r-');
+        end
+        title(sprintf('scene: %d / all tone maps', sceneIndex));
+        set(gca, 'YLim', [0 maxSPD], 'YTick', [0:0.02:0.1], 'XTick', [300:50:900], 'XLim', [spectralAxis(1) spectralAxis(end)]);
+        set(gca, 'XTickLabel', {});
+        set(gca, 'YTickLabel', {});
+        
+        grid on; box on;
+        drawnow;
+    end
+    
+    for toneMappingIndex = 1:toneMappingsNum
+        subplot('Position', subplotPosVectors(scenesNum+1, toneMappingIndex).v);
+        hold on;
+        for sceneIndex = 1:scenesNum
+            plot(spectralAxis, squeeze(spds(sceneIndex, toneMappingIndex,:)), 'r-');
+        end
+        title(sprintf('all scenes / toneMap: %d', toneMappingIndex));
+        set(gca, 'YLim', [0 maxSPD], 'YTick', [0:0.02:0.1], 'XTick', [300:50:900], 'XLim', [spectralAxis(1) spectralAxis(end)]);
+        xlabel('wavelength (nm)');
+        if (toneMappingIndex == 1)
+            ylabel('energy');
+        end
+        if (toneMappingIndex > 1)
+            set(gca, 'YTickLabel',{});
+        end
+        
+        grid on; box on;
+        drawnow;
+    end
+    NicePlot.exportFigToPDF(sprintf('%s/CalibrationSPDs_(%s).pdf', pdfSubDir, subjectInitials),hFig,300);
+     
+    
+    
+    hFig = figure(124);
+    set(hFig, 'Position', [10 10 856 941]);
+    clf;
+    subplot('Position', [0.06 0.02 0.90 0.97]);
+    
+    HDRtoneMapDeviation = [-3 -2 -1 0 1 2 3];
+    sceneIndex = 1;
+    HDRtoneMapLabels = HDRalphas(sceneIndex,:) ./ HDRalphas(sceneIndex,4);
+    
+    imagesc(HDRtoneMapDeviation, 1:scenesNum, theLuminance);
+    axis 'image'
+    set(gca, 'XTickLabel', HDRtoneMapLabels, 'FontSize', 12);
+    set(gca, 'XLim', [-3.5 3.5], 'YLim', [0.5 8.5]);
+    set(gca, 'XDir', 'reverse');
+    acrossScenesDeltaLum = max(max(theLuminance, [], 1) - min(theLuminance, [], 1));
+    acrossToneMapsDeltaLum = max(max(theLuminance, [], 2) - min(theLuminance, [], 2));
+    title([sprintf('subj %s: ',upper(subjectInitials)) ...
+           '$${\Delta}$$' sprintf('lum: %2.0f - %2.0f cd/m2,  ',  min(theLuminance(:)), max(theLuminance(:))) ...
+           '$${\Delta}$$' sprintf('lum across scenes: %2.1f cd/m2,  ',  acrossScenesDeltaLum) ...
+           '$${\Delta}$$' sprintf('lum across tone maps: %2.1f cd/m2',  acrossToneMapsDeltaLum)...
+           ], ...
+          'Interpreter', 'latex', 'FontSize', 16);
+    xlabel('tone mapping', 'FontSize', 16);
+    ylabel('scene index', 'FontSize', 16);
+    
+    ylabel('scene');
+    colormap(gray);
+    c = colorbar;
+    c.Label.String = 'measured target luminance (cd/m2)';
+    c.Label.FontSize = 14;
+    NicePlot.exportFigToPDF(sprintf('%s/CalibrationLums_(%s).pdf', pdfSubDir, subjectInitials),hFig,300);
+    
 end
 
     
