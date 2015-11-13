@@ -91,7 +91,7 @@ classdef Controller < handle
         loadStimulusCache(obj, cacheFileName, cartoonImageDirectory);
         
         % Method to set the view's calibration rect.
-        setCalibrationRect(obj, calibrationRect);
+        newCalibrationRect = setCalibrationRect(obj, calibrationRect);
         
         % Method to run the experiment
         abnormalTermination = runExperiment(obj, params);

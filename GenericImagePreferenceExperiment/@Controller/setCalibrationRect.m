@@ -1,4 +1,4 @@
-function setCalibrationRect(obj, calibrationRect)
-    obj.viewOutlet.setCalibrationRect(calibrationRect);
+function newCalibrationRect = setCalibrationRect(obj, calibrationRect)
+    newCalibrationRect = obj.viewOutlet.setCalibrationRect(calibrationRect);
 end
 

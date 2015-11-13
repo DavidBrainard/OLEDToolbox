@@ -24,10 +24,14 @@ function [stimPreferenceData, abnormalTermination] = doPairwiseStimulusCompariso
         
         comboIndex = randomizedComboIndex(kthPair);
         
-        if (rand >0.5)
+        if (obj.initParams.calibrationMode)
             swapLeftAndRight = true;
         else
-            swapLeftAndRight = false;
+            if (rand >0.5)
+                swapLeftAndRight = true;
+            else
+                swapLeftAndRight = false;
+            end
         end
         
         if (swapLeftAndRight)

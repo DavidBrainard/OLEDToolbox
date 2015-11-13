@@ -108,7 +108,7 @@ classdef View < handle
         
         % Method to configure the position, size and color of the
         % calibration rectangle
-        setCalibrationRect(obj, calibrationRect);
+        newCalibrationRect = setCalibrationRect(obj, calibrationRect);
         
         % Method to present a stimulus (hdr, ldr) pair at specific destination rects
         showStimulus(obj, stimIndex, histogramIsVisible);

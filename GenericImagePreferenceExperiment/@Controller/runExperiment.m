@@ -7,7 +7,7 @@ function abnormalTermination = runExperiment(obj, params)
     obj.runAbortionStatus = 'none';
     
     if (params.calibrationMode)
-        obj.setCalibrationRect(params.calibrationRect);
+        runParams.calibrationRect = obj.setCalibrationRect(params.calibrationRect);
     end
     
     % reset stimPreferenceMatrices
