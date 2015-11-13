@@ -64,16 +64,14 @@ function [stimPreferenceData, abnormalTermination] = doPairwiseStimulusCompariso
         
         % Present stimulus and get response
         if (obj.initParams.calibrationMode)
-            spd = obj.presentStimulusAndGetResponse(stimIndexInfo);
+            response = obj.presentStimulusAndGetResponse(stimIndexInfo);
+            stimPreferenceData.spds(responseMatrixRowIndex, responseMatrixColIndex,:) = response.energy;
+            stimPreferenceData.spdSampling(responseMatrixRowIndex, responseMatrixColIndex,:) = response.spectralAxis;
+            continue
         else
             response = obj.presentStimulusAndGetResponse(stimIndexInfo);
         end
-        
- 
-        if (obj.initParams.calibrationMode)
-            stimPreferenceData.spds(responseMatrixRowIndex, responseMatrixColIndex,:) = spd;
-            continue
-        end
+       
         
         if (strcmp(response.selectedStimulus, 'UserTerminated'))
             fprintf('\nEarly termination by user (ESCAPE).\n');

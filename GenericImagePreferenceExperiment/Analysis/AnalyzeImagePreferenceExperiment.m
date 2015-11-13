@@ -38,6 +38,11 @@ function AnalyzeImagePreferenceExperiment
     end
     
     
+    if (isfield(runParams, 'calibrationMode') && (runParams.calibrationMode))
+        analyzeSPDdata(runParams, stimPreferenceMatrices, conditionsData, repsNum);
+        return;
+    end
+    
     
     if (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
         
@@ -789,6 +794,63 @@ function AnalyzeImagePreferenceExperiment
     
 end
 
+
+function analyzeSPDdata(runParams, stimPreferenceMatrices, conditionsData, repsNum)
+
+    fprintf('Run is a calibration run with\n');
+    runParams.calibrationRect
+    
+    scenesNum       = size(conditionsData,1);
+    toneMappingsNum = size(conditionsData,2);
+    
+    if (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
+        spds = zeros(scenesNum, toneMappingsNum, repsNum, 101);
+    end
+
+    for sceneIndex = 1:scenesNum
+        for repIndex = 1:repsNum
+
+            % get the data for this repetition
+            stimPreferenceData = stimPreferenceMatrices{sceneIndex, repIndex};
+            
+            if (strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
+                for rowIndex = 1:numel(stimPreferenceData.rowStimIndices)
+                    colIndex = rowIndex;
+                    spectralAxis = stimPreferenceData.spds(rowIndex, colIndex,:).spdSampling;
+                    spds(sceneIndex,rowIndex,repIndex,:) = stimPreferenceData.spds(rowIndex, colIndex,:);
+                end
+            end
+        end % repIndex
+    end % sceneIndex
+    
+    spds = squeeze(mean(spds,3));
+    maxSPD = max(spds(:))
+    size(spds)
+
+    subplotPosVectors = NicePlot.getSubPlotPosVectors(...
+                 'rowsNum',      scenesNum, ...
+                 'colsNum',      toneMappingsNum, ...
+                 'widthMargin',  0.01, ...
+                 'heightMargin', 0.01, ...
+                 'leftMargin',   0.03, ...
+                 'rightMargin',  0.01, ...
+                 'bottomMargin', 0.08, ...
+                 'topMargin',    0.05);
+
+    h = figure(123);
+    clf;
+
+    for sceneIndex = 1:scenesNum
+        for toneMappingIndex = 1:toneMappingsNum
+            subplot('Position', subplotPosVectors(sceneIndex, toneMappingIndex).v);
+            plot(spectralAxis, squeeze(spds(sceneIndex, toneMappingIndex,:)), 'k-');
+            title(sprintf('scene:%d / toneMap: %d', sceneIndex, toneMappingIndex));
+            set(gca, 'YLim', [0 maxSPD]);
+            drawnow;
+        end
+    end
+
+end
 
     
     
