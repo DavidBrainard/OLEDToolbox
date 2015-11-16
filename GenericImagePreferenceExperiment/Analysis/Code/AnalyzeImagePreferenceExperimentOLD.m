@@ -1,4 +1,4 @@
-function AnalyzeImagePreferenceExperiment
+function AnalyzeImagePreferenceExperimentOLD
    
     [rootDir,~] = fileparts(which(mfilename)); 
     
@@ -165,7 +165,6 @@ function AnalyzeImagePreferenceExperiment
             end
         end
     end
-   
     
     for toneMappingIndex = 1:toneMappingsNum 
         tmp = allScenesLum{toneMappingIndex};

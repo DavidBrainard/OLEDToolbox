@@ -1,0 +1,6 @@
+function AnalyzeImagePreferenceExperiment
+
+    imPrefAnalyzer = ImagePreferenceAnalyzer();
+    size(imPrefAnalyzer.obj.thumbnailStimImages)
+end
+
