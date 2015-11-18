@@ -170,11 +170,11 @@ function PlotSummaryResultsAllSubjects
                  'bottomMargin', 0.09, ...
                  'topMargin',    0.01);
 
-    set(h, 'Position', [10 10 2330 1270], 'Color', [0 0 0]);
+    set(h, 'Position', [10 10 2330 1270], 'Color', [1 1 1]);
     
     subplot('Position', subplotPosVectors(1,1).v);
     hold on;
-    plot(fit.x, fit.y, '-', 'LineWidth', 3.0, 'Color', [0.8 0.8 0.8]);
+    plot(fit.x, fit.y, '-', 'LineWidth', 3.0, 'Color', [0.2 0.2 0.2]);
     plot([0 1000], [0 1000], 'w:', 'LineWidth', 2.0);
     
     for subjectIndex = 1:numel(preferredAlpha)
@@ -187,7 +187,7 @@ function PlotSummaryResultsAllSubjects
         plot(preferredAlpha{subjectIndex}.HDR, preferredAlpha{subjectIndex}.LDR, 'ks', 'LineWidth', 2, 'MarkerSize', 18, 'MarkerFaceColor', markerFaceColor, 'MarkerEdgeColor', preferredAlpha{subjectIndex}.color);
         
     end
-    set(gca, 'XColor', [1 1 1], 'YColor', [1 1 1]);
+    set(gca, 'XColor', [0.2 0.2 0.2], 'YColor', [0.2 0.2 0.2]);
     set(gca, 'XLim', [0 150], 'YLim', [0 500], 'XTick', [0:50:400], 'YTick', [0:50:500], 'FontSize', 14);
     set(gca, 'XScale', 'linear', 'YScale', 'linear')
     hL = legend(...
@@ -202,10 +202,10 @@ function PlotSummaryResultsAllSubjects
            preferredAlpha{7}.name, ...
            preferredAlpha{8}.name, ...
            'Location', 'NorthWest');
-    set(hL,'Interpreter','latex', 'fontsize', 24, 'TextColor', [ 1 1 1], 'Color', 'none', 'box', 'off')
+    set(hL,'Interpreter','latex', 'fontsize', 24, 'TextColor', [0.2 0.2 0.2], 'Color', 'none', 'box', 'off')
        
-    xlabel('$$\alpha_{_{OLED}}$$', 'interpreter', 'latex', 'FontSize', 40, 'FontWeight', 'bold', 'Color', [0.7 0.7 0.7]);
-    ylabel('$$\alpha_{_{LCD}}$$',  'interpreter', 'latex', 'FontSize', 40, 'FontWeight', 'bold', 'Color', [0.7 0.7 0.7]);
+    xlabel('$$\alpha_{_{OLED}}$$', 'interpreter', 'latex', 'FontSize', 40, 'FontWeight', 'bold', 'Color', [0.2 0.2 0.2]);
+    ylabel('$$\alpha_{_{LCD}}$$',  'interpreter', 'latex', 'FontSize', 40, 'FontWeight', 'bold', 'Color', [0.2 0.2 0.2]);
     grid off
     box on
     set(gca, 'FontSize', 28, 'Color', [0 0 0 ]);
@@ -297,8 +297,8 @@ function PlotSummaryResultsAllSubjects
     box on
     set(gca, 'YTick', (0.0:0.5:10), 'YTickLabel', sprintf('%1.1f\n', 0:0.5:10));
     set(gca, 'XLim', [0.5 numel(preferredAlpha)+0.5], 'XTick', 1:numel(preferredAlpha), 'XTickLabel', allSubjects);
-    set(gca, 'XColor', [1 1 1], 'YColor', [1 1 1], 'Color', [0 0 0]);
-    set(gca, 'FontSize', 24, 'Color', [0 0 0 ]);
+    set(gca, 'XColor', [0.2 0.2 0.2], 'YColor', [0.2 0.2 0.2], 'Color', [1 1 1]);
+    set(gca, 'FontSize', 24);
     
     
     

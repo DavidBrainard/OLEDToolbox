@@ -116,8 +116,6 @@ function AnalyzeImagePreferenceExperimentOLD
         NicePlot.exportFigToPDF(sprintf('%s/Summary_ToneMappings.pdf', pdfSubDir),hFig,300);
         fprintf('Figure saved in %s\n', sprintf('%s/Summary_ToneMappings.pdf', pdfSubDir));
     
-        disp('Hit enter to continue\n');
-        pause
     end
     
     
@@ -176,6 +174,7 @@ function AnalyzeImagePreferenceExperimentOLD
     end
     
     
+    repsNum
     for sceneIndex = 1:scenesNum
         
         for repIndex = 1:repsNum
@@ -233,9 +232,7 @@ function AnalyzeImagePreferenceExperimentOLD
                     % in HDR or LDR mode
                     elseif (~strcmp(runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
                         if (selectedStimIndex == stimPreferenceData.rowStimIndices(rowIndex))
-                            % when the (row,col) stim pair was presented, the row stimulus was chosen
-                            % for fixOptimalLDR_varyHDR, this means when the (row=HDR,col=LDR) stim pair was presented, the row=HDR stimulus was chosen
-
+                            % when the (row,col) stim pair was presented, the row stimulus was chose
                             if (isnan(prefStatsStruct.stimulusPreferenceRate2D(rowIndex, colIndex)))
                                 prefStatsStruct.stimulusPreferenceRate2D(rowIndex, colIndex) = 1;
                                 prefStatsStruct.meanResponseLatency2D(rowIndex, colIndex) = latencyInMilliseconds;
@@ -249,8 +246,6 @@ function AnalyzeImagePreferenceExperimentOLD
 
                         elseif (selectedStimIndex == stimPreferenceData.colStimIndices(colIndex))
                             % when the (row,col) stim pair was presented, the col stimulus was chosen
-                            % for fixOptimalLDR_varyHDR, this means when the (row=HDR,col=LDR) stim pair was presented, the col=LDR stimulus was chosen
-
                             if (isnan(prefStatsStruct.stimulusPreferenceRate2D(colIndex, rowIndex)))
                                 prefStatsStruct.stimulusPreferenceRate2D(colIndex, rowIndex) = 1;
 
@@ -299,7 +294,7 @@ function AnalyzeImagePreferenceExperimentOLD
             prefStatsStruct.HDRprob = HDRselected./timesVisited;
             prefStatsStruct.LDRprob = LDRselected./timesVisited;
             
-            
+            prefStatsStruct.visitedSingleReps
             if (sum(sum(prefStatsStruct.visitedSingleReps == ones(size(prefStatsStruct.visitedSingleReps)))) == numel(prefStatsStruct.visitedSingleReps)) 
                 
                 resamplingSamplesNum = 300;
@@ -647,8 +642,8 @@ function AnalyzeImagePreferenceExperimentOLD
             
             subplot('Position', subplotPosVectors(2+2*floor((sceneIndex-1)/(scenesNum/2)),1+mod(sceneIndex-1,scenesNum/2)).v); 
             
-            if (isfield(preferenceDataStats{sceneIndex}, 'HDRresampledReps'))
-                meanValsHDR = mean(preferenceDataStats{sceneIndex}.HDRresampledReps,2);
+            if (isfield(preferenceDataStats{sceneIndex}, 'HDRresampledReps2'))
+                meanValsHDR = mean(preferenceDataStats{sceneIndex}.HDRresampledReps,2)
                 meanValsLDR = mean(preferenceDataStats{sceneIndex}.LDRresampledReps,2);
                 stdValsHDR  = std(preferenceDataStats{sceneIndex}.HDRresampledReps,0, 2);
                 stdValsLDR  = std(preferenceDataStats{sceneIndex}.LDRresampledReps,0, 2);
@@ -660,6 +655,8 @@ function AnalyzeImagePreferenceExperimentOLD
                 lowerValsLDR = min(preferenceDataStats{sceneIndex}.LDRresampledReps, [], 2) - meanValsLDR;
             else
                 meanValsHDR = mean(preferenceDataStats{sceneIndex}.HDRmapSingleReps,2);
+                preferenceDataStats{sceneIndex}.HDRmapSingleReps(1,:)
+                pause
                 meanValsLDR = mean(preferenceDataStats{sceneIndex}.LDRmapSingleReps,2);
                 stdValsHDR  = std(preferenceDataStats{sceneIndex}.HDRresampledReps,0, 2);
                 stdValsLDR  = std(preferenceDataStats{sceneIndex}.LDRresampledReps,0, 2);
@@ -746,7 +743,8 @@ function AnalyzeImagePreferenceExperimentOLD
                 alphas = [alphas; repmat(alphaValues(k), [repsNum 1])];
             end
 
-            xdata = alphas;
+            xdata = alphas
+            pause
             ydata = reshape(selectionRate, [prod(size(selectionRate)) 1]);
 
 
@@ -1078,6 +1076,7 @@ end
 function pdfSubDir = getPDFsubDir(rootDir, sessionName, subjectName)
 
     cd(rootDir);
+    cd ..
     if (~isdir('PDFfigs'))
         mkdir('PDFfigs');
     end

@@ -8,6 +8,6 @@ function getDataFile(obj)
     
     [fileName,pathName] = uigetfile({'*.mat'},'Select a data file for analysis', obj.dataDir);
     obj.dataFile = fullfile(pathName, fileName);
-    cd(obj.rootDir);
     
+    cd(obj.rootDir);
 end

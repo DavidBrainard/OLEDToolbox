@@ -4,24 +4,24 @@ function plotStimuliAndProfiles(obj, whichDisplay, whichScene, figureNo)
                  'rowsNum',      obj.toneMappingsNum, ...
                  'colsNum',      3, ...
                  'widthMargin',  0.01, ...
-                 'heightMargin', 0.015, ...
-                 'leftMargin',   0.04, ...
+                 'heightMargin', 0.02, ...
+                 'leftMargin',   0.05, ...
                  'rightMargin',  0.01, ...
                  'bottomMargin', 0.04, ...
                  'topMargin',    0.01);
             
     hFig = figure(figureNo);
     clf; 
-    set(hFig, 'Position', [10 10 1013 1531], 'Color', [1 1 1]);
+    set(hFig, 'Position', [10 10 1100 1430], 'Color', [1 1 1]);
     row1 = 47; col1 = 111;
     row2 = 113; col2 = 175;
-    cols1 = col1 + (-20:20);
-    cols2 = col2 + (-20:20);
+    cols1 = col1 + (-20:19);
+    cols2 = col2 + (-20:19);
     
     
     for toneMappingIndex = 1:obj.toneMappingsNum
         stimIndex = obj.conditionsData(whichScene, toneMappingIndex);
-        if (strcmp(whichDisplay, 'HDR'))
+        if (strcmp(whichDisplay, 'OLED'))
             imageData = squeeze(obj.thumbnailStimImages(stimIndex,1,:,:,:));
             mappingFunction = obj.hdrMappingFunctionLowRes{whichScene, toneMappingIndex};
         else
@@ -54,10 +54,10 @@ function plotStimuliAndProfiles(obj, whichDisplay, whichScene, figureNo)
         else
             xlabel('scene luminance', 'FontSize', 14);
         end
-        set(gca, 'FontSize', 12);
-        ylabel('display luminance (norm)');
+        set(gca, 'FontSize', 16);
+        ylabel('norm. display lum.', 'FontSize', 18);
         box 'off'
-        
+        grid on
         
         % In the middle, the image
         subplot('Position', subplotPosVectors(toneMappingIndex,2).v);
@@ -86,14 +86,15 @@ function plotStimuliAndProfiles(obj, whichDisplay, whichScene, figureNo)
         plot(1:numel(cols2), relativeLuminance2/obj.maxRelativeImageLuminance(whichDisplay), 'bs-', 'MarkerFaceColor', [0.8 0.8 1.0]);
         hold off
         yTicks = 0:0.2:1.0;
-        set(gca, 'XLim', [1 numel(cols1)], 'YLim', [0 1], 'YTick', yTicks, 'YTickLabels', sprintf('%2.1f\n', yTicks));
+        set(gca, 'XLim', [1 numel(cols1)], 'YLim', [0 1], 'YTick', yTicks, 'YTickLabels', {});
         if (toneMappingIndex < obj.toneMappingsNum)
             set(gca, 'XTickLabel', []);
         else
-            xlabel('pixel no.', 'FontSize', 14);
+            xlabel('pixel no.', 'FontSize', 18);
         end
-        set(gca, 'FontSize', 12);
+        set(gca, 'FontSize', 16);
         box 'off'
+        grid on
     end
     
     pdfFigFileName = sprintf('%s/ToneMappingImageEffects.pdf', obj.pdfDir);
