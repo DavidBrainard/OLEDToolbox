@@ -47,6 +47,5 @@ function getData(obj)
     obj.computeSceneDynamicRanges();
     
     obj.processPreferenceData();
-    
 end
 

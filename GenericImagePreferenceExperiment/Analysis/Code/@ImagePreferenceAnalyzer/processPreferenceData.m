@@ -126,7 +126,9 @@ function processPreferenceData(obj)
                 prefStatsStruct.LDRmapStdErrOfMean = resample(prefStatsStruct.LDRmapSingleReps, resamplesNum);
                 
             else
-                error('Uneven presentation of stimuli');
+                fprintf('\n ----------------------------------------------\n');
+                fprintf(2,'* * * Uneven presentation of stimuli * * * ');
+                fprintf('\n ----------------------------------------------\n');
             end
        else
            % mean response latency for the paired comparison (row,col)

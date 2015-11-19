@@ -1,11 +1,5 @@
 function summarizeDataAcrossAllSubjects(obj)
 
-     GetAllSubjectData(obj);
-end
-
-
-function GetAllSubjectData(obj)
-
     dynamicRange = [54848 2806 15814 1079 19581 2789 6061 1110];
     
     subjectIndex = 0;
@@ -28,7 +22,6 @@ function GetAllSubjectData(obj)
     obj.allSubjectSummaryData{subjectIndex}.LDR = [43.2 37.8 50.4 59.6 47.9 36.5 64.1 56.3];
     obj.allSubjectSummaryData{subjectIndex}.dynamicRange = dynamicRange;
     
-    
     subjectIndex = subjectIndex + 1;
     obj.allSubjectSummaryData{subjectIndex}.name = 'VJK';
     obj.allSubjectNames{numel(obj.allSubjectNames)+1} = obj.allSubjectSummaryData{subjectIndex}.name;
@@ -36,7 +29,6 @@ function GetAllSubjectData(obj)
     obj.allSubjectSummaryData{subjectIndex}.HDR = [19.3 19.5 22.1 26.4 11.3 17.9 19.3 20.0];
     obj.allSubjectSummaryData{subjectIndex}.LDR = [23.5 26.6 22.7 32.1 17.0 23.3 22.0 28.7];
     obj.allSubjectSummaryData{subjectIndex}.dynamicRange = dynamicRange;
-    
     
     subjectIndex = subjectIndex + 1;
     obj.allSubjectSummaryData{subjectIndex}.name = 'NBJ';
@@ -46,7 +38,6 @@ function GetAllSubjectData(obj)
     obj.allSubjectSummaryData{subjectIndex}.LDR = [57.0 31.5 60.9 45.3 23.5 31.2 29.4 39.6];
     obj.allSubjectSummaryData{subjectIndex}.dynamicRange = dynamicRange;
     
-
     subjectIndex = subjectIndex + 1;
     obj.allSubjectSummaryData{subjectIndex}.name = 'FMR';
     obj.allSubjectNames{numel(obj.allSubjectNames)+1} = obj.allSubjectSummaryData{subjectIndex}.name;
@@ -54,7 +45,6 @@ function GetAllSubjectData(obj)
     obj.allSubjectSummaryData{subjectIndex}.HDR = [ 5.0 21.0 22.0 41.8 25.1 37.2 47.6 53.4];
     obj.allSubjectSummaryData{subjectIndex}.LDR = [20.4 32.7 37.7 59.2 44.0 44.1 81.6 80.0];
     obj.allSubjectSummaryData{subjectIndex}.dynamicRange = dynamicRange;
-    
     
     subjectIndex = subjectIndex + 1;
     obj.allSubjectSummaryData{subjectIndex}.name = 'NPC';
@@ -112,13 +102,20 @@ function GetAllSubjectData(obj)
             obj.getData();
             obj.determineMaxDisplayLuminances();
         else
-            load(dataFile, 'ldrMappingFunctionLowRes', 'hdrMappingFunctionLowRes', 'thumbnailStimImages', 'conditionsData');
+            load(dataFile, 'runParams', 'ldrMappingFunctionLowRes', 'hdrMappingFunctionLowRes', 'thumbnailStimImages', 'conditionsData', 'stimPreferenceMatrices');
             obj.ldrMappingFunctionLowRes = ldrMappingFunctionLowRes;
             obj.hdrMappingFunctionLowRes = hdrMappingFunctionLowRes;
             obj.thumbnailStimImages = thumbnailStimImages;
             obj.conditionsData = conditionsData;
+            obj.stimPreferenceMatrices = stimPreferenceMatrices;
+            obj.runParams = runParams;
+            obj.scenesNum = size(obj.conditionsData, 1);
+            obj.toneMappingsNum = size(obj.conditionsData, 2);
+            obj.repsNum = obj.runParams.repsNum;
         end
         
+        obj.extractOLEDandLCDalphas();
+        obj.processPreferenceData();
         
         bestToneMappingIndex = 4;
         for sceneIndex = 1:obj.scenesNum
@@ -129,18 +126,19 @@ function GetAllSubjectData(obj)
             obj.allSubjectSummaryData{subjectIndex}.optimalHDRimage(sceneIndex,:,:,:) = obj.thumbnailStimImages(stimIndex, 1, :,:,:);
             obj.allSubjectSummaryData{subjectIndex}.optimalLCDlum(sceneIndex).data   = obj.ldrMappingFunctionLowRes{sceneIndex,bestToneMappingIndex}.output;
             obj.allSubjectSummaryData{subjectIndex}.optimalOLEDlum(sceneIndex).data  = obj.hdrMappingFunctionLowRes{sceneIndex,bestToneMappingIndex}.output;
+            obj.allSubjectSummaryData{subjectIndex}.preferenceDataStats{sceneIndex}  = obj.preferenceDataStats{sceneIndex};
+            obj.allSubjectSummaryData{subjectIndex}.alphaValuesOLED = obj.alphaValuesOLED;
+            obj.allSubjectSummaryData{subjectIndex}.alphaValuesLCD  = obj.alphaValuesLCD;
         end % sceneIndex
         
-       
+        
     end % subjectIndex
         
-    
     % pool with subjects showing similar LCD to OLED alphas 
     obj.subjectPool1 = {'VJK', 'JTA', 'ANA', 'NBJ', 'FMR'};
     
     % pool with subjects prefaring a more saturated LCD alpha
     obj.subjectPool2 = setdiff(obj.allSubjectNames, obj.subjectPool1);
-    
 end
 
 
