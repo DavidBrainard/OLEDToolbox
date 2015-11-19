@@ -66,6 +66,7 @@ classdef ImagePreferenceAnalyzer < handle
         summarizeDataAcrossAllSubjects(obj);
         plotAllSubjectSummaryAlphaData(obj, figNo);
         plotAllSubjectOptimalToneMappingFunctions(obj, FigNo);
+        plotAllSubjectOLEDPreferenceFunctions(obj, FigNo);
     end
     
     methods (Access = private)

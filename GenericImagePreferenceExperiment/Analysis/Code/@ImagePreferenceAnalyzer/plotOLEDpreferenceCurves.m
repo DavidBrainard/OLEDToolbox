@@ -104,14 +104,33 @@ function plotOLEDpreferenceCurves(obj, whichScene, figNo)
             hold on;
             
             if (strcmp(obj.runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
+                
+                % area under the curve
+                hA = area(HDRtoneMapDeviation, mean(prefStatsStruct.HDRmapSingleReps,2), 0.5);
+                hA(1).FaceColor = [1.0 0.8 0.8];
+                hA(1).EdgeColor = 'none';
+                % erase the fill curve region < 0.5
+                hB = area([-3.4 3.4], [0 0], 0.5);
+                hB(1).FaceColor = [1 1 1];
+                hB(1).EdgeColor = 'none';   
+            
+                % Standard errors
                 x  = HDRtoneMapDeviation(:);
                 y1 = mean(prefStatsStruct.HDRmapSingleReps,2) - prefStatsStruct.HDRmapStdErrOfMean;
                 y2 = mean(prefStatsStruct.HDRmapSingleReps,2) + prefStatsStruct.HDRmapStdErrOfMean;
                 x = [x; x(end:-1:1)];
                 y = [y1; y2(end:-1:1)];
                 v = [x(:) y(:)];
-                patch('Faces', 1:14, 'Vertices', v, 'FaceColor',[1 0.7 0.7], 'EdgeColor', [1 0 0], 'FaceAlpha', 0.8);
-                plot(HDRtoneMapDeviation, mean(prefStatsStruct.HDRmapSingleReps,2), 'rs-');
+                patch('Faces', 1:14, 'Vertices', v, 'FaceColor',[0.7 0.7 0.8], 'EdgeColor', [0.6 0.6 0.7], 'FaceAlpha', 0.4);
+                
+                 % Curve
+                plot(HDRtoneMapDeviation, mean(prefStatsStruct.HDRmapSingleReps,2), 'rs-', 'MarkerSize', 14, 'LineWidth', 2.0);
+                
+                % line at P = 0.5
+                plot([-10 10], [0.5 0.5], 'k--', 'LineWidth', 1.0);
+                
+                % line at ratio = 1
+                plot([0 0], [-0.1 1.1], 'k:', 'LineWidth', 1.0);
             
                 set(gca, 'FontSize', 16, 'Color', [1 1 1], 'XColor', [0.2 0.2 0.2], 'YColor', [0.2 0.2 0.2]);
                 set(gca, 'XLim', [-3.5 3.5], 'YLim', [-0.1 1.1], 'YTick', [0:0.25:1.0], 'YTickLabel', sprintf('%1.2f\n', (0:0.25:1.0)));
@@ -119,7 +138,7 @@ function plotOLEDpreferenceCurves(obj, whichScene, figNo)
                 xlabel(['$$\mathsf{\alpha_{test} / \alpha_{opt}, [ \alpha_{opt}: }$$' sprintf('%2.1f]', obj.alphaValuesOLED(sceneIndex,4))],'interpreter','latex','fontsize',20);
                 set(gca, 'XDir', 'reverse');
                 ylabel('P_{OLED}', 'FontSize', 20);
-                box on; grid on
+                box on; grid off
                 
                 drawnow;
                 NicePlot.exportFigToPDF(sprintf('%s/%s/%s/LDR_vs_HDR_scene_%d.pdf', obj.pdfDir, obj.subjectName, obj.sessionName, sceneIndex),hFig,300);   
@@ -183,10 +202,8 @@ function plotOLEDpreferenceCurves(obj, whichScene, figNo)
         hFig = figure(figNo); clf;
         set(hFig, 'Position', [10 10 1425 1340], 'Color', [1 1 1]);
     
-        for sceneIndex = 1:obj.scenesNum
-            
-            prefStatsStruct = obj.preferenceDataStats{sceneIndex};
-            
+        % First pass: Just the images
+        for sceneIndex = 1:obj.scenesNum     
             if strcmp(obj.runParams.whichDisplay, 'HDR')
                 selectedToneMappingIndex = 4;
                 stimIndex = obj.conditionsData(sceneIndex, selectedToneMappingIndex);
@@ -198,9 +215,9 @@ function plotOLEDpreferenceCurves(obj, whichScene, figNo)
                 imagePic = squeeze(obj.thumbnailStimImages(stimIndex,2,:,:,:));
                 
             elseif (strcmp(obj.runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
-                % choose the HDR at the peak response
+                prefStatsStruct = obj.preferenceDataStats{sceneIndex};
                 meanValsHDR = mean(prefStatsStruct.HDRmapSingleReps,2);
-                stdValsHDR = prefStatsStruct.HDRmapStdErrOfMean;
+                % choose the HDR at the peak response
                 [~,selectedToneMappingIndex] = max(meanValsHDR);
                 fprintf('-----> Best OLED tone mapping index for scene[%d] = %d\n', sceneIndex, selectedToneMappingIndex);
                 stimIndex = obj.conditionsData(sceneIndex, selectedToneMappingIndex);
@@ -217,9 +234,20 @@ function plotOLEDpreferenceCurves(obj, whichScene, figNo)
             imshow(squeeze(double(imagePic)/255.0));
             title(sprintf('scene DR (%2.1f%%): %4.0f:1', obj.DHRpercentileLowEnd, obj.sceneDynamicRange(sceneIndex, 2)/obj.sceneDynamicRange(sceneIndex, 1)), 'Color', [0.2 0.2 0.2], 'FontSize', 18, 'FontWeight', 'bold');
             
+        end % sceneIndex
+        
+        
+        % Second pass: just the OLED preference curves
+        for sceneIndex = 1:obj.scenesNum
             
+            prefStatsStruct = obj.preferenceDataStats{sceneIndex};
+
             % Plot tuning on bottom
             if (strcmp(obj.runParams.whichDisplay, 'fixOptimalLDR_varyHDR'))
+                
+                meanValsHDR = mean(prefStatsStruct.HDRmapSingleReps,2);
+                stdValsHDR = prefStatsStruct.HDRmapStdErrOfMean;
+                
                 % x-axis and labels
                 HDRtoneMapDeviation = [-3 -2 -1 0 1 2 3];
                 HDRtoneMapLabels = obj.alphaValuesOLED(sceneIndex, :) ./ obj.alphaValuesOLED(sceneIndex,4);
@@ -230,14 +258,34 @@ function plotOLEDpreferenceCurves(obj, whichScene, figNo)
                 hA(1).FaceColor = [1.0 0.8 0.8];
                 hA(1).EdgeColor = 'none';
                 hold on;
-                % erase the fill curve region < 0.5
+                
+                % area under the curve < 0.5
                 hB = area([-3.4 3.4], [0 0], 0.5);
                 hB(1).FaceColor = [1 1 1];
                 hB(1).EdgeColor = 'none';
-                plot(HDRtoneMapDeviation, meanValsHDR, 'r-', 'LineWidth',2);
-                hErr = errorbar(HDRtoneMapDeviation, meanValsHDR,  stdValsHDR, 'rs', 'LineWidth',2, 'MarkerFaceColor', [0.8 0.6 0.6], 'MarkerSize', 12);
-                plot([-10 10], [0.5 0.5], 'k-');
-                plot([0 0], [0 1], 'k--');
+                % erase the fill curve region < 0.5
+                hB = area([-3.4 3.4], [0 0], 0.5);
+                hB(1).FaceColor = [1 1 1];
+                hB(1).EdgeColor = 'none';   
+            
+                % Standard errors    
+                x  = HDRtoneMapDeviation(:);
+                y1 = meanValsHDR - stdValsHDR;
+                y2 = meanValsHDR + stdValsHDR;
+                x = [x; x(end:-1:1)];
+                y = [y1; y2(end:-1:1)];
+                v = [x(:) y(:)];
+                patch('Faces', 1:14, 'Vertices', v, 'FaceColor',[0.7 0.7 0.8], 'EdgeColor', [0.6 0.6 0.7], 'FaceAlpha', 0.4);
+                
+                % Curve
+                plot(HDRtoneMapDeviation, meanValsHDR, 'rs-', 'MarkerSize', 14, 'LineWidth', 2.0);
+            
+                % line at P = 0.5
+                plot([-10 10], [0.5 0.5], 'k--');
+                
+                % line at ratio = 1
+                plot([0 0], [0 1], 'k:');
+                
                 set(gca, 'FontSize', 16, 'Color', [1 1 1], 'XColor', [0.2 0.2 0.2], 'YColor', [0.2 0.2 0.2]);
                 set(gca, 'XLim', [-3.5 3.5], 'YLim', [-0.1 1.1], 'YTick', [0:0.25:1.0], 'YTickLabel', sprintf('%1.2f\n', (0:0.25:1.0)));
                 set(gca, 'Xtick', HDRtoneMapDeviation, 'XTickLabel', sprintf('%1.2f\n',HDRtoneMapLabels));

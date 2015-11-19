@@ -54,7 +54,7 @@ function plotAllSubjectOLEDPreferenceFunctions(obj, FigNo)
             hB(1).EdgeColor = 'none';   
             
  
-            % Standard errros
+            % Standard errors
             x  = HDRtoneMapDeviation(:);
             y1 = mean(prefStatsStruct.HDRmapSingleReps,2) - prefStatsStruct.HDRmapStdErrOfMean;
             y2 = mean(prefStatsStruct.HDRmapSingleReps,2) + prefStatsStruct.HDRmapStdErrOfMean;
@@ -63,14 +63,14 @@ function plotAllSubjectOLEDPreferenceFunctions(obj, FigNo)
             v = [x(:) y(:)];
             patch('Faces', 1:14, 'Vertices', v, 'FaceColor',[0.7 0.7 0.8], 'EdgeColor', [0.6 0.6 0.7], 'FaceAlpha', 0.4);
             
-             % Curve
+            % Curve
             plot(HDRtoneMapDeviation, mean(prefStatsStruct.HDRmapSingleReps,2), 'r-', 'LineWidth', 2.0);
             
             % line at P = 0.5
             plot([-10 10], [0.5 0.5], 'k:', 'LineWidth', 0.5);
             
             % line at ratio = 1
-             plot([0 0], [-0.1 1.1], 'k:', 'LineWidth', 0.5);
+            plot([0 0], [-0.1 1.1], 'k:', 'LineWidth', 0.5);
              
             set(gca, 'FontSize', 14, 'Color', [1 1 1], 'XColor', [0.2 0.2 0.2], 'YColor', [0.2 0.2 0.2]);
             set(gca, 'XLim', [-3.5 3.5], 'YLim', [-0.1 1.1], 'YTick', [0:0.25:1.0], 'YTickLabel', sprintf('%1.1f\n', (0:0.5:1.0)));
