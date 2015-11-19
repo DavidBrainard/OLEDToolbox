@@ -31,11 +31,16 @@ function AnalyzeImagePreferenceExperiment
         % extract data from all subjects
         imPrefAnalyzer.summarizeDataAcrossAllSubjects();
         
+        figNo = 1002;
+        imPrefAnalyzer.plotAllSubjectOLEDPreferenceFunctions(figNo);
+        pause
+        
         figNo = 1000;
         imPrefAnalyzer.plotAllSubjectSummaryAlphaData(figNo);
         
         figNo = 1001;
         imPrefAnalyzer.plotAllSubjectOptimalToneMappingFunctions(figNo);
+        
         
     end
     
