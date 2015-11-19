@@ -35,7 +35,7 @@ function plotAllSubjectSummaryAlphaData(obj, figNo)
     set(gca, 'XColor', [0.2 0.2 0.2], 'YColor', [0.2 0.2 0.2], 'Color', [1 1 1], 'FontSize', 20);
     set(gca, 'XLim', [0 150], 'YLim', [0 500], 'XTick', [0:50:400], 'YTick', [0:50:500]);
     set(gca, 'XScale', 'linear', 'YScale', 'linear')
-    hL = legend(...
+    [hL,icons,plots,legend_text] = legend(...
            'identity line', ...
            obj.allSubjectSummaryData{1}.name, ...
            obj.allSubjectSummaryData{2}.name, ...
@@ -47,7 +47,11 @@ function plotAllSubjectSummaryAlphaData(obj, figNo)
            obj.allSubjectSummaryData{8}.name, ...
            'Location', 'NorthWest');
     set(hL,'Interpreter','latex', 'fontsize', 20, 'TextColor', [0.2 0.2 0.2], 'Color', 'none', 'box', 'off')
-       
+    for kk = numel(icons)-7:numel(icons)
+        icons(kk).Children.FaceAlpha = 0.3;
+        icons(kk).Children.MarkerSize = 12;
+    end
+    
     xlabel('$$\alpha_{_{OLED}}$$', 'interpreter', 'latex', 'FontSize', 30, 'FontWeight', 'bold', 'Color', [0.2 0.2 0.2]);
     ylabel('$$\alpha_{_{LCD}}$$',  'interpreter', 'latex', 'FontSize', 30, 'FontWeight', 'bold', 'Color', [0.2 0.2 0.2]);
     grid off
@@ -62,7 +66,7 @@ function plotAllSubjectSummaryAlphaData(obj, figNo)
     
     subplot('Position', subplotPosVectors(2,1).v);
     % plot the medians
-    plot([1:numel(obj.allSubjectSummaryData)], medRatio, 'ko-', 'LineWidth', 2.0, 'MarkerSize', 1, 'MarkerFaceColor', [0.6 0.6 0.6], 'MarkerEdgeColor', [0.9 0.9 0.9]);
+    plot([1:numel(obj.allSubjectSummaryData)], medRatio, 'k-', 'LineWidth', 2.0, 'MarkerSize', 1, 'MarkerFaceColor', [0.6 0.6 0.6], 'MarkerEdgeColor', [0.9 0.9 0.9]);
     hold on;
     
     % plot the ratios
@@ -79,7 +83,7 @@ function plotAllSubjectSummaryAlphaData(obj, figNo)
     set(gca, 'XColor', [0.2 0.2 0.2], 'YColor', [0.2 0.2 0.2], 'Color', [1 1 1], 'FontSize', 20);
     set(gca, 'YTick', (0.0:0.5:10), 'YTickLabel', sprintf('%1.1f\n', 0:0.5:10));
     set(gca, 'XLim', [0.5 numel(obj.allSubjectSummaryData)+0.5], 'XTick', 1:numel(obj.allSubjectSummaryData), 'XTickLabel', obj.allSubjectNames);
-    hL = legend(...
+   [hL,icons,plots,legend_text] = legend(...
            'medians', ...
            obj.allSubjectSummaryData{1}.name, ...
            obj.allSubjectSummaryData{2}.name, ...
@@ -91,6 +95,11 @@ function plotAllSubjectSummaryAlphaData(obj, figNo)
            obj.allSubjectSummaryData{8}.name, ...
            'Location', 'NorthWest');
     set(hL,'Interpreter','latex', 'fontsize', 20, 'TextColor', [0.2 0.2 0.2], 'Color', 'none', 'box', 'off')
+    for kk = numel(icons)-7:numel(icons)
+        icons(kk).Children.FaceAlpha = 0.3;
+        icons(kk).Children.MarkerSize = 12;
+    end
+    
     ylabel('$$\alpha_{_{LCD}} / \alpha_{_{OLED}}$$',  'interpreter', 'latex', 'FontSize', 30, 'FontWeight', 'bold', 'Color', [0.2 0.2 0.2]);
     grid off
     box on
