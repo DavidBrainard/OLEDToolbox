@@ -7,7 +7,13 @@ function AnalyzeImagePreferenceExperiment
         
         imPrefAnalyzer.getDataFile();
         imPrefAnalyzer.getData();
-            
+        
+        if (isfield(imPrefAnalyzer.runParams, 'calibrationMode') && (imPrefAnalyzer.runParams.calibrationMode))
+            figNo = 1;
+            imPrefAnalyzer.plotCalibrationData(figNo);
+            return;
+        end
+                
         figNo = 1;
         whichDisplay = 'OLED';
         imPrefAnalyzer.plotStimuli(whichDisplay, figNo);
@@ -33,15 +39,12 @@ function AnalyzeImagePreferenceExperiment
         
         figNo = 1002;
         imPrefAnalyzer.plotAllSubjectOLEDPreferenceFunctions(figNo);
-        pause
         
         figNo = 1000;
         imPrefAnalyzer.plotAllSubjectSummaryAlphaData(figNo);
         
         figNo = 1001;
         imPrefAnalyzer.plotAllSubjectOptimalToneMappingFunctions(figNo);
-        
-        
     end
     
 end

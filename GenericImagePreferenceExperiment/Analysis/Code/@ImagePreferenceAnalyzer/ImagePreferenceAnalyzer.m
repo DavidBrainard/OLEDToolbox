@@ -45,6 +45,8 @@ classdef ImagePreferenceAnalyzer < handle
         subjectPool1
         subjectPool2
         allSubjectNames
+        
+        calibrationData
     end
     
     
@@ -62,6 +64,7 @@ classdef ImagePreferenceAnalyzer < handle
         plotStimuli(obj, whichDisplay, figNo);
         plotStimuliAndProfiles(obj, whichDisplay, whichScene, figNo);
         plotOLEDpreferenceCurves(obj, whichScene, figNo);
+        plotCalibrationData(obj, figNo);
         
         summarizeDataAcrossAllSubjects(obj);
         plotAllSubjectSummaryAlphaData(obj, figNo);
@@ -74,6 +77,7 @@ classdef ImagePreferenceAnalyzer < handle
         determineMaxDisplayLuminances(obj);
         computeSceneDynamicRanges(obj);
         processPreferenceData(obj);
+        processCalibrationData(obj);
     end
 end
 

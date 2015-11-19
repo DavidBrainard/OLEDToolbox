@@ -72,6 +72,10 @@ function plotAllSubjectOLEDPreferenceFunctions(obj, FigNo)
             % line at ratio = 1
             plot([0 0], [-0.1 1.1], 'k:', 'LineWidth', 0.5);
              
+            % subject name
+            text(-2.4, 1.0, subjectName, 'fontsize',14, 'HorizontalAlignment', 'left', 'Color', [0.2 0.2 0.2]);
+
+                
             set(gca, 'FontSize', 14, 'Color', [1 1 1], 'XColor', [0.2 0.2 0.2], 'YColor', [0.2 0.2 0.2]);
             set(gca, 'XLim', [-3.5 3.5], 'YLim', [-0.1 1.1], 'YTick', [0:0.25:1.0], 'YTickLabel', sprintf('%1.1f\n', (0:0.5:1.0)));
             set(gca, 'Xtick', HDRtoneMapDeviation, 'XTickLabel', sprintf('%.1f\n',HDRtoneMapLabels));
