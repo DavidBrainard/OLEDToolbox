@@ -33,6 +33,7 @@ classdef ImagePreferenceAnalyzer < handle
         repsNum
         preferenceDataStats
         maxDisplayLuminance
+        minDisplayLuminance
         sceneDynamicRange
         maxRelativeImageLuminance
         alphaValuesOLED
