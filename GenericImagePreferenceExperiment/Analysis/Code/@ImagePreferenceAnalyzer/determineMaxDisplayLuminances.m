@@ -46,6 +46,5 @@ function determineMaxDisplayLuminances(obj)
 
     OLEDlumRange  = [obj.minDisplayLuminance('OLED') obj.maxDisplayLuminance('OLED')]
     LCDlumRange = [obj.minDisplayLuminance('LCD') obj.maxDisplayLuminance('LCD')]
-    pause
 end
 
